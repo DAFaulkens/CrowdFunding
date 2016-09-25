@@ -11,9 +11,13 @@ namespace Crowdfunding\Payment;
 
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
+use Joomla\DI\Container;
 use Prism;
 use Crowdfunding;
 use Emailtemplates;
+
+use Crowdfunding\Payment\Session as PaymentSessionRemote;
+use Crowdfunding\Transaction\Transaction;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -34,8 +38,13 @@ class Plugin extends \JPlugin
     protected $debugType  = 'DEBUG_PAYMENT_PLUGIN';
     protected $errorType  = 'ERROR_PAYMENT_PLUGIN';
 
-    protected $logFile    = 'com_crowdfunding.php';
+    protected $logFile    = 'com_crowdfunding.payment.php';
     protected $logTable   = '#__crowdf_logs';
+
+    /**
+     * @var \JApplicationSite
+     */
+    protected $app;
 
     /**
      * Affects constructor behavior. If true, language files will be loaded automatically.
@@ -46,11 +55,6 @@ class Plugin extends \JPlugin
     protected $autoloadLanguage = true;
 
     /**
-     * @var \JApplicationSite
-     */
-    protected $app;
-
-    /**
      * This property contains keys of response data
      * that will be used to be generated an array with extra data.
      *
@@ -58,33 +62,46 @@ class Plugin extends \JPlugin
      */
     protected $extraDataKeys = array();
 
+    /**
+     * @var Container
+     */
+    protected $container;
+
     public function __construct(&$subject, $config = array())
     {
+        parent::__construct($subject, $config);
+
+        $this->textPrefix     .= '_' . strtoupper($this->serviceAlias);
+        $this->debugType      .= '_' . strtoupper($this->serviceAlias);
+        $this->errorType      .= '_' . strtoupper($this->serviceAlias);
+
         // Create log object
         $this->log = new Prism\Log\Log();
 
-        // Set database writer.
-        $this->log->addAdapter(new Prism\Log\Adapter\Database(\JFactory::getDbo(), $this->logTable));
+        // Set database log writer if Joomla! debug is enabled.
+        if ($this->logTable !== null and $this->logTable !== '' and JDEBUG) {
+            $this->log->addAdapter(new Prism\Log\Adapter\Database(\JFactory::getDbo(), $this->logTable));
+        }
 
-        // Set file writer.
-        if ($this->logFile and $this->logFile !== '') {
-            $app = \JFactory::getApplication();
-            /** @var $app \JApplicationSite */
-
-            $file = \JPath::clean($app->get('log_path') . DIRECTORY_SEPARATOR . basename($this->logFile));
+        // Set file log adapter.
+        if ($this->logFile !== null and $this->logFile !== '') {
+            $file = \JPath::clean($this->app->get('log_path') .DIRECTORY_SEPARATOR. basename($this->logFile));
             $this->log->addAdapter(new Prism\Log\Adapter\File($file));
         }
 
-        parent::__construct($subject, $config);
+        $this->container = Prism\Container::getContainer();
     }
-
 
     /**
      * Update rewards properties - availability, distributed,...
      *
      * @param $data
      *
+     * @throws \InvalidArgumentException
      * @return \Crowdfunding\Reward|null
+     *
+     * @throws \RuntimeException
+     * @deprecated v2.8 Use Crowdfunding\Observer\Transaction\TransactionObserver
      */
     protected function updateReward($data)
     {
@@ -145,127 +162,70 @@ class Plugin extends \JPlugin
     }
 
     /**
-     * This method is invoked when the administrator changes transaction status from the backend.
-     *
-     * @param string $context   This string gives information about that where it has been executed the trigger.
-     * @param \stdClass $item    A transaction data.
-     * @param string $oldStatus Old status
-     * @param string $newStatus New status
-     *
-     * @return void
-     */
-    public function onTransactionChangeState($context, &$item, $oldStatus, $newStatus)
-    {
-        $allowedContexts = array('com_crowdfunding.transaction', 'com_crowdfundingfinance.transaction');
-        if (!in_array($context, $allowedContexts, true)) {
-            return;
-        }
-
-        $app = \JFactory::getApplication();
-        /** @var $app \JApplicationSite */
-
-        if ($app->isSite()) {
-            return;
-        }
-
-        $doc = \JFactory::getDocument();
-        /**  @var $doc \JDocumentHtml */
-
-        // Check document type
-        $docType = $doc->getType();
-        if (strcmp('html', $docType) !== 0) {
-            return;
-        }
-
-        // Verify the service provider.
-        if (strcmp($this->serviceAlias, $item->service_alias) !== 0) {
-            return;
-        }
-
-        if (strcmp($oldStatus, 'completed') === 0) { // Remove funds if someone change the status from completed to other one.
-
-            $project = new Crowdfunding\Project(\JFactory::getDbo());
-            $project->load($item->project_id);
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_BCSNC'), $this->debugType, $project->getProperties()) : null;
-
-            $project->removeFunds($item->txn_amount);
-            $project->storeFunds();
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_ACSNC'), $this->debugType, $project->getProperties()) : null;
-
-        } elseif (strcmp($newStatus, 'completed') === 0) { // Add funds if someone change the status to completed.
-
-            $project = new Crowdfunding\Project(\JFactory::getDbo());
-            $project->load($item->project_id);
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_BCSTC'), $this->debugType, $project->getProperties()) : null;
-
-            $project->addFunds($item->txn_amount);
-            $project->storeFunds();
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_ACSTC'), $this->debugType, $project->getProperties()) : null;
-        }
-
-    }
-
-    /**
      * Send emails to the administrator, project owner and the user who have made a donation.
      *
-     * @param \stdClass   $project
-     * @param \stdClass   $transaction
+     * @param \stdClass   $paymentResult
      * @param Registry    $params
-     * @param \stdClass   $reward
+     *
+     * @throws \InvalidArgumentException
+     * @return void
      */
-    protected function sendMails(&$project, &$transaction, &$params, &$reward)
+    protected function sendMails($paymentResult, $params)
     {
-        $app = \JFactory::getApplication();
-        /** @var $app \JApplicationSite */
+        if (!\JComponentHelper::isInstalled('com_emailtemplates')) {
+            \JLog::add(\JText::_('LIB_CROWDFUNDING_EMAIL_TEMPLATES_INSTALLATION'), \JLog::WARNING, 'com_crowdfunding');
+            return;
+        }
+
+        $transaction = $paymentResult->transaction;
+        /** @var Crowdfunding\Transaction\Transaction $transaction */
+
+        $project = $paymentResult->project;
+        /** @var Crowdfunding\Project $project */
+
+        $reward = $paymentResult->reward;
+        /** @var Crowdfunding\Reward $reward */
 
         // Get website
-        $uri     = \JUri::getInstance();
-        $website = $uri->toString(array('scheme', 'host'));
+        $uri       = \JUri::getInstance();
+        $website   = $uri->toString(array('scheme', 'host'));
 
-        $emailMode = $this->params->get('email_mode', 'plain');
+        $emailMode  = $this->params->get('email_mode', 'plain');
 
-        $componentParams = \JComponentHelper::getParams('com_crowdfunding');
-
-        $currency   = Crowdfunding\Currency::getInstance(\JFactory::getDbo(), $componentParams->get('project_currency'));
-        $amount     = new Crowdfunding\Amount($componentParams);
-        $amount->setCurrency($currency);
+        $moneyHash  = Prism\Utilities\StringHelper::generateMd5Hash(Crowdfunding\Constants::CONTAINER_FORMATTER_MONEY, $params->get('project_currency'));
+        $money      = $this->container->get($moneyHash);
+        /** @var Prism\Money\Money $money */
 
         // Prepare data for parsing.
         $data = array(
-            'site_name'      => $app->get('sitename'),
+            'site_name'      => $this->app->get('sitename'),
             'site_url'       => \JUri::root(),
-            'item_title'     => $project->title,
-            'item_url'       => $website . \JRoute::_(\CrowdfundingHelperRoute::getDetailsRoute($project->slug, $project->catslug)),
-            'amount'         => $amount->setValue($transaction->txn_amount)->formatCurrency(),
-            'transaction_id' => $transaction->txn_id,
+            'item_title'     => $project->getTitle(),
+            'item_url'       => $website . \JRoute::_(\CrowdfundingHelperRoute::getDetailsRoute($project->getSlug(), $project->getCatSlug())),
+            'amount'         => $money->setAmount($transaction->getAmount())->formatCurrency(),
+            'transaction_id' => $transaction->getTransactionId(),
             'reward_title'   => '',
             'delivery_date'  => '',
             'payer_name'     => '',
             'payer_email'    => ''
         );
 
-        // Set reward data.
-        if (is_object($reward)) {
-            $data['reward_title'] = $reward->title;
-            if ($reward->delivery !== '0000-00-00') {
-                $date = new \JDate($reward->delivery);
-                $data['delivery_date'] = $date->format('d F Y');
-            }
-        }
-
         // Prepare data about payer if he is NOT anonymous ( is registered user with profile ).
-        if ((int)$transaction->investor_id > 0) {
-            $investor            = \JFactory::getUser($transaction->investor_id);
+        if ((int)$transaction->getInvestorId() > 0) {
+            $investor            = \JFactory::getUser($transaction->getInvestorId());
             $data['payer_email'] = $investor->get('email');
             $data['payer_name']  = $investor->get('name');
+        }
+
+        // Set reward data.
+        if (is_object($reward)) {
+            $data['reward_title'] = $reward->getTitle();
+
+            $dateValidator = new Prism\Validator\Date($reward->getDeliveryDate());
+            if ($dateValidator->isValid()) {
+                $date = new \JDate($reward->getDeliveryDate());
+                $data['delivery_date'] = $date->format($this->params->get('date_format_views', \JText::_('DATE_FORMAT_LC3')));
+            }
         }
 
         // Send mail to the administrator
@@ -276,20 +236,20 @@ class Plugin extends \JPlugin
             $email->load($emailId);
 
             if (!$email->getSenderName()) {
-                $email->setSenderName($app->get('fromname'));
+                $email->setSenderName($this->app->get('fromname'));
             }
             if (!$email->getSenderEmail()) {
-                $email->setSenderEmail($app->get('mailfrom'));
+                $email->setSenderEmail($this->app->get('mailfrom'));
             }
 
-            $recipientId = (int)$componentParams->get('administrator_id', 0);
+            $recipientId = (int)$params->get('administrator_id', 0);
             if ($recipientId > 0) {
                 $recipient     = \JFactory::getUser($recipientId);
                 $recipientName = $recipient->get('name');
                 $recipientMail = $recipient->get('email');
             } else {
-                $recipientName = $app->get('fromname');
-                $recipientMail = $app->get('mailfrom');
+                $recipientName = $this->app->get('fromname');
+                $recipientMail = $this->app->get('mailfrom');
             }
 
             // Prepare data for parsing
@@ -297,6 +257,9 @@ class Plugin extends \JPlugin
             $data['sender_email']    = $email->getSenderEmail();
             $data['recipient_name']  = $recipientName;
             $data['recipient_email'] = $recipientMail;
+
+            // DEBUG
+            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_SEND_MAIL_ADMINISTRATOR'), $this->debugType, $data) : null;
 
             $email->parse($data);
             $subject = $email->getSubject();
@@ -311,9 +274,8 @@ class Plugin extends \JPlugin
 
             // Check for an error.
             if ($return !== true) {
-                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_ADMIN'), $this->debugType, $mailer->ErrorInfo);
+                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_ADMIN'), $this->errorType, $mailer->ErrorInfo);
             }
-
         }
 
         // Send mail to project owner.
@@ -324,13 +286,13 @@ class Plugin extends \JPlugin
             $email->load($emailId);
 
             if (!$email->getSenderName()) {
-                $email->setSenderName($app->get('fromname'));
+                $email->setSenderName($this->app->get('fromname'));
             }
             if (!$email->getSenderEmail()) {
-                $email->setSenderEmail($app->get('mailfrom'));
+                $email->setSenderEmail($this->app->get('mailfrom'));
             }
 
-            $user          = \JFactory::getUser($transaction->receiver_id);
+            $user          = \JFactory::getUser($transaction->getReceiverId());
             $recipientName = $user->get('name');
             $recipientMail = $user->get('email');
 
@@ -340,6 +302,9 @@ class Plugin extends \JPlugin
             $data['recipient_name']  = $recipientName;
             $data['recipient_email'] = $recipientMail;
 
+            // DEBUG
+            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_SEND_MAIL_PROJECT_OWNER'), $this->debugType, $data) : null;
+
             $email->parse($data);
             $subject = $email->getSubject();
             $body    = $email->getBody($emailMode);
@@ -347,33 +312,31 @@ class Plugin extends \JPlugin
             $mailer = \JFactory::getMailer();
             if (strcmp('html', $emailMode) === 0) { // Send as HTML message
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_HTML);
-
             } else { // Send as plain text.
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
-
             }
 
             // Check for an error.
             if ($return !== true) {
-                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_PROJECT_OWNER'), $this->debugType, $mailer->ErrorInfo);
+                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_PROJECT_OWNER'), $this->errorType, $mailer->ErrorInfo);
             }
         }
 
         // Send mail to backer.
         $emailId = (int)$this->params->get('user_mail_id', 0);
-        if ($emailId > 0 and (int)$transaction->investor_id > 0) {
+        if ($emailId > 0 and (int)$transaction->getInvestorId() > 0) {
             $email = new Emailtemplates\Email();
             $email->setDb(\JFactory::getDbo());
             $email->load($emailId);
 
             if (!$email->getSenderName()) {
-                $email->setSenderName($app->get('fromname'));
+                $email->setSenderName($this->app->get('fromname'));
             }
             if (!$email->getSenderEmail()) {
-                $email->setSenderEmail($app->get('mailfrom'));
+                $email->setSenderEmail($this->app->get('mailfrom'));
             }
 
-            $user          = \JFactory::getUser($transaction->investor_id);
+            $user          = \JFactory::getUser($transaction->getInvestorId());
             $recipientName = $user->get('name');
             $recipientMail = $user->get('email');
 
@@ -383,6 +346,9 @@ class Plugin extends \JPlugin
             $data['recipient_name']  = $recipientName;
             $data['recipient_email'] = $recipientMail;
 
+            // DEBUG
+            JDEBUG ? $this->log->add(\JText::_($this->textPrefix . '_DEBUG_SEND_MAIL_BACKER'), $this->debugType, $data) : null;
+
             $email->parse($data);
             $subject = $email->getSubject();
             $body    = $email->getBody($emailMode);
@@ -390,15 +356,13 @@ class Plugin extends \JPlugin
             $mailer = \JFactory::getMailer();
             if (strcmp('html', $emailMode) === 0) { // Send as HTML message
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_HTML);
-
             } else { // Send as plain text.
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
-
             }
 
             // Check for an error.
             if ($return !== true) {
-                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_PROJECT_OWNER'), $this->debugType, $mailer->ErrorInfo);
+                $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_PROJECT_OWNER'), $this->errorType, $mailer->ErrorInfo);
             }
         }
     }
@@ -407,6 +371,8 @@ class Plugin extends \JPlugin
      * Send email to the administrator if there is a problem with a payment plugin.
      *
      * @param string $message
+     *
+     * @throws \Exception
      */
     protected function notifyAdministrator($message)
     {
@@ -436,7 +402,7 @@ class Plugin extends \JPlugin
 
         // Check for an error.
         if ($return !== true) {
-            $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_ADMIN'), $this->debugType, $mailer->ErrorInfo);
+            $this->log->add(\JText::_($this->textPrefix . '_ERROR_MAIL_SENDING_ADMIN'), $this->errorType, $mailer->ErrorInfo);
         }
     }
 
@@ -446,6 +412,7 @@ class Plugin extends \JPlugin
      * @param array $options The keys used to load payment session data from database.
      *
      * @throws \UnexpectedValueException
+     * @throws \InvalidArgumentException
      *
      * @return Crowdfunding\Payment\Session
      */
@@ -564,6 +531,8 @@ class Plugin extends \JPlugin
      * @param $fees
      * @param $txnAmount
      *
+     * @throws \InvalidArgumentException
+     *
      * @return float
      */
     protected function calculateFee($fundingType, $fees, $txnAmount)
@@ -617,7 +586,7 @@ class Plugin extends \JPlugin
      */
     protected function getCallbackUrl($htmlEncoded = false)
     {
-        $page = \JString::trim($this->params->get('callback_url'));
+        $page   = trim($this->params->get('callback_url'));
 
         $uri    = \JUri::getInstance();
         $domain = $uri->toString(array('host'));
@@ -645,14 +614,14 @@ class Plugin extends \JPlugin
      */
     protected function getReturnUrl($slug, $catslug)
     {
-        $page = \JString::trim($this->params->get('return_url'));
+        $page = trim($this->params->get('return_url'));
         if (!$page) {
             $page = \JRoute::_(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'share'), false);
         }
 
         if (false === strpos($page, '://')) {
             $uri  = \JUri::getInstance();
-            $page = $uri->toString(array('scheme', 'host')) . '/'. $page;
+            $page = $uri->toString(array('scheme', 'host')) . $page;
         }
 
         return $page;
@@ -668,7 +637,7 @@ class Plugin extends \JPlugin
      */
     protected function getCancelUrl($slug, $catslug)
     {
-        $page = \JString::trim($this->params->get('cancel_url'));
+        $page = trim($this->params->get('cancel_url'));
         if (!$page) {
             $uri  = \JUri::getInstance();
             $page = $uri->toString(array('scheme', 'host')) . \JRoute::_(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'default'), false);
@@ -701,7 +670,7 @@ class Plugin extends \JPlugin
         }
 
         // Set a note.
-        if (\JString::strlen($note) > 0) {
+        if ($note !== null and $note !== '') {
             $extraData[$trackingKey]['NOTE'] = $note;
         }
 
@@ -728,6 +697,8 @@ class Plugin extends \JPlugin
      *
      * @param Crowdfunding\Payment\Session $paymentSession
      * @param bool $removeIntention Remove or not the intention record.
+     *
+     * @deprecated v2.8 Use removeIntention.
      */
     protected function closePaymentSession($paymentSession, $removeIntention = false)
     {
@@ -746,19 +717,51 @@ class Plugin extends \JPlugin
     }
 
     /**
-     * This method is executed after complete payment.
-     * It is used to be sent mails to user and administrator
+     * Remove an intention records.
      *
-     * @param string $context  Transaction data
-     * @param \stdClass $transaction  Transaction data
-     * @param Registry $params Component parameters
-     * @param \stdClass $project  Project data
-     * @param \stdClass $reward  Reward data
-     * @param \stdClass $paymentSession Payment session data.
+     * @param PaymentSessionRemote $paymentSession
+     * @param Transaction $transaction
      */
-    public function onAfterPayment($context, &$transaction, &$params, &$project, &$reward, &$paymentSession)
+    protected function removeIntention(PaymentSessionRemote $paymentSession, Transaction $transaction)
     {
-        if (strcmp('com_crowdfunding.notify.' . $this->serviceAlias, $context) !== 0) {
+        // Remove intention record.
+        $removeIntention  = (strcmp('completed', $transaction->getStatus()) === 0 or strcmp('pending', $transaction->getStatus()) === 0);
+        if ($paymentSession->getIntentionId() and $removeIntention) {
+            $intention = new Crowdfunding\Intention(\JFactory::getDbo());
+            $intention->load($paymentSession->getIntentionId());
+
+            if ($intention->getId()) {
+                $intention->delete();
+            }
+        }
+    }
+
+    /**
+     * This method is executed after complete payment notification.
+     * It is used to be sent mails to users and the administrator.
+     *
+     * <code>
+     * $paymentResult->transaction;
+     * $paymentResult->project;
+     * $paymentResult->reward;
+     * $paymentResult->paymentSession;
+     * $paymentResult->serviceProvider;
+     * $paymentResult->serviceAlias;
+     * $paymentResult->response;
+     * $paymentResult->returnUrl;
+     * $paymentResult->message;
+     * $paymentResult->triggerEvents;
+     * </code>
+     *
+     * @param string $context
+     * @param \stdClass $paymentResult  Object that contains Transaction, Reward, Project, PaymentSession, etc.
+     * @param Registry $params Component parameters
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function onAfterPaymentNotify($context, $paymentResult, $params)
+    {
+        if (!preg_match('/com_crowdfunding\.(notify|payments)/', $context)) {
             return;
         }
 
@@ -766,16 +769,61 @@ class Plugin extends \JPlugin
             return;
         }
 
-        $doc = \JFactory::getDocument();
-        /**  @var $doc \JDocumentHtml */
-
         // Check document type
-        $docType = $doc->getType();
-        if (strcmp('raw', $docType) !== 0) {
+        $docType = \JFactory::getDocument()->getType();
+        if (!in_array($docType, array('raw', 'html'), true)) {
             return;
         }
 
         // Send mails
-        $this->sendMails($project, $transaction, $params, $reward);
+        $this->sendMails($paymentResult, $params);
+    }
+
+    /**
+     * This method will be executed after all payment events, especially onAfterPaymentNotify.
+     * It is used to close payment session.
+     *
+     * <code>
+     * $paymentResult->transaction;
+     * $paymentResult->project;
+     * $paymentResult->reward;
+     * $paymentResult->paymentSession;
+     * $paymentResult->serviceProvider;
+     * $paymentResult->serviceAlias;
+     * $paymentResult->response;
+     * $paymentResult->returnUrl;
+     * $paymentResult->message;
+     * $paymentResult->triggerEvents;
+     * </code>
+     *
+     * @param string $context
+     * @param \stdClass $paymentResult  Object that contains Transaction, Reward, Project, PaymentSession, etc.
+     * @param Registry $params Component parameters
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function onAfterPayment($context, $paymentResult, $params)
+    {
+        if (!preg_match('/com_crowdfunding\.(notify|payments)/', $context)) {
+            return;
+        }
+
+        if ($this->app->isAdmin()) {
+            return;
+        }
+
+        // Check document type
+        $docType = \JFactory::getDocument()->getType();
+        if (!in_array($docType, array('raw', 'html'), true)) {
+            return;
+        }
+
+        $paymentSession = $paymentResult->paymentSession;
+        /** @var PaymentSessionRemote $paymentSession */
+
+        // Remove payment session record from database.
+        if (($paymentSession instanceof PaymentSessionRemote) and $paymentSession->getId()) {
+            $paymentSession->delete();
+        }
     }
 }

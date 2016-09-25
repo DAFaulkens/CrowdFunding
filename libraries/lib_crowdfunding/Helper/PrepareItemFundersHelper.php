@@ -9,32 +9,48 @@
 
 namespace Crowdfunding\Helper;
 
-use Prism\Helper\HelperAbstract;
+use Prism\Helper\HelperInterface;
+use Prism\Utilities\ArrayHelper;
 
 defined('JPATH_PLATFORM') or die;
 
 /**
- * This class provides functionality to prepare the statuses of the items.
+ * This class provides functionality to prepare the items.
  *
  * @package      Crowdfunding
  * @subpackage   Helpers
  */
-final class PrepareItemFundersHelper extends HelperAbstract
+final class PrepareItemFundersHelper implements HelperInterface
 {
+    /**
+     * Database driver.
+     *
+     * @var \JDatabaseDriver
+     */
+    protected $db;
+
+    /**
+     * Initialize the object.
+     *
+     * @param \JDatabaseDriver $db
+     */
+    public function __construct(\JDatabaseDriver $db = null)
+    {
+        $this->db     = $db;
+    }
+
     /**
      * Count project funders.
      *
      * @param array $data
      * @param array $options
+     *
+     * @throws \RuntimeException
      */
     public function handle(&$data, array $options = array())
     {
         $funders = array();
-        $ids     = array();
-        foreach ($data as $item) {
-            $ids[] = (int)$item->id;
-        }
-        $ids   = array_filter(array_unique($ids));
+        $ids     = ArrayHelper::getIds($data, 'id');
 
         if (count($ids) > 0) {
             $query = $this->db->getQuery(true);
@@ -51,7 +67,7 @@ final class PrepareItemFundersHelper extends HelperAbstract
         }
 
         foreach ($data as $item) {
-            $item->funders = (array_key_exists($item->id, $funders)) ? $funders[$item->id]->funders : 0;
+            $item->funders = array_key_exists($item->id, $funders) ? $funders[$item->id]->funders : 0;
         }
 
         unset($funders);

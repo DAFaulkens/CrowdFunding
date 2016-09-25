@@ -9,8 +9,10 @@
 
 namespace Crowdfunding\Helper;
 
-use Prism\Helper\HelperAbstract;
+use Joomla\Registry\Registry;
+use Prism\Helper\HelperInterface;
 use Prism\Utilities\MathHelper;
+use Prism;
 use Crowdfunding;
 
 defined('JPATH_PLATFORM') or die;
@@ -21,7 +23,7 @@ defined('JPATH_PLATFORM') or die;
  * @package      Crowdfunding
  * @subpackage   Helpers
  */
-final class PrepareItemsHelper extends HelperAbstract
+final class PrepareItemsHelper implements HelperInterface
 {
     /**
      * Prepare the statuses of the items.
@@ -36,7 +38,7 @@ final class PrepareItemsHelper extends HelperAbstract
             if (is_numeric($item->funding_days) and $item->funding_days > 0) {
                 $fundingStartDate  = new Crowdfunding\Date($item->funding_start);
                 $endDate           = $fundingStartDate->calculateEndDate($item->funding_days);
-                $item->funding_end = $endDate->format('Y-m-d');
+                $item->funding_end = $endDate->format(Prism\Constants::DATE_FORMAT_SQL_DATE);
             }
 
             // Calculate funded percentage.
@@ -45,6 +47,17 @@ final class PrepareItemsHelper extends HelperAbstract
             // Calculate days left
             $today           = new Crowdfunding\Date();
             $item->days_left = $today->calculateDaysLeft($item->funding_days, $item->funding_start, $item->funding_end);
+
+            // Decode parameters.
+            if ($item->params === null) {
+                $item->params = '{}';
+            }
+
+            if (is_string($item->params) and $item->params !== '') {
+                $params = new Registry;
+                $params->loadString($item->params);
+                $item->params = $params;
+            }
         }
     }
 }

@@ -66,6 +66,8 @@ class pkg_crowdfundingInstallerScript
      * @param string $type
      * @param string $parent
      *
+     * @throws \UnexpectedValueException
+     * @throws \InvalidArgumentException
      * @return void
      */
     public function postflight($type, $parent)
@@ -148,8 +150,9 @@ class pkg_crowdfundingInstallerScript
         // Display result about verification for GD library
         $title = JText::_('COM_CROWDFUNDING_GD_LIBRARY');
         $info  = '';
-        if (!extension_loaded('gd') and function_exists('gd_info')) {
-            $result = array('type' => 'important', 'text' => JText::_('COM_CROWDFUNDING_WARNING'));
+        if (!extension_loaded('gd') and !function_exists('gd_info')) {
+            $info   = JText::_('COM_CROWDFUNDING_GD_LIBRARY_INFO');
+            $result = array('type' => 'important', 'text' => JText::_('JOFF'));
         } else {
             $result = array('type' => 'success', 'text' => JText::_('JON'));
         }
@@ -182,6 +185,17 @@ class pkg_crowdfundingInstallerScript
         $info  = '';
         if (!function_exists('finfo_open')) {
             $info   = JText::_('COM_CROWDFUNDING_FILEINFO_INFO');
+            $result = array('type' => 'important', 'text' => JText::_('JOFF'));
+        } else {
+            $result = array('type' => 'success', 'text' => JText::_('JON'));
+        }
+        CrowdfundingInstallHelper::addRow($title, $result, $info);
+
+        // Display result about verification PHP Intl
+        $title = JText::_('COM_CROWDFUNDING_PHPINTL');
+        $info  = '';
+        if (!extension_loaded('intl')) {
+            $info   = JText::_('COM_CROWDFUNDING_PHPINTL_INFO');
             $result = array('type' => 'important', 'text' => JText::_('JOFF'));
         } else {
             $result = array('type' => 'success', 'text' => JText::_('JON'));
@@ -304,11 +318,11 @@ class pkg_crowdfundingInstallerScript
             }
         }
 
-        // Remove the files that the system does not use anymore.
-        $this->removeUnusedFiles();
+        // Delete the files that the system does not use anymore.
+        $this->deleteFiles();
     }
 
-    private function removeUnusedFiles()
+    private function deleteFiles()
     {
         $files = array(
             '/components/com_crowdfunding/helpers/category.php',
@@ -323,7 +337,10 @@ class pkg_crowdfundingInstallerScript
             '/administrator/components/com_crowdfunding/layouts/project_wizard.php',
             '/administrator/components/com_crowdfunding/layouts/payment_wizard_four_steps.php',
             '/administrator/components/com_crowdfunding/layouts/payment_wizard.php',
-            '/administrator/components/com_crowdfunding/layouts/items_grid.php'
+            '/administrator/components/com_crowdfunding/layouts/items_grid.php',
+
+            // v2.5
+            '/components/com_crowdfunding/views/embed/tmpl/email.php',
         );
 
         foreach ($files as $file) {
