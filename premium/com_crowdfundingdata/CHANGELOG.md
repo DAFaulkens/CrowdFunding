@@ -1,6 +1,9 @@
 Crowdfunding Data Changelog
 ===============================
 
+###v2.4
+* It was made compatible with Crowdfunding v2.6.
+
 ###v2.3
 * It was made compatible with Crowdfunding v2.5.
 
