@@ -23,7 +23,7 @@ echo $layout->render($this->layoutData);
             $this->raised = $this->money->setAmount($this->item->funded)->formatCurrency();
 
             // Prepare the value that I am going to display
-            $fundedPercents = JHtml::_('crowdfunding.funded', $this->item->funded_percents);
+            $fundedPercents = JHtml::_('crowdfunding.funded', $this->item->fundedPercent);
             ?>
             <div class="thumbnail cf-project">
                 <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($this->item->slug, $this->item->catslug)); ?>">
@@ -44,10 +44,10 @@ echo $layout->render($this->layoutData);
                 </div>
 
                 <div class="cf-caption-info absolute-bottom">
-                    <?php echo JHtml::_('crowdfunding.progressbar', $fundedPercents, $this->item->days_left, $this->item->funding_type, false, $this->item->funding_start); ?>
+                    <?php echo JHtml::_('crowdfunding.progressbar', $fundedPercents, $this->item->daysLeft, $this->item->funding_type, false, $this->item->funding_start); ?>
                     <div class="row-fluid">
                         <div class="col-md-4 hidden-xs">
-                            <div class="bolder"><?php echo $this->item->funded_percents; ?>%</div>
+                            <div class="bolder"><?php echo $this->item->fundedPercent; ?>%</div>
                             <div class="text-uppercase"><?php echo JText::_('COM_CROWDFUNDING_FUNDED'); ?></div>
                         </div>
                         <div class="col-md-4 col-xs-6">
@@ -55,7 +55,7 @@ echo $layout->render($this->layoutData);
                             <div class="text-uppercase"><?php echo JText::_('COM_CROWDFUNDING_RAISED'); ?></div>
                         </div>
                         <div class="col-md-4 col-xs-6">
-                            <div class="bolder"><?php echo $this->item->days_left; ?></div>
+                            <div class="bolder"><?php echo $this->item->daysLeft; ?></div>
                             <div class="text-uppercase"><?php echo JText::_('COM_CROWDFUNDING_DAYS_LEFT'); ?></div>
                         </div>
                     </div>
@@ -80,3 +80,9 @@ echo $layout->render($this->layoutData);
     </div>
 </div>
 <?php } ?>
+
+<div class="row">
+    <div class="col-md-12">
+        <?php echo $this->loadTemplate('statistics'); ?>
+    </div>
+</div>

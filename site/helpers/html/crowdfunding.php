@@ -187,6 +187,32 @@ abstract class JHtmlCrowdfunding
     }
 
     /**
+     * Display information about minimum and maximum allowed amount that could be made.
+     *
+     * @param float    $minimumAmount
+     * @param float $maximumAmount
+     * @param Prism\Money\Money $moneyFormatter
+     *
+     * @return string
+     */
+    public static function minMaxAllowedAmount($minimumAmount, $maximumAmount, $moneyFormatter)
+    {
+        $output        = '';
+        $minimumAmount = $moneyFormatter->setAmount($minimumAmount)->parse();
+        $maximumAmount = $moneyFormatter->setAmount($maximumAmount)->parse();
+
+        if ($minimumAmount > 0 and $maximumAmount > 0) {
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_MAXIMUM_AMOUNT_S_S', $moneyFormatter->setAmount($minimumAmount)->formatCurrency(), $moneyFormatter->setAmount($maximumAmount)->formatCurrency());
+        } elseif ($minimumAmount > 0 and $maximumAmount <= 0) {
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_AMOUNT_S', $moneyFormatter->setAmount($minimumAmount)->formatCurrency());
+        } elseif ($minimumAmount <= 0 and $maximumAmount > 0) {
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MAXIMUM_AMOUNT_S', $moneyFormatter->setAmount($maximumAmount)->formatCurrency());
+        }
+
+        return '<div class="font-xsmall">'.$output.'</div>';
+    }
+
+    /**
      *
      * Display a text that describes the state of result
      *
@@ -667,5 +693,23 @@ abstract class JHtmlCrowdfunding
         }
 
         return implode("\n", $html);
+    }
+
+    /**
+     * @param $minAmount
+     * @param $maxAmount
+     * @param Prism\Money\Money $money
+     *
+     * @return string
+     */
+    public static function infoMinMaxAmount($minAmount, $maxAmount, $money)
+    {
+        if ($minAmount > 0 and !$maxAmount) {
+            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_AMOUNT', $money->setAmount($minAmount)->formatCurrency());
+        } elseif ($minAmount > 0 and $maxAmount > 0) {
+            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_MAXIMUM_AMOUNT', $money->setAmount($minAmount)->formatCurrency(), $money->setAmount($maxAmount)->formatCurrency());
+        }
+
+        return '';
     }
 }

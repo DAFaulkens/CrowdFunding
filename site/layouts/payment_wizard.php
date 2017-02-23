@@ -10,18 +10,30 @@
 // no direct access
 defined('_JEXEC') or die;
 
-$active = array('rewards' => false, 'payment' => false, 'share' => false);
+/**
+ * @var stdClass $displayData
+ * @var array $steps
+ * @var array $wizardSteps
+ */
 
-switch ($displayData->layout) {
-    case 'default':
-        $active['rewards'] = true;
+$steps = array();
+$steps['default'] = false;
+
+// Prepare custom steps.
+$wizardSteps = $displayData->wizard_steps;
+foreach ($wizardSteps as $step) {
+    $steps[$step['layout']] = false;
+}
+
+$steps['payment'] = false;
+$steps['share']   = false;
+
+// Find active step.
+foreach ($steps as $step => $value) {
+    if (strcmp($displayData->layout, $step) === 0) {
+        $steps[$step] = true;
         break;
-    case 'payment':
-        $active['payment'] = true;
-        break;
-    case 'share':
-        $active['share'] = true;
-        break;
+    }
 }
 ?>
 <div class="navbar navbar-default cf-backing-navigation" role="navigation">
@@ -32,29 +44,41 @@ switch ($displayData->layout) {
 
         <div class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <li <?php echo ($active['rewards']) ? 'class="active"' : ''; ?>>
+                <li <?php echo $steps['default'] ? 'class="active"' : ''; ?>>
                     <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug)); ?>">
                         (1) <?php echo (!$displayData->rewards_enabled) ? JText::_('COM_CROWDFUNDING_STEP_PLEDGE') : JText::_('COM_CROWDFUNDING_STEP_PLEDGE_REWARDS'); ?>
                     </a>
                 </li>
 
-                <li <?php echo ($active['payment']) ? 'class="active"' : ''; ?>>
+                <?php
+                $i = 2;
+                foreach ($wizardSteps as $step) {?>
+                <li <?php echo $steps[$step['layout']] ? 'class="active"' : ''; ?>>
+                    <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug, $step['layout'])); ?>">
+                        (<?php echo $i; ?>) <?php echo htmlspecialchars($step['title'], ENT_COMPAT, 'UTF-8'); ?>
+                    </a>
+                </li>
+                <?php
+                    $i++;
+                } ?>
+
+                <li <?php echo $steps['payment'] ? 'class="active"' : ''; ?>>
                     <?php if ((bool)$displayData->paymentSession->step1 === true) { ?>
                         <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug, 'payment')); ?>">
-                            (2) <?php echo JText::_('COM_CROWDFUNDING_STEP_PAY'); ?>
+                            (<?php echo $i++; ?>) <?php echo JText::_('COM_CROWDFUNDING_STEP_PAY'); ?>
                         </a>
                     <?php } else { ?>
-                        <a href="javascript: void(0);" class="disabled">(2) <?php echo JText::_('COM_CROWDFUNDING_STEP_PAY'); ?></a>
+                        <a href="javascript: void(0);" class="disabled">(<?php echo $i++; ?>) <?php echo JText::_('COM_CROWDFUNDING_STEP_PAY'); ?></a>
                     <?php } ?>
                 </li>
 
-                <li <?php echo ($active['share']) ? 'class="active"' : ''; ?>>
+                <li <?php echo $steps['share'] ? 'class="active"' : ''; ?>>
                     <?php if ((bool)$displayData->paymentSession->step2 === true) { ?>
                         <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug, 'share')); ?>">
-                            (3) <?php echo JText::_('COM_CROWDFUNDING_STEP_SHARE'); ?>
+                            (<?php echo $i++; ?>) <?php echo JText::_('COM_CROWDFUNDING_STEP_SHARE'); ?>
                         </a>
                     <?php } else { ?>
-                        <a href="javascript: void(0);" class="disabled">(3) <?php echo JText::_('COM_CROWDFUNDING_STEP_SHARE'); ?></a>
+                        <a href="javascript: void(0);" class="disabled">(<?php echo $i++; ?>) <?php echo JText::_('COM_CROWDFUNDING_STEP_SHARE'); ?></a>
                     <?php } ?>
                 </li>
             </ul>

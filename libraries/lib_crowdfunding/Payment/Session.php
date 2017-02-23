@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Payments
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -77,6 +77,7 @@ class Session extends Prism\Database\Table
      * @param array $options
      *
      * @throws \UnexpectedValueException
+     * @throws \RuntimeException
      */
     public function load($keys, array $options = array())
     {
@@ -222,6 +223,8 @@ class Session extends Prism\Database\Table
      * $paymentSession->load($keys);
      * $paymentSession->delete();
      * </code>
+     *
+     * @throws \RuntimeException
      */
     public function delete()
     {
@@ -669,6 +672,8 @@ class Session extends Prism\Database\Table
      * $paymentSession->storeUniqueKey();
      * </code>
      *
+     * @throws \RuntimeException
+     *
      * @return self
      */
     public function storeUniqueKey()
@@ -742,6 +747,8 @@ class Session extends Prism\Database\Table
      * $paymentSession->storeOrderId();
      * </code>
      *
+     * @throws \RuntimeException
+     *
      * @return self
      */
     public function storeOrderId()
@@ -772,6 +779,8 @@ class Session extends Prism\Database\Table
      * $paymentSession->setData('order_id', $orderId);
      * $paymentSession->storeData();
      * </code>
+     *
+     * @throws \RuntimeException
      *
      * @return self
      */
@@ -899,6 +908,6 @@ class Session extends Prism\Database\Table
      */
     public function isAnonymous()
     {
-        return (bool)($this->auser_id);
+        return (bool)$this->auser_id;
     }
 }

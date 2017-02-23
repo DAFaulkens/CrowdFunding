@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -29,8 +29,11 @@ class CrowdfundingModelUser extends JModelItem
 
     public function getItem($id)
     {
+        $app = JFactory::getApplication();
+        $secret = $app->get('secret');
+
         $db = $this->getDbo();
-        /** @var $db JDatabaseMySQLi */
+        /** @var $db JDatabaseDriver */
 
         // Create a new query object.
         $query = $db->getQuery(true);
@@ -39,16 +42,16 @@ class CrowdfundingModelUser extends JModelItem
         $query->select(
             $this->getState(
                 'list.select',
-                'a.id, a.name, a.registerDate'
+                'a.id, a.name, a.registerDate, ' .
+                'DES_DECRYPT(b.passport_id, '.$db->quote($secret).') AS passport_id'
             )
         );
         $query->from($db->quoteName('#__users', 'a'));
-        $query->where("a.id = ". (int)$id);
+        $query->leftJoin($db->quoteName('#__crowdf_users', 'b') . ' ON a.id = b.user_id');
+        $query->where('a.id = '. (int)$id);
 
         $db->setQuery($query);
 
-        $result = $db->loadObject();
-
-        return $result;
+        return $db->loadObject();
     }
 }

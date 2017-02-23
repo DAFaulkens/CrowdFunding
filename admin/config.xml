@@ -81,8 +81,8 @@
             <option value="six_steps">COM_CROWDFUNDING_SIX_STEPS</option>
         </field>
         <field name="project_currency" type="cfcurrencies" default="" label="COM_CROWDFUNDING_CURRENCY" description="COM_CROWDFUNDING_SETTINGS_CURRENCY_DESC"/>
-        <field name="project_amount_minimum" type="text" default="100" label="COM_CROWDFUNDING_MINIMUM_AMOUNT" description="COM_CROWDFUNDING_MINIMUM_AMOUNT_DESC"/>
-        <field name="project_amount_maximum" type="text" default="" label="COM_CROWDFUNDING_MAXIMUM_AMOUNT" description="COM_CROWDFUNDING_MAXIMUM_AMOUNT_DESC"/>
+        <field name="project_amount_minimum" type="cfamount" default="" label="COM_CROWDFUNDING_MINIMUM_AMOUNT" description="COM_CROWDFUNDING_MINIMUM_AMOUNT_DESC" format="0"/>
+        <field name="project_amount_maximum" type="cfamount" default="" label="COM_CROWDFUNDING_MAXIMUM_AMOUNT" description="COM_CROWDFUNDING_MAXIMUM_AMOUNT_DESC" format="0"/>
         <field name="project_funding_duration" type="list" label="COM_CROWDFUNDING_FUNDING_DURATION" description="COM_CROWDFUNDING_FUNDING_DURATION_OPTIONS_DESC" class="btn-group">
             <option value="">COM_CROWDFUNDING_BOTH</option>
             <option value="days">COM_CROWDFUNDING_DAYS</option>
@@ -95,6 +95,7 @@
             <option value="FIXED">COM_CROWDFUNDING_FIXED</option>
             <option value="FLEXIBLE">COM_CROWDFUNDING_FLEXIBLE</option>
         </field>
+        <field name="default_access" type="accesslevel" default="1" label="COM_CROWDFUNDING_DEFAULT_ACCESS_LABEL" description="COM_CROWDFUNDING_DEFAULT_ACCESS_DESC" size="1" />
         <field name="project_terms" type="radio" default="0" label="COM_CROWDFUNDING_PROJECT_DISPLAY_TERMS" description="COM_CROWDFUNDING_PROJECT_DISPLAY_TERMS_DESC" class="btn-group">
             <option value="0">JNO</option>
             <option value="1">JYES</option>
@@ -111,15 +112,13 @@
     </fieldset>
 
     <fieldset name="payment_wizard" label="COM_CROWDFUNDING_PAYMENT_WIZARD" description="COM_CROWDFUNDING_PAYMENT_WIZARD_PARAMS">
-        <field name="backing_wizard_type" type="list" default="three_steps" label="COM_CROWDFUNDING_WIZARD_TYPE" description="COM_CROWDFUNDING_BACKING_WIZARD_TYPE_DESC">
-            <option value="three_steps">COM_CROWDFUNDING_THREE_STEPS</option>
-            <option value="four_steps">COM_CROWDFUNDING_FOUR_STEPS</option>
-        </field>
+        <field name="backing_minimum_amount" type="cfamount" default="" label="COM_CROWDFUNDING_BACKING_MINIMUM_AMOUNT" description="COM_CROWDFUNDING_BACKING_MINIMUM_AMOUNT_DESC" format="0"/>
+        <field name="backing_maximum_amount" type="cfamount" default="" label="COM_CROWDFUNDING_BACKING_MAXIMUM_AMOUNT" description="COM_CROWDFUNDING_BACKING_MAXIMUM_AMOUNT_DESC" format="0" />
         <field name="backing_terms" type="radio" default="0" label="COM_CROWDFUNDING_BACKING_DISPLAY_TERMS" description="COM_CROWDFUNDING_BACKING_DISPLAY_TERMS_DESC" class="btn-group">
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
-        <field name="backing_terms_url" type="text" default="" label="COM_CROWDFUNDING_TERMS_URL" description="COM_CROWDFUNDING_TERMS_URL_DESC" class="span6"/>
+        <field name="backing_terms_url" type="text" default="" label="COM_CROWDFUNDING_TERMS_URL" description="COM_CROWDFUNDING_TERMS_URL_DESC" class="span12" />
     </fieldset>
 
     <fieldset name="media" label="COM_CROWDFUNDING_MEDIA" description="COM_CROWDFUNDING_MEDIA_PARAMS">
@@ -132,12 +131,12 @@
         <field name="image_square_height" type="text" default="50" label="COM_CROWDFUNDING_SQUARE_HEIGHT" description="COM_CROWDFUNDING_IMAGE_SQUARE_HEIGHT_DESC"/>
         <field name="pitch_image_width" type="text" default="600" label="COM_CROWDFUNDING_PITCH_IMAGE_WIDTH" description="COM_CROWDFUNDING_PITCH_IMAGE_WIDTH_DESC"/>
         <field name="pitch_image_height" type="text" default="400" label="COM_CROWDFUNDING_PITCH_IMAGE_HEIGHT" description="COM_CROWDFUNDING_PITCH_IMAGE_HEIGHT_DESC"/>
-        <field name="image_quality" type="text" default="80" label="COM_CROWDFUNDING_IMAGE_QUALITY" description="COM_CROWDFUNDING_IMAGE_QUALITY_DESC"/>
-        <field name="image_resizing_scale" type="list" default="2" label="COM_CROWDFUNDING_EXTRA_IMAGES_SCALE" description="COM_CROWDFUNDING_EXTRA_IMAGES_SCALE_DESC" class="btn-group">
-            <option value="1">COM_CROWDFUNDING_FILL</option>
-            <option value="2">COM_CROWDFUNDING_INSIDE</option>
-            <option value="3">COM_CROWDFUNDING_OUTSIDE</option>
-            <option value="6">COM_CROWDFUNDING_FIT</option>
+        <field name="image_quality" type="list" default="80" label="COM_CROWDFUNDING_IMAGE_QUALITY" description="COM_CROWDFUNDING">
+            <option value="100">COM_CROWDFUNDING_MAXIMUM</option>
+            <option value="80">COM_CROWDFUNDING_VERY_HIGH</option>
+            <option value="60">COM_CROWDFUNDING_HIGH</option>
+            <option value="30">COM_CROWDFUNDING_MEDIUM</option>
+            <option value="10">COM_CROWDFUNDING_LOW</option>
         </field>
         <field name="image_aspect_ratio" type="list" default="" label="COM_CROWDFUNDING_ASPECT_RATIO" description="COM_CROWDFUNDING_ASPECT_RATIO_DESC">
             <option value="">COM_CROWDFUNDING_FREE</option>
@@ -205,6 +204,7 @@
             <option value="kunena">COM_CROWDFUNDING_KUNENA</option>
             <option value="easyprofile">COM_CROWDFUNDING_EASYPROFILE</option>
             <option value="communitybuilder">COM_CROWDFUNDING_COMMUNITY_BUILDER</option>
+            <option value="joomlaprofile">COM_CROWDFUNDING_JOOMLA_PROFILE</option>
         </field>
         <field name="integration_avatars_size" type="list" default="small" label="COM_CROWDFUNDING_AVATARS_SIZE" description="COM_CROWDFUNDING_AVATARS_SIZE_DESC" >
             <option value="icon">COM_CROWDFUNDING_ICON</option>

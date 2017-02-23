@@ -3,12 +3,16 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
 // no direct access
 defined('_JEXEC') or die;
+
+/**
+ * @var stdClass $item
+ */
 ?>
 <?php foreach ($this->items as $i => $item) {
     $ordering = ($this->listOrder === 'a.ordering');
@@ -22,6 +26,8 @@ defined('_JEXEC') or die;
         'class' => 'width-100px'
     );
 
+    $params = new Joomla\Registry\Registry();
+    $params->loadString($item->params);
     ?>
     <tr class="row<?php echo $i % 2; ?> <?php echo JHtml::_('crowdfundingbackend.transactionColor', $item->txn_status); ?>" id="txn-row-<?php echo $item->id; ?>">
         <td class="center hidden-phone">
@@ -29,8 +35,10 @@ defined('_JEXEC') or die;
         </td>
         <td>
             <a href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=transaction&layout=edit&id=' . $item->id); ?>">
-                <?php echo $item->txn_id; ?>
+                <?php echo $this->escape($item->txn_id); ?>
             </a>
+            <?php echo JHtml::_('crowdfundingbackend.capturedPeriod', $params); ?>
+
             <div class="small hidden-phone">
                 <?php echo JText::sprintf('COM_CROWDFUNDING_PROJECT_S_S', JRoute::_('index.php?option=com_crowdfunding&view=transactions&filter_search=pid:' . $item->project_id), $this->escape($item->project)); ?>
             </div>

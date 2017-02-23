@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Observers
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -88,15 +88,15 @@ class TransactionObserver extends Observer
             return;
         }
 
-        $completedOrPending            = Constants::PAYMENT_STATUS_COMPLETED | Constants::PAYMENT_STATUS_PENDING;
-        $canceledOrRefundedOrFialed    = Constants::PAYMENT_STATUS_CANCELED | Constants::PAYMENT_STATUS_REFUNDED | Constants::PAYMENT_STATUS_FAILED;
+        $completedOrPending            = Constants::PAYMENT_STATUS_COMPLETED_BIT | Constants::PAYMENT_STATUS_PENDING_BIT;
+        $canceledOrRefundedOrFailed    = Constants::PAYMENT_STATUS_CANCELED_BIT | Constants::PAYMENT_STATUS_REFUNDED_BIT | Constants::PAYMENT_STATUS_FAILED_BIT;
 
         $statuses = array(
-            'completed' => Constants::PAYMENT_STATUS_COMPLETED,
-            'pending'   => Constants::PAYMENT_STATUS_PENDING,
-            'canceled'  => Constants::PAYMENT_STATUS_CANCELED,
-            'refunded'  => Constants::PAYMENT_STATUS_REFUNDED,
-            'failed'    => Constants::PAYMENT_STATUS_FAILED
+            'completed' => Constants::PAYMENT_STATUS_COMPLETED_BIT,
+            'pending'   => Constants::PAYMENT_STATUS_PENDING_BIT,
+            'canceled'  => Constants::PAYMENT_STATUS_CANCELED_BIT,
+            'refunded'  => Constants::PAYMENT_STATUS_REFUNDED_BIT,
+            'failed'    => Constants::PAYMENT_STATUS_FAILED_BIT
         );
 
         $oldStatus     = ArrayHelper::getValue($options, 'old_status');
@@ -128,7 +128,7 @@ class TransactionObserver extends Observer
 
         } else {
             // If someone change the status from completed/pending to another one, remove funds.
-            if (($completedOrPending & $oldStatusBit) and ($canceledOrRefundedOrFialed & $newStatusBit)) {
+            if (($completedOrPending & $oldStatusBit) and ($canceledOrRefundedOrFailed & $newStatusBit)) {
                 $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
 
                 $project->removeFunds($transaction->getAmount());
@@ -140,7 +140,7 @@ class TransactionObserver extends Observer
                 }
 
             } // If someone change the status to completed/pending from canceled, refunded or failed, add funds.
-            elseif (($canceledOrRefundedOrFialed & $oldStatusBit) and ($completedOrPending & $newStatusBit)) {
+            elseif (($canceledOrRefundedOrFailed & $oldStatusBit) and ($completedOrPending & $newStatusBit)) {
                 $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
 
                 $project->addFunds($transaction->getAmount());
@@ -150,6 +150,74 @@ class TransactionObserver extends Observer
                     $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
                     $this->increaseDistributedReward($transaction, $reward);
                 }
+            }
+        }
+    }
+
+    /**
+     * Pre-processor for $transactionManager->changeStatus($context, $options)
+     *
+     * @param   string        $context
+     * @param   Transaction   $transaction
+     * @param   array         $options
+     *
+     * @throws  \RuntimeException
+     * @throws  \InvalidArgumentException
+     * @throws  \UnexpectedValueException
+     * @throws  \OutOfBoundsException
+     *
+     * @return  void
+     */
+    public function onAfterTransactionStatusChange($context, Transaction $transaction, array $options = array())
+    {
+        // Check for allowed context.
+        if (!in_array($context, $this->allowedContext, true)) {
+            return;
+        }
+
+        $completedOrPending            = Constants::PAYMENT_STATUS_COMPLETED_BIT | Constants::PAYMENT_STATUS_PENDING_BIT;
+        $canceledOrRefundedOrFailed    = Constants::PAYMENT_STATUS_CANCELED_BIT | Constants::PAYMENT_STATUS_REFUNDED_BIT | Constants::PAYMENT_STATUS_FAILED_BIT;
+
+        $statuses = array(
+            'completed' => Constants::PAYMENT_STATUS_COMPLETED_BIT,
+            'pending'   => Constants::PAYMENT_STATUS_PENDING_BIT,
+            'canceled'  => Constants::PAYMENT_STATUS_CANCELED_BIT,
+            'refunded'  => Constants::PAYMENT_STATUS_REFUNDED_BIT,
+            'failed'    => Constants::PAYMENT_STATUS_FAILED_BIT
+        );
+
+        $oldStatus     = ArrayHelper::getValue($options, 'old_status');
+        $newStatus     = ArrayHelper::getValue($options, 'new_status');
+
+        $oldStatusBit  = ($oldStatus and array_key_exists($oldStatus, $statuses)) ? $statuses[$oldStatus] : null;
+        $newStatusBit  = ($newStatus and array_key_exists($newStatus, $statuses)) ? $statuses[$newStatus] : null;
+
+        // Check if it is new record.
+        $container        = Container::getContainer();
+        $containerHelper  = new Helper();
+
+        // If someone change the status from completed/pending to another one, remove funds.
+        if (($completedOrPending & $oldStatusBit) and ($canceledOrRefundedOrFailed & $newStatusBit)) {
+            $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+
+            $project->removeFunds($transaction->getAmount());
+            $project->storeFunds();
+
+            if ($transaction->getRewardId()) {
+                $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                $this->decreaseDistributedReward($transaction, $reward);
+            }
+
+        } // If someone change the status to completed/pending from canceled, refunded or failed, add funds.
+        elseif (($canceledOrRefundedOrFailed & $oldStatusBit) and ($completedOrPending & $newStatusBit)) {
+            $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+
+            $project->addFunds($transaction->getAmount());
+            $project->storeFunds();
+
+            if ($transaction->getRewardId()) {
+                $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                $this->increaseDistributedReward($transaction, $reward);
             }
         }
     }

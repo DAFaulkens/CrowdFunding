@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Prism\Payment\Result as PaymentResult;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -137,9 +139,9 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             // Get the result, that comes from the plugin.
             if (is_array($results) and count($results) > 0) {
                 foreach ($results as $result) {
-                    if ($result !== null and is_object($result)) {
-                        $redirectUrl   = isset($result->redirectUrl) ? $result->redirectUrl : null;
-                        $message       = isset($result->message) ? $result->message : null;
+                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
+                        $redirectUrl   = $result->redirectUrl ?: null;
+                        $message       = $result->message ?: null;
                         break;
                     }
                 }
@@ -225,7 +227,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $item    = $model->prepareItem($this->projectId, $params, $this->paymentSessionLocal);
 
             $context = 'com_crowdfunding.payments.'.$task.'.' . strtolower($this->paymentSessionLocal->paymentService);
-            
+
             // Import Crowdfunding Payment Plugins
             $dispatcher = JEventDispatcher::getInstance();
             JPluginHelper::importPlugin('crowdfundingpayment');
@@ -236,21 +238,23 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             // Get the result, that comes from the plugin.
             if (is_array($results) and count($results) > 0) {
                 foreach ($results as $result) {
-                    if ($result !== null and is_object($result)) {
+                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
                         $paymentResult = $result;
-                        $redirectUrl   = isset($result->redirectUrl) ? $result->redirectUrl : null;
-                        $message       = isset($result->message) ? $result->message : null;
-                        $triggerEvents = isset($result->triggerEvents) ? (bool)$result->triggerEvents : false;
+                        $redirectUrl   = $result->redirectUrl ?: null;
+                        $message       = $result->message ?: null;
+                        $triggerEvents = (array)$result->triggerEvents;
                         break;
                     }
                 }
             }
 
-            if ($triggerEvents) {
-                // Trigger the event onAfterPaymentNotify
+            // Trigger the event onAfterPaymentNotify
+            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
                 $dispatcher->trigger('onAfterPaymentNotify', array($context, &$paymentResult, &$params));
+            }
 
-                // Trigger the event onAfterPayment
+            // Trigger the event onAfterPayment
+            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
                 $dispatcher->trigger('onAfterPayment', array($context, &$paymentResult, &$params));
             }
 

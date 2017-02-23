@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -41,9 +41,12 @@ class CrowdfundingViewProjects extends JViewLegacy
     protected $listDirn;
     protected $saveOrder;
     protected $saveOrderingUrl;
-    protected $sortFields;
+//    protected $sortFields;
 
     protected $sidebar;
+
+    public $activeFilters;
+    public $filterForm;
 
     public function display($tpl = null)
     {
@@ -58,10 +61,7 @@ class CrowdfundingViewProjects extends JViewLegacy
         $this->money      = $this->money = $this->getMoneyFormatter($this->params);
 
         // Get projects IDs
-        $projectsIds = array();
-        foreach ($this->items as $item) {
-            $projectsIds[] = $item->id;
-        }
+        $projectsIds = Prism\Utilities\ArrayHelper::getIds($this->items);
 
         // Get number of rewards.
         $projects = new Crowdfunding\Projects(JFactory::getDbo());
@@ -84,7 +84,7 @@ class CrowdfundingViewProjects extends JViewLegacy
     /**
      * Prepare sortable fields, sort values and filters.
      *
-     * @throws \InvalidArgumentException
+     * @throws \Exception
      */
     protected function prepareSorting()
     {
@@ -98,21 +98,8 @@ class CrowdfundingViewProjects extends JViewLegacy
             JHtml::_('sortablelist.sortable', $this->getName() . 'List', 'adminForm', strtolower($this->listDirn), $this->saveOrderingUrl);
         }
 
-        $this->sortFields = array(
-            'a.ordering'      => JText::_('JGRID_HEADING_ORDERING'),
-            'a.published'     => JText::_('JSTATUS'),
-            'a.title'         => JText::_('COM_CROWDFUNDING_TITLE'),
-            'b.title'         => JText::_('COM_CROWDFUNDING_CATEGORY'),
-            'a.created'       => JText::_('COM_CROWDFUNDING_CREATED'),
-            'a.goal'          => JText::_('COM_CROWDFUNDING_GOAL'),
-            'a.funded'        => JText::_('COM_CROWDFUNDING_FUNDED'),
-            'funded_percents' => JText::_('COM_CROWDFUNDING_FUNDED_PERCENTS'),
-            'a.funding_start' => JText::_('COM_CROWDFUNDING_START_DATE'),
-            'a.funding_end'   => JText::_('COM_CROWDFUNDING_END_DATE'),
-            'a.approved'      => JText::_('COM_CROWDFUNDING_APPROVED'),
-            'd.name'          => JText::_('COM_CROWDFUNDING_OWNER'),
-            'a.id'            => JText::_('JGRID_HEADING_ID')
-        );
+        $this->filterForm    = $this->get('FilterForm');
+        $this->activeFilters = $this->get('ActiveFilters');
     }
 
     /**
@@ -124,54 +111,6 @@ class CrowdfundingViewProjects extends JViewLegacy
     protected function addSidebar()
     {
         CrowdfundingHelper::addSubmenu($this->getName());
-
-        JHtmlSidebar::setAction('index.php?option=' . $this->option . '&view=' . $this->getName());
-
-        // Prepare options
-        $approvedOptions = array(
-            JHtml::_('select.option', 1, JText::_('COM_CROWDFUNDING_APPROVED')),
-            JHtml::_('select.option', 0, JText::_('COM_CROWDFUNDING_DISAPPROVED')),
-        );
-
-        $featuredOptions = array(
-            JHtml::_('select.option', 1, JText::_('COM_CROWDFUNDING_FEATURED')),
-            JHtml::_('select.option', 0, JText::_('COM_CROWDFUNDING_NOT_FEATURED')),
-        );
-
-        JHtmlSidebar::addFilter(
-            JText::_('JOPTION_SELECT_PUBLISHED'),
-            'filter_state',
-            JHtml::_('select.options', JHtml::_('jgrid.publishedOptions', array('archived' => false)), 'value', 'text', $this->state->get('filter.state'), true)
-        );
-
-        JHtmlSidebar::addFilter(
-            JText::_('COM_CROWDFUNDING_SELECT_APPROVED_STATUS'),
-            'filter_approved',
-            JHtml::_('select.options', $approvedOptions, 'value', 'text', $this->state->get('filter.approved'), true)
-        );
-
-        JHtmlSidebar::addFilter(
-            JText::_('COM_CROWDFUNDING_SELECT_FEATURED_STATUS'),
-            'filter_featured',
-            JHtml::_('select.options', $featuredOptions, 'value', 'text', $this->state->get('filter.featured'), true)
-        );
-
-        JHtmlSidebar::addFilter(
-            JText::_('JOPTION_SELECT_CATEGORY'),
-            'filter_category_id',
-            JHtml::_('select.options', JHtml::_('category.options', 'com_crowdfunding'), 'value', 'text', $this->state->get('filter.category_id'))
-        );
-
-        $projectTypes = new Crowdfunding\Types(JFactory::getDbo());
-        $projectTypes->load();
-        
-        $typesOptions = $projectTypes->toOptions();
-
-        JHtmlSidebar::addFilter(
-            JText::_('COM_CROWDFUNDING_SELECT_TYPE'),
-            'filter_type_id',
-            JHtml::_('select.options', $typesOptions, 'value', 'text', $this->state->get('filter.type_id'))
-        );
 
         $this->sidebar = JHtmlSidebar::render();
     }

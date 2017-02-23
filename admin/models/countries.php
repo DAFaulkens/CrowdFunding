@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -30,7 +30,7 @@ class CrowdfundingModelCountries extends JModelList
                 'id', 'a.id',
                 'name', 'a.name',
                 'code', 'a.code',
-                'code4', 'a.code4',
+                'locale', 'a.locale',
                 'latitude', 'a.latitude',
                 'longitude', 'a.longitude',
                 'timezone', 'a.timezone',

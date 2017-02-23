@@ -11,6 +11,7 @@ use Joomla\DI\ContainerAwareInterface;
 use Joomla\DI\ContainerAwareTrait;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\Registry\Registry;
+use Prism\Utilities\StringHelper as PrismStringHelper;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -107,7 +108,7 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
 
                 // Set the name to the form element.
                 if ($locationName !== null and $locationName !== '') {
-                    $data->location_preview = $locationName;
+                    $data->location = $locationName;
                 }
             }
         }
@@ -143,7 +144,7 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
 
             // Check for a table object error.
             if ($return === false) {
-                throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
+                throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
             }
         }
 
@@ -156,10 +157,64 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
             /** @var  $registry Registry */
 
             $registry->loadString($item->params);
-            $item->params = $registry->toArray();
+            $item->params = $registry;
+        }
+
+        if ((int)$item->id > 0) {
+            $this->prepareAccess($item);
         }
 
         return $item;
+    }
+
+    /**
+     * Method to prepare access data.
+     *
+     * @param   stdClass $item
+     */
+    public function prepareAccess($item)
+    {
+        $user      = JFactory::getUser();
+
+        $helperBus = new Prism\Helper\HelperBus($item);
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemAccessHelper($user));
+        $helperBus->handle();
+    }
+
+    /**
+     * Check if the item can be edited.
+     *
+     * @param   CrowdfundingTableProject $item
+     *
+     * @return bool
+     */
+    public function canEdit($item)
+    {
+        $canEdit = false;
+
+        $user   = JFactory::getUser();
+
+        $userId = (int)$user->get('id');
+        $guest  = $user->get('guest');
+
+        // Compute the asset access permissions.
+        // Technically guest could edit an article, but lets not check that to improve performance a little.
+        if (!$guest) {
+            $asset = 'com_crowdfunding.item.' . $item->get('id');
+
+            // Check general edit permission first.
+            if ($userId > 0 and $user->authorise('core.edit', $asset)) {
+                $canEdit = true;
+            } // Now check if edit.own is available.
+            elseif ($userId > 0 and $user->authorise('core.edit.own', $asset)) {
+                // Check for a valid user and that they are the owner.
+                if ($userId === (int)$item->get('user_id')) {
+                    $canEdit = true;
+                }
+            }
+        }
+
+        return $canEdit;
     }
 
     /**
@@ -188,7 +243,7 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
         $row->load($id);
 
         // Set a flag for a new item.
-        $isNew = $row->get('id') ? true : false;
+        $isNew = $row->get('id') ? false : true;
 
         $row->set('title', $title);
         $row->set('short_desc', $shortDesc);
@@ -252,8 +307,6 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
      */
     protected function prepareTable($table)
     {
-        $userId = (int)JFactory::getUser()->get('id');
-
         if (!$table->get('id')) {
             // Get maximum order number
             // Set ordering to the last item if not set
@@ -275,11 +328,28 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
             $table->set('published', Prism\Constants::UNPUBLISHED);
 
             // Set user ID
-            $table->set('user_id', $userId);
+            $table->set('user_id', (int)JFactory::getUser()->get('id'));
+
+            // Prepare default access.
+            $params = JComponentHelper::getParams($this->option);
+            /** @var  $params Joomla\Registry\Registry */
+
+            $access = $params->get('default_access', JFactory::getApplication()->get('access'));
+            $table->set('access', $access);
 
         } else {
-            if ($userId !== (int)$table->get('user_id')) {
-                throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_INVALID_USER'));
+            if (!$this->canEdit($table)) {
+                throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS_TO_DO_ACTION'));
+            }
+
+            // Prepare default access.
+            $access = (int)$table->get('access');
+            if (!$access) {
+                $params = JComponentHelper::getParams($this->option);
+                /** @var  $params Joomla\Registry\Registry */
+
+                $access = $params->get('default_access', JFactory::getApplication()->get('access'));
+                $table->set('access', $access);
             }
         }
 
@@ -287,7 +357,7 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
         if (!$table->get('alias')) {
             $table->set('alias', $table->get('title'));
         }
-        $table->set('alias', JApplicationHelper::stringURLSafe($table->get('alias')));
+        $table->set('alias', PrismStringHelper::stringUrlSafe($table->get('alias')));
     }
 
     /**
@@ -302,9 +372,6 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
      */
     public function uploadImage($uploadedFileData, $destinationFolder)
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
         $uploadedFile = ArrayHelper::getValue($uploadedFileData, 'tmp_name');
         $uploadedName = ArrayHelper::getValue($uploadedFileData, 'name');
         $errorCode    = ArrayHelper::getValue($uploadedFileData, 'error');
@@ -354,27 +421,33 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
         }
 
         // Upload the file in temporary folder.
-        $filesystemLocal = new Prism\Filesystem\Adapter\Local($destinationFolder);
-        $sourceFile      = $filesystemLocal->upload($uploadedFileData);
+        $options = new Registry(array(
+            'filename_length'  => 16,
+            'image_type'       => \JFile::getExt($uploadedName)
+        ));
 
-        if (!JFile::exists($sourceFile)) {
+        $file = new Prism\File\Image($uploadedFile);
+        $fileData = $file->toFile($destinationFolder, $options);
+
+        if (!JFile::exists($fileData['filepath'])) {
             throw new RuntimeException('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED');
         }
 
-        return $sourceFile;
+        return $fileData;
     }
 
     /**
      * Crop the image and generates smaller ones.
      *
-     * @param string $file
+     * @param string $file The temporary file of the image that will be cropped.
      * @param array  $options
+     * @param Registry  $params
      *
      * @throws Exception
      *
      * @return array
      */
-    public function cropImage($file, array $options = array())
+    public function cropImage($file, array $options, Registry $params)
     {
         // Resize image
         $image = new \Prism\File\Image($file);
@@ -403,47 +476,50 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
 
         // Crop the image.
         $fileData = $image->crop($destinationFolder, $imageOptions);
-        $image    = new \Prism\File\Image($fileData['filepath']);
+        $croppedImageFilepath = $fileData['filepath'];
+
+        $names = array(
+            'image'        => '',
+            'image_small'  => '',
+            'image_square' => ''
+        );
+
+        $image    = new \Prism\File\Image($croppedImageFilepath);
 
         // Resize to general size.
         $imageOptions->set('suffix', '_image');
-        $width  = ArrayHelper::getValue($options, 'resize_width', 200);
+        $width  = $params->get('image_width', 200);
         $width  = ($width < 25) ? 50 : $width;
         $imageOptions->set('width', $width);
-        $height = ArrayHelper::getValue($options, 'resize_height', 200);
+        $height = $params->get('image_height', 200);
         $height = ($height < 25) ? 50 : $height;
         $imageOptions->set('height', $height);
 
         $fileData  = $image->resize($destinationFolder, $imageOptions);
-        $imageName = $fileData['filename'];
-
-        // Load parameters.
-        $params = JComponentHelper::getParams($this->option);
-        /** @var  $params Registry */
+        $names['image'] = $fileData['filename'];
 
         // Create small image
         $imageOptions->set('suffix', '_small');
         $imageOptions->set('width', $params->get('image_small_width', 100));
         $imageOptions->set('height', $params->get('image_small_height', 100));
         $fileData  = $image->resize($destinationFolder, $imageOptions);
-        $smallName = $fileData['filename'];
+        $names['image_small'] = $fileData['filename'];
 
         // Create square image
         $imageOptions->set('suffix', '_square');
         $imageOptions->set('width', $params->get('image_square_width', 50));
         $imageOptions->set('height', $params->get('image_square_height', 50));
         $fileData   = $image->resize($destinationFolder, $imageOptions);
-        $squareName = $fileData['filename'];
-
-        $names = array(
-            'image'        => $imageName,
-            'image_small'  => $smallName,
-            'image_square' => $squareName
-        );
+        $names['image_square'] = $fileData['filename'];
 
         // Remove the temporary file.
         if (JFile::exists($file)) {
             JFile::delete($file);
+        }
+
+        // Remove the temporary cropped file.
+        if (JFile::exists($croppedImageFilepath)) {
+            JFile::delete($croppedImageFilepath);
         }
 
         return $names;
@@ -452,33 +528,31 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
     /**
      * Delete image only
      *
-     * @param integer $id     Item id
-     * @param integer $userId User id
+     * @param int $projectId     Item id
+     * @param int $userId User id
+     * @param string $mediaFolder
      *
      * @throws Exception
      */
-    public function removeImage($id, $userId)
+    public function removeImage($projectId, $userId, $mediaFolder)
     {
         $keys = array(
-            'id'      => $id,
-            'user_id' => $userId
+            'id'      => (int)$projectId,
+            'user_id' => (int)$userId
         );
 
-        // Load category data
-        $row = $this->getTable();
-        $row->load($keys);
+        $project = new Crowdfunding\Project(JFactory::getDbo());
+        $project->load($keys);
+        if (!$project->getId()) {
+            throw new InvalidArgumentException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
+        }
 
         // Delete old image if I upload the new one
-        if ($row->get('image')) {
-            $params = JComponentHelper::getParams($this->option);
-            /** @var  $params Registry */
-
-            $imagesFolder = $params->get('images_directory', 'images/crowdfunding');
-
+        if ($project->getImage()) {
             // Remove an image from the filesystem
-            $fileImage  = $imagesFolder .'/'. $row->get('image');
-            $fileSmall  = $imagesFolder .'/'. $row->get('image_small');
-            $fileSquare = $imagesFolder .'/'. $row->get('image_square');
+            $fileImage  = JPath::clean($mediaFolder .'/'. $project->getImage(), '/');
+            $fileSmall  = JPath::clean($mediaFolder .'/'. $project->getSmallImage(), '/');
+            $fileSquare = JPath::clean($mediaFolder .'/'. $project->getSquareImage(), '/');
 
             if (JFile::exists($fileImage)) {
                 JFile::delete($fileImage);
@@ -491,50 +565,50 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
             if (JFile::exists($fileSquare)) {
                 JFile::delete($fileSquare);
             }
-        }
 
-        $row->set('image', '');
-        $row->set('image_small', '');
-        $row->set('image_square', '');
-        $row->store();
+            $project->removeImage();
+        }
     }
 
     /**
      * Store the temporary images to project record.
      * Remove the old images and move the new ones from temporary folder to the images folder.
      *
-     * @param int    $projectId
-     * @param array  $images The names of the pictures.
-     * @param string $source Path to the temporary folder.
+     * @param array  $images
+     * @param array  $options
+     * @param Registry $params
      *
      * @throws InvalidArgumentException
      * @throws UnexpectedValueException
      * @throws RuntimeException
      */
-    public function updateImages($projectId, $images, $source)
+    public function updateImages($images, $options, Registry $params)
     {
+        $keys = array(
+            'id'      => ArrayHelper::getValue($options, 'project_id', 0, 'int'),
+            'user_id' => ArrayHelper::getValue($options, 'user_id', 0, 'int')
+        );
+
+        $sourceFolder = ArrayHelper::getValue($options, 'source_folder');
+            
         $project = new Crowdfunding\Project(JFactory::getDbo());
-        $project->load($projectId);
+        $project->load($keys);
         if (!$project->getId()) {
             throw new InvalidArgumentException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
         }
 
         // Prepare the path to the pictures.
-        $fileImage  = $source .'/'. $images['image'];
-        $fileSmall  = $source .'/'. $images['image_small'];
-        $fileSquare = $source .'/'. $images['image_square'];
+        $fileImage  = $sourceFolder .'/'. $images['image'];
+        $fileSmall  = $sourceFolder .'/'. $images['image_small'];
+        $fileSquare = $sourceFolder .'/'. $images['image_square'];
 
         if (is_file($fileImage) and is_file($fileSmall) and is_file($fileSquare)) {
-            // Get the folder where the pictures are stored.
-            $params = JComponentHelper::getParams('com_crowdfunding');
-            /** @var $params Registry */
-
-            $imagesFolder = JPath::clean(JPATH_ROOT .'/'. $params->get('images_directory', 'images/crowdfunding'));
+            $destination = JPath::clean(JPATH_ROOT .'/'. $params->get('images_directory', 'images/crowdfunding'), '/');
 
             // Remove an image from the filesystem
-            $oldFileImage  = $imagesFolder .'/'. $project->getImage();
-            $oldFileSmall  = $imagesFolder .'/'. $project->getSmallImage();
-            $oldFileSquare = $imagesFolder .'/'. $project->getSquareImage();
+            $oldFileImage  = JPath::clean($destination .'/'. $project->getImage(), '/');
+            $oldFileSmall  = JPath::clean($destination .'/'. $project->getSmallImage(), '/');
+            $oldFileSquare = JPath::clean($destination .'/'. $project->getSquareImage(), '/');
 
             if (JFile::exists($oldFileImage)) {
                 JFile::delete($oldFileImage);
@@ -549,43 +623,70 @@ class CrowdfundingModelProject extends JModelForm implements ContainerAwareInter
             }
 
             // Move the new files to the images folder.
-            $newFileImage  = $imagesFolder .'/'. $images['image'];
-            $newFileSmall  = $imagesFolder .'/'. $images['image_small'];
-            $newFileSquare = $imagesFolder .'/'. $images['image_square'];
+            $newFileImage  = JPath::clean($destination .'/'. $images['image'], '/');
+            $newFileSmall  = JPath::clean($destination .'/'. $images['image_small'], '/');
+            $newFileSquare = JPath::clean($destination .'/'. $images['image_square'], '/');
 
             JFile::move($fileImage, $newFileImage);
             JFile::move($fileSmall, $newFileSmall);
             JFile::move($fileSquare, $newFileSquare);
 
             // Store the newest pictures.
-            $project->bind($images);
-            $project->store();
+            $project->storeImage($images);
         }
     }
 
     /**
-     * Remove the temporary images that have been stored in the temporary folder,
-     * during the process of cropping.
+     * Remove the temporary images if a user upload or crop a picture,
+     * but he does not store it or reload the page.
      *
-     * @param array  $images       The names of the pictures.
-     * @param string $sourceFolder Path to the temporary folder.
+     * @param JApplicationSite $app
+     *
+     * @throws \Exception
      */
-    public function removeTemporaryImages(array $images, $sourceFolder)
+    public function removeTemporaryImage($app)
     {
-        $temporaryImage       = $sourceFolder . '/' . basename($images['image']);
-        $temporaryImageSmall  = $sourceFolder . '/' . basename($images['image_small']);
-        $temporaryImageSquare = $sourceFolder . '/' . basename($images['image_square']);
-
-        if (JFile::exists($temporaryImage)) {
-            JFile::delete($temporaryImage);
+        // Remove old image if it exists.
+        $oldImage = (string)$app->getUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT);
+        if ($oldImage !== '') {
+            $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
+            $oldImage = JPath::clean($temporaryFolder .'/'. basename($oldImage), '/');
+            if (JFile::exists($oldImage)) {
+                JFile::delete($oldImage);
+            }
         }
 
-        if (JFile::exists($temporaryImageSmall)) {
-            JFile::delete($temporaryImageSmall);
+        // Set the name of the image in the session.
+        $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, null);
+    }
+
+    /**
+     * Remove the temporary images if a user upload or crop a picture,
+     * but he does not store it or reload the page.
+     *
+     * @param JApplicationSite $app
+     *
+     * @throws \Exception
+     */
+    public function removeCroppedImages($app)
+    {
+        // Remove the temporary cropped images if they exist.
+        $temporaryImages = $app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
+        /** @var array $temporaryImages */
+
+        if (is_array($temporaryImages) and count($temporaryImages) > 0) {
+            $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
+
+            foreach ($temporaryImages as $filename) {
+                $filepath = $temporaryFolder . '/' . basename($filename);
+
+                if (JFile::exists($filepath)) {
+                    JFile::delete($filepath);
+                }
+            }
         }
 
-        if (JFile::exists($temporaryImageSquare)) {
-            JFile::delete($temporaryImageSquare);
-        }
+        // Reset the temporary images.
+        $app->setUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT, null);
     }
 }

@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Constants
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -24,10 +24,14 @@ class Constants
     const CROPPED_IMAGES_CONTEXT  = 'cropped_images_project';
     const TEMPORARY_IMAGE_CONTEXT = 'temporary_image_project';
 
+    // Funding Types
+    const FUNDING_TYPE_FIXED    = 'FIXED';
+    const FUNDING_TYPE_FLEXIBLE = 'FLEXIBLE';
+
     // Filtering
-    const FILTER_STARTED_SOON = 1;
-    const FILTER_ENDING_SOON = 2;
-    const FILTER_SUCCESSFULLY_COMPLETED = 1;
+    const FILTER_STARTED_SOON = 'ssoon';
+    const FILTER_ENDING_SOON = 'esoon';
+    const FILTER_SUCCESSFULLY_COMPLETED = 'sfunded';
 
     // Ordering
     const ORDER_BY_ORDERING = 0;

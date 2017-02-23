@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Projects
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -80,7 +80,7 @@ class Project extends Database\Table
      *
      * @return null|self
      *
-     * @deprecated v2.8
+     * @deprecated v2.4 Use container.
      */
     public static function getInstance(\JDatabaseDriver $db, $id)
     {
@@ -104,7 +104,7 @@ class Project extends Database\Table
      * $project->load($projectId);
      * </code>
      *
-     * @param array|int $keys Array or integer (ID)
+     * @param array|int $keys Array with keys or project ID.
      * @param array $options
      *
      * @throws \UnexpectedValueException
@@ -286,11 +286,12 @@ class Project extends Database\Table
      *
      * <code>
      * $projectId = 1;
-     * $finds = 50;
+     * $funds = 50;
      *
      * $project   = new Crowdfunding\Project(\JFactory::getDbo());
      * $project->load($projectId);
-     * $project->addFunds($finds);
+     *
+     * $project->addFunds($funds);
      * $project->store();
      * </code>
      *
@@ -310,11 +311,12 @@ class Project extends Database\Table
      *
      * <code>
      * $projectId = 1;
-     * $finds = 50;
+     * $funds     = 50;
      *
      * $project   = new Crowdfunding\Project(\JFactory::getDbo());
      * $project->load($projectId);
-     * $project->removeFunds($finds);
+     *
+     * $project->removeFunds($funds);
      * $project->store();
      * </code>
      *
@@ -920,5 +922,145 @@ class Project extends Database\Table
         }
 
         return (int)$this->backers;
+    }
+
+    /**
+     * Remove the record of the pitch image from database.
+     *
+     * <code>
+     * $projectId  = 1;
+     *
+     * $project   = new Crowdfunding\Project(JFactory::getDbo());
+     * $project->load($placeId);
+     *
+     * $project->removePitchImage();
+     * </code>
+     *
+     * @throws \RuntimeException
+     */
+    public function removePitchImage()
+    {
+        $this->pitch_image = '';
+
+        $query = $this->db->getQuery(true);
+
+        $query
+            ->update($this->db->quoteName('#__crowdf_projects'))
+            ->set($this->db->quoteName('pitch_image') . '= ""')
+            ->where($this->db->quoteName('id') . '=' . (int)$this->id);
+
+        $this->db->setQuery($query);
+        $this->db->execute();
+    }
+
+    /**
+     * Store the pitch image in database.
+     *
+     * <code>
+     * $projectId  = 1;
+     * $image = 'picture_pitch.jpg';
+     *
+     * $project   = new Crowdfunding\Project(JFactory::getDbo());
+     * $project->load($placeId);
+     *
+     * $project->updatePitchImage($image);
+     * </code>
+     *
+     * @param string $image
+     *
+     * @throws \RuntimeException
+     */
+    public function storePitchImage($image)
+    {
+        if (is_string($image)) {
+            $this->pitch_image = $image;
+
+            $query = $this->db->getQuery(true);
+
+            $query
+                ->update($this->db->quoteName('#__crowdf_projects'))
+                ->set($this->db->quoteName('pitch_image') . '=' . $this->db->quote($this->pitch_image))
+                ->where($this->db->quoteName('id') . '=' . (int)$this->id);
+
+            $this->db->setQuery($query);
+            $this->db->execute();
+        }
+    }
+
+    /**
+     * Store the image in database.
+     *
+     * <code>
+     * $projectId  = 1;
+     * $images = array(
+     *    'image'           => 'image.jpg',
+     *    'image_small'     => 'image_small.jpg',
+     *    'image_square'    => 'image_square.jpg',
+     * );
+     *
+     * $project   = new Crowdfunding\Project(JFactory::getDbo());
+     * $project->load($placeId);
+     *
+     * $project->storeImage($images);
+     * </code>
+     *
+     * @param array $images
+     *
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
+     */
+    public function storeImage(array $images)
+    {
+        if (count($images) > 0) {
+            $this->image        = ArrayHelper::getValue($images, 'image', '', 'string');
+            $this->image_small  = ArrayHelper::getValue($images, 'image_small', '', 'string');
+            $this->image_square = ArrayHelper::getValue($images, 'image_square', '', 'string');
+
+            $query = $this->db->getQuery(true);
+
+            $query
+                ->update($this->db->quoteName('#__crowdf_projects'))
+                ->set($this->db->quoteName('image') . '=' . $this->db->quote($this->image))
+                ->set($this->db->quoteName('image_small') . '=' . $this->db->quote($this->image_small))
+                ->set($this->db->quoteName('image_square') . '=' . $this->db->quote($this->image_square))
+                ->where($this->db->quoteName('id') . '=' . (int)$this->id);
+
+            $this->db->setQuery($query);
+            $this->db->execute();
+        }
+    }
+
+    /**
+     * Remove the records about image from database.
+     *
+     * <code>
+     * $projectId  = 1;
+     * $image      = 'picture_pitch.jpg';
+     *
+     * $project   = new Crowdfunding\Project(JFactory::getDbo());
+     * $project->load($placeId);
+     *
+     * $project->removeImage();
+     * </code>
+     *
+     * @throws \RuntimeException
+     */
+    public function removeImage()
+    {
+        $this->image = '';
+        $this->image_small = '';
+        $this->image_square = '';
+
+        $query = $this->db->getQuery(true);
+
+        $query
+            ->update($this->db->quoteName('#__crowdf_projects'))
+            ->set($this->db->quoteName('image') . '= ""')
+            ->set($this->db->quoteName('image_small') . '= ""')
+            ->set($this->db->quoteName('image_square') . '= ""')
+            ->where($this->db->quoteName('id') . '=' . (int)$this->id);
+
+        $this->db->setQuery($query);
+        $this->db->execute();
     }
 }

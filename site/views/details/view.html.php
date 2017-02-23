@@ -62,8 +62,7 @@ class CrowdfundingViewDetails extends JViewLegacy
     public function display($tpl = null)
     {
         $this->app    = JFactory::getApplication();
-
-        $this->option = JFactory::getApplication()->input->get('option');
+        $this->option = $this->app->input->get('option');
         
         // Get model state.
         $this->state  = $this->get('State');
@@ -74,11 +73,19 @@ class CrowdfundingViewDetails extends JViewLegacy
         /** @var  $this->params Joomla\Registry\Registry */
 
         $model  = $this->getModel();
+        $user   = JFactory::getUser();
         $userId = JFactory::getUser()->get('id');
 
-        if (!$this->item or $model->isRestricted($this->item, $userId)) {
+        // Handle bus helper.
+        $helperBus = new Prism\Helper\HelperBus($this->item);
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemParamsHelper());
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemFundingHelper());
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemAccessHelper($user));
+        $helperBus->handle();
+
+        if (!$this->item or !$model->isAllowed($this->item, $userId)) {
             $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), 'notice');
-            $this->app->redirect(JRoute::_('index.php?option=com_crowdfunding&view=discover', false));
+            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false));
             return;
         }
 
@@ -145,6 +152,7 @@ class CrowdfundingViewDetails extends JViewLegacy
     protected function prepareUpdatesScreen()
     {
         $model       = JModelLegacy::getInstance('Updates', 'CrowdfundingModel', $config = array('ignore_request' => false));
+        /** @var CrowdfundingModelUpdates items */
         $this->items = $model->getItems();
         $this->form  = $model->getForm();
 

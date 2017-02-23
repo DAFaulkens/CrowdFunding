@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Prism\Payment\Result as PaymentResult;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -65,14 +67,14 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
 
         // Set file log adapter.
         if ($this->logFile !== null and $this->logFile !== '') {
-            $file = \JPath::clean($this->app->get('log_path') .DIRECTORY_SEPARATOR. basename($this->logFile));
+            $file = \JPath::clean($this->app->get('log_path') .'/'. basename($this->logFile), '/');
             $this->log->addAdapter(new Prism\Log\Adapter\File($file));
         }
 
         // Prepare context
         $filter         = new JFilterInput();
         $paymentService = $filter->clean(trim(strtolower($this->input->getCmd('payment_service'))), 'ALNUM');
-        $this->context  = (Joomla\String\StringHelper::strlen($paymentService) > 0) ? 'com_crowdfunding.notify.' . $paymentService : 'com_crowdfunding.notify';
+        $this->context  = $paymentService !== '' ? 'com_crowdfunding.notify.' . $paymentService : 'com_crowdfunding.notify';
 
         // Prepare params
         $this->params   = JComponentHelper::getParams('com_crowdfunding');
@@ -113,6 +115,11 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $paymentResult      = null;
         $responseToService  = null;
 
+        $triggerEvents  = array(
+            'AfterPaymentNotify' => false,
+            'AfterPayment' => false
+        );
+
         // Save data
         try {
             // Events
@@ -124,9 +131,10 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
 
             if (is_array($results) and count($results) > 0) {
                 foreach ($results as $result) {
-                    if (is_object($result) and isset($result->transaction)) {
+                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
                         $paymentResult      = $result;
-                        $responseToService  = isset($result->response) ? $result->response : null;
+                        $triggerEvents      = (array)$result->triggerEvents;
+                        $responseToService  = $result->response ?: null;
                         break;
                     }
                 }
@@ -139,10 +147,14 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             }
 
             // Trigger the event onAfterPaymentNotify
-            $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
+            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
+                $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
+            }
 
             // Trigger the event onAfterPayment
-            $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
+            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
+                $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
+            }
 
         } catch (Exception $e) {
             $error     = 'NOTIFIER ERROR: ' .$e->getMessage() ."\n";
@@ -194,6 +206,11 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $project        = null;
         /** @var Crowdfunding\Project $project */
 
+        $triggerEvents  = array(
+            'AfterPaymentNotify' => false,
+            'AfterPayment' => false
+        );
+
         // Trigger the event
         try {
             // Import Crowdfunding Payment Plugins
@@ -205,11 +222,12 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
 
             if (is_array($results) and count($results) > 0) {
                 foreach ($results as $result) {
-                    if (is_object($result) and isset($result->transaction)) {
+                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
                         $paymentResult      = $result;
-                        $project            = isset($result->project) ? $result->project : null;
-                        $redirectUrl        = isset($result->redirectUrl) ? $result->redirectUrl : null;
-                        $message            = isset($result->message) ? $result->message : null;
+                        $project            = $result->project ?: null;
+                        $message            = $result->message ?: null;
+                        $redirectUrl        = $result->redirectUrl ?: null;
+                        $triggerEvents      = (array)$result->triggerEvents;
                         break;
                     }
                 }
@@ -229,10 +247,14 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             }
 
             // Trigger the event onAfterPaymentNotify
-            $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
+            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
+                $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
+            }
 
             // Trigger the event onAfterPayment
-            $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
+            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
+                $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
+            }
 
         } catch (Exception $e) {
             // Store log data to the database.

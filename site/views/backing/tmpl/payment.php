@@ -18,11 +18,7 @@ defined('_JEXEC') or die;
     <div class="row">
         <div class="col-md-12">
             <?php
-            if (strcmp('three_steps', $this->wizardType) === 0) {
-                $layout = new JLayoutFile('payment_wizard');
-            } else {
-                $layout = new JLayoutFile('payment_wizard_four_steps');
-            }
+            $layout = new JLayoutFile('payment_wizard');
             echo $layout->render($this->layoutData);
             ?>
         </div>
@@ -35,9 +31,11 @@ defined('_JEXEC') or die;
                     <h2><?php echo JText::_('COM_CROWDFUNDING_SUMMARY'); ?></h2>
                 </div>
                 <div class="panel-body">
-                    <p><?php
+                    <p>
+                        <?php
                         $amount = $this->money->setAmount($this->paymentAmount)->formatCurrency();
-                        echo JText::sprintf('COM_CROWDFUNDING_AMOUNT_S', $amount); ?></p>
+                        echo JText::sprintf('COM_CROWDFUNDING_AMOUNT_S', $amount); ?>
+                    </p>
 
                     <p><?php echo JText::_('COM_CROWDFUNDING_FUNDING_TYPE_' . strtoupper($this->item->funding_type)); ?></p>
 
@@ -51,7 +49,8 @@ defined('_JEXEC') or die;
                         } else {
                             echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE_INFO_FLEXIBLE', $endDate);
                         }
-                        ?></p>
+                        ?>
+                    </p>
                 </div>
             </div>
 
@@ -61,7 +60,7 @@ defined('_JEXEC') or die;
                     <h2><?php echo JText::_('COM_CROWDFUNDING_SELECTED_REWARD'); ?></h2>
                 </div>
                 <div class="panel-body">
-                    <?php if (!$this->paymentSession->rewardId) { ?>
+                    <?php if (!$this->paymentSessionLocal->rewardId) { ?>
                         <p><?php echo JText::_('COM_CROWDFUNDING_NO_SELECTED_REWARD'); ?></p>
                     <?php } else { ?>
                         <h3><?php echo $this->escape($this->reward->getTitle()); ?></h3>

@@ -15,15 +15,16 @@
 	<property name="cfg.mediaDestDir" location="${cfg.pkgDir}/media" />
 	<property name="cfg.siteDestDir" location="${cfg.pkgDir}/site" />
 	<property name="cfg.librariesDestDir" location="${cfg.pkgDir}/libraries" />
-	
 	<property name="cfg.pluginsDestDir" location="${cfg.pkgDir}/plugins" />
 	<property name="cfg.modulesDestDir" location="${cfg.pkgDir}/modules" />
+	<property name="cfg.premiumDestDir" location="${cfg.pkgDir}/premium" />
 
 	<!-- Admin, Site and Media source -->
 	<property name="cfg.adminSourceDir" location="${cfg.sourceDir}/administrator/components" />
 	<property name="cfg.siteSourceDir" location="${cfg.sourceDir}/components" />
 	<property name="cfg.mediaSourceDir" location="${cfg.sourceDir}/media" />
 	<property name="cfg.librariesSourceDir" location="${cfg.sourceDir}/libraries" />
+	<property name="cfg.premiumSourceDir" location="${cfg.sourceDir}/premium" />
 
 	<!-- plug-ins source -->
     <property name="cfg.pluginsSourceDir" location="${cfg.sourceDir}/plugins" />
@@ -42,6 +43,7 @@
 			<fileset dir="${cfg.modulesDestDir}" includes="**/*" />
 			<fileset dir="${cfg.pluginsDestDir}" includes="**/*" />
 			<fileset dir="${cfg.siteDestDir}" includes="**/*" />
+			<fileset dir="${cfg.premiumDestDir}" includes="**/*" />
 			<fileset dir="${cfg.pkgDir}/packages" includes="*"/>
 			<fileset dir="${cfg.pkgDir}" includes="CHANGELOG.md"/>
 			<fileset dir="${cfg.pkgDir}" includes="LICENSE.txt"/>
@@ -61,6 +63,7 @@
 		<mkdir dir="${cfg.pkgDir}/packages" />
 		<mkdir dir="${cfg.pkgDir}/modules" />
 		<mkdir dir="${cfg.pkgDir}/plugins" />
+		<mkdir dir="${cfg.pkgDir}/premium" />
 		
 		<!-- plug-ins -->
 		<mkdir dir="${cfg.pkgDir}/plugins/content/plg_content_crowdfundingnav" />
@@ -89,12 +92,12 @@
 				<exclude name="**/README.md" />
 				<exclude name="**/CHANGELOG.md" />
 				<exclude name="**/LICENSE.txt" />
-				<exclude name="**/install.php" />
+				<exclude name="install.php" />
 			</fileset>
 		</copy>
 
 		<!-- copy install helper of the component -->
-		<copy file="${cfg.adminSourceDir}/${cfg.comName}/helpers/install.php" todir="${cfg.adminDestDir}/helpers/" />
+		<!-- <copy file="${cfg.adminSourceDir}/${cfg.comName}/helpers/install.php" todir="${cfg.adminDestDir}/helpers/" /> -->
 		
 		<!-- copy site files of the component -->
 		<copy todir="${cfg.siteDestDir}">
@@ -118,6 +121,97 @@
 		<copy file="${cfg.adminSourceDir}/${cfg.comName}/${cfg.pkgName}.xml" todir="${cfg.pkgDir}" />
 		<copy file="${cfg.adminSourceDir}/${cfg.comName}/${cfg.name}.xml" todir="${cfg.pkgDir}" />
 
+		<!-- Premium Extensions Changelogs and Language Files -->
+		<copy file="${cfg.premiumSourceDir}/README.md" todir="${cfg.premiumDestDir}" />
+		
+		<copy file="${cfg.adminSourceDir}/com_crowdfundingdata/CHANGELOG.md" todir="${cfg.premiumDestDir}/com_crowdfundingdata" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfundingpayment/data/language/en-GB/en-GB.plg_crowdfundingpayment_data.ini" todir="${cfg.premiumDestDir}/com_crowdfundingdata/plg_crowdfundingpayment_data/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfundingpayment/data/language/en-GB/en-GB.plg_crowdfundingpayment_data.sys.ini" todir="${cfg.premiumDestDir}/com_crowdfundingdata/plg_crowdfundingpayment_data/language/en-GB" />
+		
+		<copy file="${cfg.adminSourceDir}/com_crowdfundingfiles/CHANGELOG.md" todir="${cfg.premiumDestDir}/com_crowdfundingfiles" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingfiles/language/en-GB/en-GB.plg_content_crowdfundingfiles.ini" todir="${cfg.premiumDestDir}/com_crowdfundingfiles/plg_content_crowdfundingfiles/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingfiles/language/en-GB/en-GB.plg_content_crowdfundingfiles.sys.ini" todir="${cfg.premiumDestDir}/com_crowdfundingfiles/plg_content_crowdfundingfiles/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfunding/files/language/en-GB/en-GB.plg_crowdfunding_files.ini" todir="${cfg.premiumDestDir}/com_crowdfundingfiles/plg_crowdfunding_files/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfunding/files/language/en-GB/en-GB.plg_crowdfunding_files.sys.ini" todir="${cfg.premiumDestDir}/com_crowdfundingfiles/plg_crowdfunding_files/language/en-GB" />
+		
+		<copy file="${cfg.adminSourceDir}/com_crowdfundingpartners/CHANGELOG.md" todir="${cfg.premiumDestDir}/com_crowdfundingpartners" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingpartners/language/en-GB/en-GB.plg_content_crowdfundingpartners.ini" todir="${cfg.premiumDestDir}/com_crowdfundingpartners/plg_content_crowdfundingpartners/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingpartners/language/en-GB/en-GB.plg_content_crowdfundingpartners.sys.ini" todir="${cfg.premiumDestDir}/com_crowdfundingpartners/plg_content_crowdfundingpartners/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfunding/partners/language/en-GB/en-GB.plg_crowdfunding_partners.ini" todir="${cfg.premiumDestDir}/com_crowdfundingpartners/plg_crowdfunding_partners/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfunding/partners/language/en-GB/en-GB.plg_crowdfunding_partners.sys.ini" todir="${cfg.premiumDestDir}/com_crowdfundingpartners/plg_crowdfunding_partners/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcampaigns/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingcampaigns" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcampaigns/language/en-GB/en-GB.mod_crowdfundingcampaigns.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingcampaigns/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcampaigns/language/en-GB/en-GB.mod_crowdfundingcampaigns.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingcampaigns/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcategories/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingcategories" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcategories/language/en-GB/en-GB.mod_crowdfundingcategories.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingcategories/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingcategories/language/en-GB/en-GB.mod_crowdfundingcategories.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingcategories/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilters/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingfilters" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilters/language/en-GB/en-GB.mod_crowdfundingfilters.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilters/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilters/language/en-GB/en-GB.mod_crowdfundingfilters.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilters/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterssorting/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterssorting" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterssorting/language/en-GB/en-GB.mod_crowdfundingfilterssorting.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterssorting/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterssorting/language/en-GB/en-GB.mod_crowdfundingfilterssorting.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterssorting/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterstowns/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterstowns" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterstowns/language/en-GB/en-GB.mod_crowdfundingfilterstowns.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterstowns/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingfilterstowns/language/en-GB/en-GB.mod_crowdfundingfilterstowns.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingfilterstowns/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinglatest/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundinglatest" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinglatest/language/en-GB/en-GB.mod_crowdfundinglatest.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinglatest/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinglatest/language/en-GB/en-GB.mod_crowdfundinglatest.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinglatest/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingmostfunded/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingmostfunded" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingmostfunded/language/en-GB/en-GB.mod_crowdfundingmostfunded.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingmostfunded/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingmostfunded/language/en-GB/en-GB.mod_crowdfundingmostfunded.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingmostfunded/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpopular/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingpopular" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpopular/language/en-GB/en-GB.mod_crowdfundingpopular.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingpopular/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpopular/language/en-GB/en-GB.mod_crowdfundingpopular.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingpopular/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpredefinedfilters/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingpredefinedfilters" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpredefinedfilters/language/en-GB/en-GB.mod_crowdfundingpredefinedfilters.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingpredefinedfilters/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingpredefinedfilters/language/en-GB/en-GB.mod_crowdfundingpredefinedfilters.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingpredefinedfilters/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingprofile/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingprofile" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingprofile/language/en-GB/en-GB.mod_crowdfundingprofile.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingprofile/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingprofile/language/en-GB/en-GB.mod_crowdfundingprofile.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingprofile/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingreporting/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingreporting" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingreporting/language/en-GB/en-GB.mod_crowdfundingreporting.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingreporting/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingreporting/language/en-GB/en-GB.mod_crowdfundingreporting.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingreporting/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingsearch/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundingsearch" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingsearch/language/en-GB/en-GB.mod_crowdfundingsearch.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingsearch/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundingsearch/language/en-GB/en-GB.mod_crowdfundingsearch.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundingsearch/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserpledges/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundinguserpledges" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserpledges/language/en-GB/en-GB.mod_crowdfundinguserpledges.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinguserpledges/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserpledges/language/en-GB/en-GB.mod_crowdfundinguserpledges.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinguserpledges/language/en-GB" />
+		
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserprojects/CHANGELOG.md" todir="${cfg.premiumDestDir}/mod_crowdfundinguserprojects" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserprojects/language/en-GB/en-GB.mod_crowdfundinguserprojects.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinguserprojects/language/en-GB" />
+		<copy file="${cfg.modulesSourceDir}/mod_crowdfundinguserprojects/language/en-GB/en-GB.mod_crowdfundinguserprojects.sys.ini" todir="${cfg.premiumDestDir}/mod_crowdfundinguserprojects/language/en-GB" />
+		
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundinginfo/CHANGELOG.md" todir="${cfg.premiumDestDir}/plg_content_crowdfundinginfo" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundinginfo/language/en-GB/en-GB.plg_content_crowdfundinginfo.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundinginfo/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundinginfo/language/en-GB/en-GB.plg_content_crowdfundinginfo.sys.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundinginfo/language/en-GB" />
+		
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingmanager/CHANGELOG.md" todir="${cfg.premiumDestDir}/plg_content_crowdfundingmanager" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingmanager/language/en-GB/en-GB.plg_content_crowdfundingmanager.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundingmanager/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingmanager/language/en-GB/en-GB.plg_content_crowdfundingmanager.sys.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundingmanager/language/en-GB" />
+		
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingdetailsbar/CHANGELOG.md" todir="${cfg.premiumDestDir}/plg_content_crowdfundingdetailsbar" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingdetailsbar/language/en-GB/en-GB.plg_content_crowdfundingdetailsbar.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundingdetailsbar/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/content/crowdfundingdetailsbar/language/en-GB/en-GB.plg_content_crowdfundingdetailsbar.sys.ini" todir="${cfg.premiumDestDir}/plg_content_crowdfundingdetailsbar/language/en-GB" />
+		
+		<copy file="${cfg.pluginsSourceDir}/crowdfundingpayment/conditions/CHANGELOG.md" todir="${cfg.premiumDestDir}/plg_crowdfundingpayment_conditions" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfundingpayment/conditions/language/en-GB/en-GB.plg_crowdfundingpayment_conditions.ini" todir="${cfg.premiumDestDir}/plg_crowdfundingpayment_conditions/language/en-GB" />
+		<copy file="${cfg.pluginsSourceDir}/crowdfundingpayment/conditions/language/en-GB/en-GB.plg_crowdfundingpayment_conditions.sys.ini" todir="${cfg.premiumDestDir}/plg_crowdfundingpayment_conditions/language/en-GB" />
+		
 		<!-- copy library files of the component -->
 		<copy todir="${cfg.librariesDestDir}/lib_${cfg.name}">
 			<fileset dir="${cfg.librariesSourceDir}/${cfg.name}">

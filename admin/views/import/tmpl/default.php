@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -16,8 +16,6 @@ defined('_JEXEC') or die;
               id="adminForm" class="form-validate" enctype="multipart/form-data">
 
             <fieldset>
-                <legend><?php echo $this->legend; ?></legend>
-
                 <div class="control-group">
                     <div class="control-label"><?php echo $this->form->getLabel('data'); ?></div>
                     <div class="controls">
@@ -34,27 +32,20 @@ defined('_JEXEC') or die;
                     </div>
                 </div>
 
-                <?php if (strcmp($this->importType, 'states') !== 0) { ?>
-                    <div class="control-group">
-                        <div class="control-label"><?php echo $this->form->getLabel('reset_id'); ?></div>
-                        <div class="controls"><?php echo $this->form->getInput('reset_id'); ?></div>
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label"><?php echo $this->form->getLabel('remove_old'); ?></div>
-                        <div class="controls"><?php echo $this->form->getInput('remove_old'); ?></div>
-                    </div>
-                <?php } ?>
+                <?php
+                if (!in_array($this->importType, ['locations', 'regions'], true)) {
+                    echo $this->form->renderField('reset_id');
+                }
 
-                <?php if (strcmp($this->importType, 'locations') === 0) { ?>
-                    <div class="control-group">
-                        <div class="control-label"><?php echo $this->form->getLabel('country'); ?></div>
-                        <div class="controls"><?php echo $this->form->getInput('country'); ?></div>
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label"><?php echo $this->form->getLabel('minimum_population'); ?></div>
-                        <div class="controls"><?php echo $this->form->getInput('minimum_population'); ?></div>
-                    </div>
-                <?php } ?>
+                echo $this->form->renderField('remove_old');
+
+                if (in_array($this->importType, ['locations', 'regions'], true)) {
+                    echo $this->form->renderField('country');
+                }
+
+                if (strcmp($this->importType, 'locations') === 0) {
+                    echo $this->form->renderField('minimum_population');
+                } ?>
 
             </fieldset>
 
@@ -62,4 +53,26 @@ defined('_JEXEC') or die;
             <?php echo JHtml::_('form.token'); ?>
         </form>
     </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="icon icon-info"></i>
+    <?php
+    echo $this->resourcesInformation;
+
+    if ($this->importType === 'locations') {?>
+    <ul>
+        <li><a href="http://download.geonames.org/export/dump/cities1000.zip" download>cities1000.zip</a></li>
+        <li><a href="http://download.geonames.org/export/dump/cities5000.zip" download>cities5000.zip</a></li>
+        <li><a href="http://download.geonames.org/export/dump/cities15000.zip" download>cities15000.zip</a></li>
+    </ul>
+    <?php
+    }
+
+    if ($this->importType === 'regions') {?>
+    <ul>
+        <li><a href="http://download.geonames.org/export/dump/admin1CodesASCII.txt" download>admin1CodesASCII.txt</a></li>
+    </ul>
+<?php
+} ?>
 </div>

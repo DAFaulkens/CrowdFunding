@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -18,6 +18,11 @@ class CrowdfundingViewImport extends JViewLegacy
     public $document;
 
     /**
+     * @var JApplicationAdministrator
+     */
+    public $app;
+
+    /**
      * @var Joomla\Registry\Registry
      */
     protected $state;
@@ -30,44 +35,47 @@ class CrowdfundingViewImport extends JViewLegacy
     protected $legend;
     protected $uploadTask;
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get("option");
-    }
+    protected $resourcesInformation;
 
     public function display($tpl = null)
     {
+        $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
+        
         $this->state = $this->get('State');
         $this->form  = $this->get('Form');
 
-        $this->importType = $this->state->get("import.context");
+        $this->importType = $this->state->get('import.context');
 
         switch ($this->importType) {
-            case "locations":
-                $this->legend     = JText::_("COM_CROWDFUNDING_IMPORT_LOCATIONS_DATA");
-                $this->uploadTask = "import.locations";
+            case 'locations':
+                $this->legend     = JText::_('COM_CROWDFUNDING_IMPORT_LOCATIONS_DATA');
+                $this->uploadTask = 'import.locations';
+
+                $this->resourcesInformation = JText::_('COM_CROWDFUNDING_RESOURCES_INFORMATION2');
                 break;
 
-            case "countries":
-                $this->legend     = JText::_("COM_CROWDFUNDING_IMPORT_COUNTRIES_DATA");
-                $this->uploadTask = "import.countries";
+            case 'countries':
+                $this->legend     = JText::_('COM_CROWDFUNDING_IMPORT_COUNTRIES_DATA');
+                $this->uploadTask = 'import.countries';
+
+                $this->resourcesInformation = JText::_('COM_CROWDFUNDING_RESOURCES_INFORMATION');
                 break;
 
-            case "states":
-                $this->legend     = JText::_("COM_CROWDFUNDING_IMPORT_STATES_DATA");
-                $this->uploadTask = "import.states";
+            case 'regions':
+                $this->legend     = JText::_('COM_CROWDFUNDING_IMPORT_REGIONS_DATA');
+                $this->uploadTask = 'import.regions';
+
+                $this->resourcesInformation = JText::_('COM_CROWDFUNDING_RESOURCES_INFORMATION2');
                 break;
 
             default: // Currencies
-                $this->legend     = JText::_("COM_CROWDFUNDING_IMPORT_CURRENCY_DATA");
-                $this->uploadTask = "import.currencies";
+                $this->legend     = JText::_('COM_CROWDFUNDING_IMPORT_CURRENCY_DATA');
+                $this->uploadTask = 'import.currencies';
+
+                $this->resourcesInformation = JText::_('COM_CROWDFUNDING_RESOURCES_INFORMATION');
                 break;
-
         }
-
-        // Add submenu
-        CrowdfundingHelper::addSubmenu($this->importType);
 
         // Prepare actions
         $this->addToolbar();
@@ -83,11 +91,14 @@ class CrowdfundingViewImport extends JViewLegacy
      */
     protected function addToolbar()
     {
+        // Add submenu
+        CrowdfundingHelper::addSubmenu($this->importType);
+        
         // Set toolbar items for the page
-        JToolbarHelper::title(JText::_('COM_CROWDFUNDING_IMPORT_MANAGER'));
+        JToolbarHelper::title(JText::sprintf('COM_CROWDFUNDING_IMPORT_MANAGER_S', $this->legend));
 
         // Upload
-        JToolbarHelper::custom($this->uploadTask, "upload", "", JText::_("COM_CROWDFUNDING_UPLOAD"), false);
+        JToolbarHelper::custom($this->uploadTask, 'upload', '', JText::_('COM_CROWDFUNDING_UPLOAD_AND_IMPORT'), false);
 
         JToolbarHelper::divider();
         JToolbarHelper::cancel('import.cancel', 'JTOOLBAR_CANCEL');
@@ -108,6 +119,6 @@ class CrowdfundingViewImport extends JViewLegacy
         JHtml::_('bootstrap.tooltip');
         JHtml::_('Prism.ui.bootstrap2FileInput');
 
-        $this->document->addScript('../media/' . $this->option . '/js/admin/' . JString::strtolower($this->getName()) . '.js');
+        $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 }

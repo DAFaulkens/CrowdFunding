@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Amounts
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -18,6 +18,8 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Amounts
+ *
+ * @deprecated v2.4 Use Prism\Money\Money
  */
 class Amount
 {
@@ -56,8 +58,6 @@ class Amount
      *
      * @param Registry $options
      * @param float $value
-     *
-     * @deprecated v2.8 Use Prism\Money\Money
      */
     public function __construct(Registry $options = null, $value = 0.00)
     {

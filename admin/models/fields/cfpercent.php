@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -46,7 +46,6 @@ class JFormFieldCfPercent extends JFormField
 
         $html = array();
         if ($cssLayout === 'Bootstrap 3') {
-
             $html[] = '<div class="input-group">';
 
             $html [] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' .
@@ -65,7 +64,6 @@ class JFormFieldCfPercent extends JFormField
             // Appended
             $html[] = '<span class="add-on">%</span>';
             $html[] = '</div>';
-
         }
 
         return implode("\n", $html);

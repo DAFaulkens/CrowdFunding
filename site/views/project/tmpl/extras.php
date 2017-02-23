@@ -26,6 +26,8 @@ if (!empty($this->item->event->onExtrasDisplay)) {
 
 <form action="javascript: void(0);" method="post" id="js-cfextras-form-token">
     <?php echo JHtml::_('form.token'); ?>
+    <input type="hidden" name="<?php echo JSession::getFormToken(); ?>" value="1" id="js-form-token" />
+    <input type="hidden" name="item_id" value="<?php echo (int)$this->item->id;?>" id="js-form-item-id" />
 </form>
 
 <div class="row">

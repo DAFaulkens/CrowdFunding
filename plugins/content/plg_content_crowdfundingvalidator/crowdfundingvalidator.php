@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Plugins
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -271,17 +271,16 @@ class plgContentCrowdfundingValidator extends JPlugin
         // Validate minimum and maximum amount.
         if ($this->params->get('validate_amount', 1)) {
             $goal      = ArrayHelper::getValue($data, 'goal', 0, 'float');
-            $minAmount = (float)$params->get('project_amount_minimum', 100);
-            $maxAmount = (float)$params->get('project_amount_maximum');
 
             // Verify minimum amount
+            $minAmount = (float)$params->get('project_amount_minimum');
             if ($goal < $minAmount) {
                 $result['message'] = JText::_('PLG_CONTENT_CROWDFUNDINGVALIDATOR_ERROR_INVALID_GOAL');
                 return $result;
             }
 
-
             // Verify maximum amount
+            $maxAmount = (float)$params->get('project_amount_maximum');
             if ($maxAmount > 0 and ($goal > $maxAmount)) {
                 $result['message'] = JText::_('PLG_CONTENT_CROWDFUNDINGVALIDATOR_ERROR_INVALID_GOAL');
                 return $result;

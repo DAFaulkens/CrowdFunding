@@ -90,6 +90,8 @@ class CrowdfundingModelCategories extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     *
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -112,9 +114,14 @@ class CrowdfundingModelCategories extends JModelList
             ->where('a.published = 1')
             ->where('a.level = 1');
 
+        // Filter by access level.
+        $user   = JFactory::getUser();
+        $groups = implode(',', $user->getAuthorisedViewLevels());
+        $query->where('a.access IN (' . $groups . ')');
+
         // Filter by search phrase or ID.
-        $search = $this->getState('filter.search');
-        if (JString::strlen($search) > 0) {
+        $search = (string)$this->getState('filter.search');
+        if (strlen($search) > 0) {
             if (stripos($search, 'id:') === 0) {
                 $query->where('a.id = ' . (int)substr($search, 3));
             } else {

@@ -27,9 +27,7 @@ class CrowdfundingModelCategory extends JModelList
     public function __construct($config = array())
     {
         if (empty($config['filter_fields'])) {
-            $config['filter_fields'] = array(
-                0,1,2,3,4,5,6,7,8,9,10
-            );
+            $config['filter_fields'] = array();
         }
 
         parent::__construct($config);
@@ -65,6 +63,10 @@ class CrowdfundingModelCategory extends JModelList
         $value = $app->input->get('filter_location', 0, 'int');
         $this->setState($this->context . '.filter_location', $value);
 
+        // Filter by region
+        $value = $app->input->get('filter_region', '', 'cmd');
+        $this->setState($this->context . '.filter_region', $value);
+
         // Filter by phrase
         $value = $app->input->get('filter_phrase');
         $this->setState($this->context . '.filter_phrase', $value);
@@ -78,11 +80,11 @@ class CrowdfundingModelCategory extends JModelList
         $this->setState($this->context . '.filter_projecttype', $value);
 
         // Filter by filter date.
-        $value = $app->input->get('filter_date', 0, 'uint');
+        $value = $app->input->get('filter_date', '', 'string');
         $this->setState($this->context . '.filter_date', $value);
 
         // Filter by funding state.
-        $value = $app->input->get('filter_funding_state', 0, 'uint');
+        $value = $app->input->get('filter_funding_state', '', 'string');
         $this->setState($this->context . '.filter_funding_state', $value);
 
         // Filter by featured state.
@@ -93,19 +95,19 @@ class CrowdfundingModelCategory extends JModelList
         $value = $app->input->get('filter_user');
         $this->setState($this->context . '.filter_user', $value);
 
-        // Set category id
         $catId = $app->input->get('id', 0, 'uint');
-        $this->setState($this->context . '.category_id', $catId);
 
         // It is a discovery page and I can filter it by category.
         // If it is a subcategory page, there is a category ID
         if (!$catId) {
-            // Filter by category
-            $value = $app->input->get('filter_category');
-            $this->setState($this->context . '.category_id', $value);
+            // Get category ID from filter data.
+            $catId = $app->input->get('filter_category');
         } else {
             $app->input->set('filter_category', (int)$catId);
         }
+
+        // Set category ID to the session state.
+        $this->setState($this->context . '.category_id', $catId);
 
         // Set limit
         $value = $app->input->getInt('limit');
@@ -170,21 +172,33 @@ class CrowdfundingModelCategory extends JModelList
                 'a.id, a.title, a.short_desc, a.image, a.user_id, a.catid, a.featured, a.params, ' .
                 'a.goal, a.funded, a.funding_start, a.funding_end, a.funding_days, a.funding_type, ' .
                 $query->concatenate(array('a.id', 'a.alias'), ':') . ' AS slug, ' .
-                'b.name AS user_name, ' .
+                'u.name AS user_name, ' .
                 $query->concatenate(array('c.id', 'c.alias'), ':') . ' AS catslug'
             )
         );
-        $query->from($db->quoteName('#__crowdf_projects', 'a'));
-        $query->innerJoin($db->quoteName('#__users', 'b') . ' ON a.user_id = b.id');
-        $query->innerJoin($db->quoteName('#__categories', 'c') . ' ON a.catid = c.id');
+
+        $query
+            ->from($db->quoteName('#__crowdf_projects', 'a'))
+            ->innerJoin($db->quoteName('#__categories', 'c') . ' ON a.catid = c.id')
+            ->innerJoin($db->quoteName('#__users', 'u') . ' ON a.user_id = u.id');
+
+        // Filter by state
+        $query
+            ->where('a.published = ' . (int)Prism\Constants::PUBLISHED)
+            ->where('a.approved = ' . (int)Prism\Constants::APPROVED);
+
+        // Filter by access level.
+        $user   = JFactory::getUser();
+        $groups = array_unique((array)$user->getAuthorisedViewLevels());
+        $groups = implode(',', $groups);
+
+        $query
+            ->where('a.access IN (' . $groups . ')')
+            ->where('c.access IN (' . $groups . ')');
 
         $this->prepareFilters($query);
         $this->prepareFilterDate($query);
         $this->prepareFilterFundingState($query);
-
-        // Filter by state
-        $query->where('a.published = ' . (int)Prism\Constants::PUBLISHED);
-        $query->where('a.approved = ' . (int)Prism\Constants::APPROVED);
 
         // Add the list ordering clause.
         $orderString = $this->getOrderString();
@@ -206,7 +220,7 @@ class CrowdfundingModelCategory extends JModelList
         }
 
         // Convert direction to uppercase.
-        $orderDirn = JString::strtoupper($orderDirn);
+        $orderDirn = strtoupper($orderDirn);
 
         // Validate directions.
         $allowedDirns = array('ASC', 'DESC');
@@ -217,7 +231,6 @@ class CrowdfundingModelCategory extends JModelList
         $fundingEndSort = ', a.funding_end ASC';
 
         switch ($order) {
-
             case Crowdfunding\Constants::ORDER_BY_NAME:
                 $orderCol = 'a.title';
                 break;
@@ -257,19 +270,18 @@ class CrowdfundingModelCategory extends JModelList
      * Prepare some main filters.
      *
      * @param JDatabaseQuery $query
+     *
+     * @throws \RuntimeException
      */
     protected function prepareFilters(&$query)
     {
-        $db     = JFactory::getDbo();
+        $db     = $this->getDbo();
 
         // Filter by featured state.
         $value = $this->getState($this->context . '.filter_featured');
-        if (null !== $value) {
-            if (!$value) {
-                $query->where('a.featured = 0');
-            } else {
-                $query->where('a.featured = 1');
-            }
+        if ($value !== null) {
+            $value = $value ? Prism\Constants::FEATURED : Prism\Constants::NOT_FEATURED;
+            $query->where('a.featured = '. (int)$value);
         }
 
         // Filter by category ID
@@ -291,10 +303,17 @@ class CrowdfundingModelCategory extends JModelList
         }
 
         // Filter by country
-        $value = $this->getState($this->context . '.filter_country');
-        if (JString::strlen($value) > 0) {
+        $value = (string)$this->getState($this->context . '.filter_country');
+        if ($value !== '') {
             $query->innerJoin($db->quoteName('#__crowdf_locations', 'l') . ' ON a.location_id = l.id');
             $query->where('l.country_code = ' . $db->quote($value));
+        }
+
+        // Filter by region
+        $value = (string)$this->getState($this->context . '.filter_region');
+        if ($value !== '') {
+            $query->innerJoin($db->quoteName('#__crowdf_locations', 'l') . ' ON a.location_id = l.id');
+            $query->where('l.admin1code_id = '. $db->quote($value));
         }
 
         // Filter by location
@@ -304,8 +323,8 @@ class CrowdfundingModelCategory extends JModelList
         }
 
         // Filter by funding type
-        $value = JString::strtoupper(JString::trim($this->getState($this->context . '.filter_fundingtype')));
-        if (JString::strlen($value) > 0) {
+        $value = strtoupper(trim($this->getState($this->context . '.filter_fundingtype')));
+        if ($value !== '') {
             $allowedFundingTypes = array('FIXED', 'FLEXIBLE');
             if (in_array($value, $allowedFundingTypes, true)) {
                 $query->where('a.funding_type = ' . $db->quote($value));
@@ -313,8 +332,8 @@ class CrowdfundingModelCategory extends JModelList
         }
 
         // Filter by phrase
-        $value = $this->getState($this->context . '.filter_phrase');
-        if (JString::strlen($value) > 0) {
+        $value = (string)$this->getState($this->context . '.filter_phrase');
+        if ($value !== '') {
             $escaped = $db->escape($value, true);
             $quoted  = $db->quote('%' . $escaped . '%', false);
             $query->where('a.title LIKE ' . $quoted);
@@ -330,12 +349,10 @@ class CrowdfundingModelCategory extends JModelList
     {
         $db     = $this->getDbo();
 
-        // Filter by date.
-        $filter = (int)$this->getState($this->context . '.filter_date');
-
-        switch($filter) {
-            case 1: // Starting soon
-                jimport('joomla.date.date');
+        // Filter by period.
+        $filter = (string)$this->getState($this->context . '.filter_date');
+        switch ($filter) {
+            case 'ssoon': // Starting soon
                 $date  = new JDate();
                 $today = $date->toSql();
 
@@ -343,8 +360,7 @@ class CrowdfundingModelCategory extends JModelList
                 $query->where('a.funding_start >= ' . $db->quote($date->toSql()) . ' AND a.funding_start <= '. $db->quote($today));
                 break;
 
-            case 2: // Ending soon
-                jimport('joomla.date.date');
+            case 'esoon': // Ending soon
                 $date  = new JDate();
                 $today = $date->toSql();
 
@@ -364,11 +380,9 @@ class CrowdfundingModelCategory extends JModelList
         $db     = JFactory::getDbo();
 
         // Filter by funding state.
-        $filter = (int)$this->getState($this->context . '.filter_funding_state');
-
-        switch($filter) {
-            case 1: // Successfully funded.
-                jimport('joomla.date.date');
+        $filter = (string)$this->getState($this->context . '.filter_funding_state');
+        switch ($filter) {
+            case 'sfunded': // Successfully funded.
                 $date  = new JDate();
                 $today = $date->toSql();
 

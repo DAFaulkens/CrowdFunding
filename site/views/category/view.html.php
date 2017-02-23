@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 class CrowdfundingViewCategory extends JViewLegacy
 {
     use Crowdfunding\Container\MoneyHelper;
+    use Crowdfunding\Helper\AccessHelper;
 
     /**
      * @var JDocumentHtml
@@ -41,6 +42,10 @@ class CrowdfundingViewCategory extends JViewLegacy
     protected $subcategoriesPerRow;
     protected $displayProjectsNumber;
     protected $projectsNumber;
+
+    /**
+     * @var JCategoryNode
+     */
     protected $item;
 
     protected $layoutData;
@@ -56,15 +61,26 @@ class CrowdfundingViewCategory extends JViewLegacy
 
     public function display($tpl = null)
     {
-        $this->app        = JFactory::getApplication();
+        $this->app      = JFactory::getApplication();
+        $this->option   = $this->app->input->getCmd('option');
 
-        $this->option     = JFactory::getApplication()->input->getCmd('option');
-        
+        // Get current category
+        $categoryId     = $this->app->input->getInt('id');
+        $categories     = Crowdfunding\Category\Categories::getInstance('crowdfunding');
+        $this->item     = $categories->get($categoryId);
+
+        // Check access view.
+        $user = JFactory::getUser();
+        if (!$this->item or !$this->canView($this->app, $user)) {
+            $this->app->enqueueMessage(JText::_('JERROR_ALERTNOAUTHOR'), 'error');
+            $this->app->setHeader('status', 403, true);
+            return;
+        }
+
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
 
-        // Get params
         $this->params = $this->state->get('params');
         /** @var  $this->params Joomla\Registry\Registry */
 
@@ -91,11 +107,6 @@ class CrowdfundingViewCategory extends JViewLegacy
         $this->layoutData->money          = $this->getMoneyFormatter($container, $this->params);
         $this->layoutData->socialProfiles = $this->socialProfiles;
         $this->layoutData->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
-
-        // Get current category
-        $categoryId = $this->app->input->getInt('id');
-        $categories = Crowdfunding\Categories::getInstance('crowdfunding');
-        $this->item = $categories->get($categoryId);
 
         $this->prepareDocument();
 
@@ -170,29 +181,22 @@ class CrowdfundingViewCategory extends JViewLegacy
 
     private function prepareSubcategories()
     {
-        $categoryId = $this->app->input->getInt('id');
+        $this->categories = $this->item->getChildren();
 
-        $categories = new Crowdfunding\Categories();
-        $category   = $categories->get($categoryId);
+        $this->subcategoriesPerRow   = $this->params->get('categories_items_row', 3);
+        $this->displayProjectsNumber = $this->params->get('categories_show_projects_number', 0);
 
-        $this->categories = $category->getChildren();
+        $options   = array(
+            'count_projects' => $this->displayProjectsNumber,
+            'project_state'  => array(
+                'state' => Prism\Constants::PUBLISHED,
+                'approved' => Prism\Constants::APPROVED
+            )
+        );
 
-        $this->subcategoriesPerRow = $this->params->get('categories_items_row', 3);
-        $this->displayProjectsNumber = $this->params->get('categories_display_projects_number', 0);
-
-        // Load projects number.
-        if ($this->displayProjectsNumber) {
-            $ids = array();
-            foreach ($this->items as $item) {
-                $ids[] = $item->id;
-            }
-
-            $categories->setDb(JFactory::getDbo());
-
-            $this->projectsNumber = $categories->getProjectsNumber($ids, array('state' => 1));
-        }
-
-        $this->categories = CrowdfundingHelper::prepareCategories($this->categories);
+        $helperBus = new Prism\Helper\HelperBus($this->categories);
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper());
+        $helperBus->handle($options);
     }
 
     private function prepareItems($items)

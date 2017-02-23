@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Transactions
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -81,11 +81,11 @@ class Transaction extends Database\Table
             ->select(
                 'a.id, a.txn_date, a.txn_amount, a.txn_currency, a.txn_status, a.txn_id, a.parent_txn_id, ' .
                 'a.extra_data, a.status_reason, a.project_id, a.reward_id, a.investor_id, a.receiver_id, ' .
-                'a.service_provider, a.service_alias, a.reward_state, a.fee'
+                'a.service_provider, a.service_alias, a.reward_state, a.fee, a.params'
             )
             ->from($this->db->quoteName('#__crowdf_transactions', 'a'));
 
-        if ($keys !== null and is_array($keys)) {
+        if (is_array($keys)) {
             foreach ($keys as $key => $value) {
                 $query->where($this->db->quoteName('a.'.$key) . '=' . $this->db->quote($value));
             }
@@ -117,17 +117,13 @@ class Transaction extends Database\Table
      */
     public function bind($data, array $ignored = array())
     {
-        // Encode extra data to JSON format.
-        foreach ($data as $key => $value) {
-            if (!in_array($key, $ignored, true)) {
-                $this->$key = $value;
-
-                // If it is extra data ( array or object ), encode the data to JSON string.
-                if ((strcmp('extra_data', $key) === 0) and (is_array($value) or is_object($value))) {
-                    $this->$key = json_encode($value);
-                }
-            }
+        // If it is extra data ( array or object ), encode the data to JSON string.
+        if (array_key_exists('extra_data', $data) and (is_array($data['extra_data']) or is_object($data['extra_data']))) {
+            $this->extra_data = json_encode($data['extra_data']);
+            unset($data['extra_data']);
         }
+
+        parent::bind($data, $ignored);
     }
 
     /**
@@ -156,6 +152,7 @@ class Transaction extends Database\Table
     protected function updateObject()
     {
         // Prepare extra data value.
+        $params    = (!$this->params) ? '{}' : $this->db->quote($this->params->toString());
         $extraData = (!$this->extra_data) ? 'NULL' : $this->db->quote($this->extra_data);
 
         $query = $this->db->getQuery(true);
@@ -178,6 +175,7 @@ class Transaction extends Database\Table
             ->set($this->db->quoteName('service_alias') . '=' . $this->db->quote($this->service_alias))
             ->set($this->db->quoteName('reward_state') . '=' . $this->db->quote($this->reward_state))
             ->set($this->db->quoteName('fee') . '=' . $this->db->quote($this->fee))
+            ->set($this->db->quoteName('params') . '=' . $params)
             ->where($this->db->quoteName('id') .'='. (int)$this->id);
 
         $this->db->setQuery($query);
@@ -187,6 +185,7 @@ class Transaction extends Database\Table
     protected function insertObject()
     {
         // Prepare extra data value.
+        $params    = (!$this->params) ? '{}' : $this->db->quote($this->params->toString());
         $extraData = (!$this->extra_data) ? 'NULL' : $this->db->quote($this->extra_data);
         $txnDate   = (!$this->txn_date) ? 'NULL' : $this->db->quote($this->txn_date);
 
@@ -209,7 +208,8 @@ class Transaction extends Database\Table
             ->set($this->db->quoteName('service_provider') . '=' . $this->db->quote($this->service_provider))
             ->set($this->db->quoteName('service_alias') . '=' . $this->db->quote($this->service_alias))
             ->set($this->db->quoteName('reward_state') . '=' . $this->db->quote($this->reward_state))
-            ->set($this->db->quoteName('fee') . '=' . $this->db->quote($this->fee));
+            ->set($this->db->quoteName('fee') . '=' . $this->db->quote($this->fee))
+            ->set($this->db->quoteName('params') . '=' . $params);
 
         $this->db->setQuery($query);
         $this->db->execute();
@@ -911,7 +911,7 @@ class Transaction extends Database\Table
             $this->db->setQuery($query);
             $result = $this->db->loadResult();
 
-            if ($result !== null and is_string($result) and \JString::strlen($result) > 0) {
+            if ($result !== null and is_string($result) and $result !== '') {
                 $this->service_data = new Registry($result);
             } else {
                 $this->service_data = new Registry;

@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -56,9 +56,8 @@ $website    = $uri->toString(array('scheme', 'host'));
                 <a href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=rewards&pid=' . $item->id); ?>">
                     <?php echo JText::sprintf('COM_CROWDFUNDING_REWARDS_N', $numberOfRewards); ?>
                 </a>
-                <div>
-                    <?php echo JText::sprintf('COM_CROWDFUNDING_CATEGORY_S', $item->category); ?>
-                </div>
+                <?php echo JHtml::_('crowdfundingbackend.category', $item->category); ?>
+                <?php echo JHtml::_('crowdfundingbackend.type', $item->type); ?>
             </div>
         </td>
         <td class="hidden-phone"><?php echo $this->money->setAmount($item->goal)->formatCurrency(); ?></td>
@@ -71,7 +70,8 @@ $website    = $uri->toString(array('scheme', 'host'));
             <?php echo JHtml::_('crowdfunding.duration', $item->funding_end, $item->funding_days, $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'))); ?>
         </td>
         <td class="hidden-phone"><?php echo JHtml::_('date', $item->created, $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'))); ?></td>
-        <td class="hidden-phone"><?php echo $this->escape($item->type); ?></td>
+        <td class="hidden-phone">
+            <?php echo $this->escape($item->access_level); ?></td>
         <td>
             <a href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=users&filter_search=id:' . $item->user_id); ?>">
                 <?php echo $this->escape($item->username); ?>

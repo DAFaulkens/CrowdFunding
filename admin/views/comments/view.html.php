@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -35,14 +35,10 @@ class CrowdfundingViewComments extends JViewLegacy
 
     protected $sidebar;
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get("option");
-    }
-
     public function display($tpl = null)
     {
+        $this->option = JFactory::getApplication()->input->get('option');
+        
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
@@ -112,12 +108,12 @@ class CrowdfundingViewComments extends JViewLegacy
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_COMMENTS_MANAGER'));
         JToolbarHelper::editList('comment.edit');
         JToolbarHelper::divider();
-        JToolbarHelper::publishList("comments.publish");
-        JToolbarHelper::unpublishList("comments.unpublish");
+        JToolbarHelper::publishList('comments.publish');
+        JToolbarHelper::unpublishList('comments.unpublish');
         JToolbarHelper::divider();
-        JToolbarHelper::deleteList(JText::_("COM_CROWDFUNDING_DELETE_ITEMS_QUESTION"), "comments.delete");
+        JToolbarHelper::deleteList(JText::_('COM_CROWDFUNDING_DELETE_ITEMS_QUESTION'), 'comments.delete');
         JToolbarHelper::divider();
-        JToolbarHelper::custom('comments.backToDashboard', "dashboard", "", JText::_("COM_CROWDFUNDING_DASHBOARD"), false);
+        JToolbarHelper::custom('comments.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
     /**
@@ -135,6 +131,6 @@ class CrowdfundingViewComments extends JViewLegacy
 
         JHtml::_('formbehavior.chosen', 'select');
 
-        JHtml::_('prism.ui.joomlaList');
+        JHtml::_('Prism.ui.joomlaList');
     }
 }

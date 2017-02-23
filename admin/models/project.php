@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -16,6 +16,22 @@ defined('_JEXEC') or die;
 
 class CrowdfundingModelProject extends JModelAdmin
 {
+    /**
+     * The type alias for this content type (for example, 'com_content.article').
+     *
+     * @var      string
+     * @since    3.2
+     */
+    public $typeAlias = 'com_crowdfunding.project';
+
+    /**
+     * The context used for the associations table
+     *
+     * @var      string
+     * @since    3.4.4
+     */
+    protected $associationsContext = 'com_crowdfunding.project';
+    
     /**
      * Returns a reference to the a Table object, always creating it.
      *
@@ -59,8 +75,10 @@ class CrowdfundingModelProject extends JModelAdmin
      */
     protected function loadFormData()
     {
+        $app  = JFactory::getApplication();
+        
         // Check the session for previously entered form data.
-        $data = JFactory::getApplication()->getUserState($this->option . '.edit.project.data', array());
+        $data = $app->getUserState($this->option . '.edit.project.data', array());
 
         if (!$data) {
             $data = $this->getItem();
@@ -75,6 +93,19 @@ class CrowdfundingModelProject extends JModelAdmin
                 if ($locationName !== '') {
                     $data->location_preview = $locationName;
                 }
+            }
+
+            $projectId = (int)$this->getState('project.id');
+            if ($projectId === 0) {
+                $filters = (array)$app->getUserState('com_crowdfunding.projects.filter');
+
+                $state           = (array_key_exists('state', $filters) and $filters['state'] !== '') ? $filters['state'] : null;
+                $data->published = $app->input->getInt('published', $state);
+
+                $data->catid     = $app->input->getInt('catid', (!empty($filters['category']) ? $filters['category'] : null));
+                $data->access    = $app->input->getInt('access', (!empty($filters['access']) ? $filters['access'] : JFactory::getConfig()->get('access')));
+                $data->type_id   = $app->input->getInt('type', (!empty($filters['type']) ? $filters['type'] : null));
+                $data->approved  = $app->input->getInt('approved', (!empty($filters['approved']) ? $filters['approved'] : null));
             }
         }
 
@@ -112,6 +143,11 @@ class CrowdfundingModelProject extends JModelAdmin
         $pitchVideo  = ArrayHelper::getValue($data, 'pitch_video');
         $description = ArrayHelper::getValue($data, 'description');
 
+        $app           = JFactory::getApplication();
+        $filters       = (array)$app->getUserState($this->option.'.items.filter');
+        $defaultAccess = (!empty($filters['access']) ? $filters['access'] : $app->get('access'));
+        $access        = Joomla\Utilities\ArrayHelper::getValue($data, 'access', $defaultAccess, 'int');
+
         // Encode parameters to JSON format.
         $params      = ($params !== null and is_array($params)) ? json_encode($params) : null;
 
@@ -119,17 +155,21 @@ class CrowdfundingModelProject extends JModelAdmin
         $row = $this->getTable();
         $row->load($id);
 
+        if (!$row->get('id')) {
+            $row->set('user_id', $userId);
+        }
+
         $row->set('title', $title);
         $row->set('alias', $alias);
         $row->set('catid', $catId);
         $row->set('type_id', $typeId);
-        $row->set('user_id', $userId);
         $row->set('location_id', $locationId);
         $row->set('published', $published);
         $row->set('approved', $approved);
         $row->set('short_desc', $shortDesc);
         $row->set('created', $created);
         $row->set('params', $params);
+        $row->set('access', $access);
 
         $row->set('goal', $goal);
         $row->set('funded', $funded);

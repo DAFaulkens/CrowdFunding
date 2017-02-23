@@ -17,13 +17,9 @@ defined('_JEXEC') or die;
 	
 	<div class="row">
 		<div class="col-md-12">
-    		<?php 
-        	  if (strcmp('three_steps', $this->wizardType) === 0) {
-        		  $layout      = new JLayoutFile('payment_wizard');
-    		  } else {
-        		  $layout      = new JLayoutFile('payment_wizard_four_steps');
-    		  }
-        	  echo $layout->render($this->layoutData);
+    		<?php
+                $layout      = new JLayoutFile('payment_wizard');
+        	    echo $layout->render($this->layoutData);
     		?>	
     	</div>
 	</div>

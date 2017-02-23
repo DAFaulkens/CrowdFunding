@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Registry\Registry;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -282,6 +284,47 @@ abstract class JHtmlCrowdfundingBackend
             }
         } else {
             $output[] = JText::_('COM_CROWDFUNDING_ANONYMOUS');
+        }
+
+        return implode("\n", $output);
+    }
+
+    public static function capturedPeriod(Registry $params)
+    {
+        $output = array();
+        $capturedPeriod = $params->get('capture_period');
+
+        if ($capturedPeriod !== null and (isset($capturedPeriod->start) and isset($capturedPeriod->end))) {
+            $output[] = '<span class="icon icon-help hasPopover cursor-pointer" data-title="'.JText::_('COM_CROWDFUNDING_CAPTURING_PERIOD').'" data-content="'.JText::sprintf('COM_CROWDFUNDING_CAPTURING_PERIOD_S', $capturedPeriod->start, $capturedPeriod->end).'">';
+            $output[] = '</span>';
+        }
+
+        return implode("\n", $output);
+    }
+
+    public static function type($title)
+    {
+        $title  = (string)$title;
+        $output = array();
+
+        if ($title !== '') {
+            $output[] = '<div>';
+            $output[] = JText::sprintf('COM_CROWDFUNDING_TYPE_S', htmlspecialchars($title, ENT_COMPAT, 'UTF-8'));
+            $output[] = '</div>';
+        }
+
+        return implode("\n", $output);
+    }
+
+    public static function category($title)
+    {
+        $title  = (string)$title;
+        $output = array();
+
+        if ($title !== '') {
+            $output[] = '<div>';
+            $output[] = JText::sprintf('COM_CROWDFUNDING_CATEGORY_S', htmlspecialchars($title, ENT_COMPAT, 'UTF-8'));
+            $output[] = '</div>';
         }
 
         return implode("\n", $output);

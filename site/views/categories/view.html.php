@@ -61,15 +61,6 @@ class CrowdfundingViewCategories extends JViewLegacy
         // Get description length
         $this->descriptionLength = $this->params->get('categories_description_length');
 
-        // Load projects number.
-        if ($this->displayProjectsNumber) {
-            $ids = Prism\Utilities\ArrayHelper::getIds($this->items);
-            $categories = new Crowdfunding\Categories();
-            $categories->setDb(JFactory::getDbo());
-
-            $this->projectsNumber = $categories->getProjectsNumber($ids, array('state' => Prism\Constants::PUBLISHED, 'approved' => Prism\Constants::APPROVED));
-        }
-
         // Prepare items parameters.
         if (is_array($this->items) and count($this->items) > 0) {
             $this->prepareItems($this->items);
@@ -79,10 +70,8 @@ class CrowdfundingViewCategories extends JViewLegacy
         $layout = $this->params->get('categories_layout', 'grid');
         $this->templateView = in_array($layout, $this->allowedLayouts, true) ? $layout : 'grid';
 
-        // Get params
+        $this->params = $this->state->get('params');
         /** @var  $params Joomla\Registry\Registry */
-        $params = $this->state->get('params');
-        $this->params = $params;
 
         // Prepare filters
         $this->listOrder = $this->escape($this->state->get('list.ordering'));
@@ -166,8 +155,16 @@ class CrowdfundingViewCategories extends JViewLegacy
 
     private function prepareItems($items)
     {
+        $options   = array(
+            'count_projects' => $this->displayProjectsNumber,
+            'project_state'  => array(
+                'state' => Prism\Constants::PUBLISHED,
+                'approved' => Prism\Constants::APPROVED
+            )
+        );
+
         $helperBus = new Prism\Helper\HelperBus($items);
         $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper());
-        $helperBus->handle();
+        $helperBus->handle($options);
     }
 }

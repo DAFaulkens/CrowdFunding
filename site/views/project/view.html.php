@@ -75,6 +75,7 @@ class CrowdfundingViewProject extends JViewLegacy
     protected $isImageExists = false;
     protected $imagePath;
     protected $displayRemoveButton = 'none';
+    protected $imageStyleDisplay = 'none';
 
     protected $wizardType;
     protected $layoutData = array();
@@ -84,6 +85,13 @@ class CrowdfundingViewProject extends JViewLegacy
 
     // Variables used on step Basic.
     protected $maxFilesize;
+    protected $authorised;
+    protected $itemId;
+
+    /**
+     * @var CrowdfundingModelProject
+     */
+    protected $model;
 
     protected $option;
 
@@ -107,21 +115,63 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->app    = JFactory::getApplication();
         $this->option = $this->app->input->getCmd('option');
 
-        $this->userId = (int)JFactory::getUser()->get('id');
+        $user         = JFactory::getUser();
+        $this->userId = (int)$user->get('id');
         if (!$this->userId) {
             $this->setLayout('intro');
         }
 
+        if (!$user->authorise('core.create', 'com_crowdfunding')) {
+            $loginUrl  = JRoute::_('index.php?option=com_users&view=login&return='.base64_encode(CrowdfundingHelperRoute::getFormRoute()), false);
+
+            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS_TO_DO_ACTION'), 'notice');
+            $this->app->redirect($loginUrl);
+            return;
+        }
+
+        $this->layout  = $this->getLayout();
+
+        // Prepare model suffix.
+        $modelSuffix   = in_array($this->layout, ['intro', 'default', 'funding', 'manager', 'story', 'extras', 'rewards'], true) ? ucfirst($this->layout) : null;
+        if (!$modelSuffix) {
+            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
+            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
+            return;
+        }
+
+        // Get the model.
+        $modelSuffix = in_array($modelSuffix, ['Default', 'Rewards'], true) ? 'Project' : $modelSuffix;
+        $this->model = JModelLegacy::getInstance($modelSuffix, 'CrowdfundingModel', $config = array('ignore_request' => false));
+
+        // Get state
+        $this->state  = $this->model->getState();
+        /** @var  $this->state Joomla\Registry\Registry */
+
         // Get component params.
-        $this->params         = $this->app->getParams($this->option);
+        $this->params  = $this->state->get('params');
+
+        $this->itemId  = $this->app->input->getUint('id');
+
+        $this->item    = $this->model->getItem($this->itemId, $this->userId);
+        if (!$this->item or !$this->item->id) { // Check if it is new record.
+            $this->authorised = $user->authorise('core.create', 'com_crowdfunding') || count($user->getAuthorisedCategories('com_crowdfunding', 'core.create'));
+        } else {
+            $this->authorised = $this->item->params->get('access-edit');
+        }
+
+        // Redirect the user to login form if he is not authorized.
+        if (!$this->authorised) {
+            $loginUrl  = JRoute::_('index.php?option=com_users&view=login&return='.base64_encode(CrowdfundingHelperRoute::getFormRoute()), false);
+            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS_TO_DO_ACTION'), 'notice');
+            $this->app->redirect($loginUrl);
+            return;
+        }
 
         // Get date format.
         $this->dateFormat     = $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'));
 
         $this->rewardsEnabled = (bool)$this->params->get('rewards_enabled', Prism\Constants::ENABLED);
         $this->disabledButton = '';
-
-        $this->layout = $this->getLayout();
 
         switch ($this->layout) {
             case 'funding':
@@ -178,7 +228,7 @@ class CrowdfundingViewProject extends JViewLegacy
         $params          = $this->state->get('params');
         $this->debugMode = $params->get('debug_project_adding_disabled', 0);
         if ($this->debugMode) {
-            $msg = JString::trim($params->get('debug_disabled_functionality_msg'));
+            $msg = Joomla\String\StringHelper::trim($params->get('debug_disabled_functionality_msg'));
             if (!$msg) {
                 $msg = JText::_('COM_CROWDFUNDING_DEBUG_MODE_DEFAULT_MSG');
             }
@@ -211,55 +261,21 @@ class CrowdfundingViewProject extends JViewLegacy
      */
     protected function prepareIntro()
     {
-        $model        = JModelLegacy::getInstance('Intro', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelIntro */
-
-        // Get state
-        /** @var  $state Joomla\Registry\Registry */
-        $state = $model->getState();
-        $this->state = $state;
-
-        // Get params
-        /** @var  $params Joomla\Registry\Registry */
-        $params = $this->state->get('params');
-        $this->params = $params;
-
         $articleId     = $this->params->get('project_intro_article', 0);
-        $this->article = $model->getItem($articleId);
+        $this->article = $this->model->getItem($articleId);
 
         $this->pathwayName = JText::_('COM_CROWDFUNDING_START_PROJECT_BREADCRUMB');
     }
 
     protected function prepareBasic()
     {
-        $model = JModelLegacy::getInstance('Project', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelProject */
-
-        // Get state
-        $this->state = $model->getState();
-        /** @var  $this->state Joomla\Registry\Registry */
-
-        // Get params
-        $this->params = $this->state->get('params');
-        /** @var  $this->params Joomla\Registry\Registry */
-
-        // Get item
-        $itemId     = $this->state->get('project.id');
-        $this->item = $model->getItem($itemId, $this->userId);
-
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'basic')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
-
         // Set a flag that describes the item as new.
         $this->isNew = false;
         if (!(int)$this->item->id) {
             $this->isNew = true;
         }
 
-        $this->form          = $model->getForm();
+        $this->form          = $this->model->getForm();
 
         // Get types
         $this->types         = Crowdfunding\Types::getInstance(JFactory::getDbo());
@@ -273,7 +289,7 @@ class CrowdfundingViewProject extends JViewLegacy
             $this->displayRemoveButton = 'none';
         } else {
             $this->imagePath     = $this->imageFolder.'/'.$this->item->image;
-            $this->displayRemoveButton = 'inline';
+            $this->displayRemoveButton = 'inline-block';
         }
 
         $mediaParams        = JComponentHelper::getParams('com_media');
@@ -285,38 +301,21 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->pathwayName = JText::_('COM_CROWDFUNDING_STEP_BASIC');
 
         // Remove the temporary pictures if they exists.
-        $this->removeTemporaryImages($model);
+        $this->model->removeTemporaryImage($this->app);
+        $this->model->removeCroppedImages($this->app);
     }
 
     protected function prepareFunding()
     {
-        $model = JModelLegacy::getInstance('Funding', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelFunding */
-
-        // Get state
-        $this->state = $model->getState();
-        /** @var  $state Joomla\Registry\Registry */
-
-        // Get item
-        $itemId     = $this->state->get('funding.id');
-        $this->item = $model->getItem($itemId, $this->userId);
-
-        // Check if the item exists.
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'funding')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
-
-        $this->form = $model->getForm();
+        $this->form = $this->model->getForm();
 
         // Get money formatter.
         $container    = Prism\Container::getContainer();
         $this->money  = $this->getMoneyFormatter($container, $this->params);
 
         // Set minimum values - days, amount,...
-        $this->minAmount = $this->params->get('project_amount_minimum', 100);
-        $this->maxAmount = $this->params->get('project_amount_maximum');
+        $this->minAmount = (float)$this->params->get('project_amount_minimum');
+        $this->maxAmount = (float)$this->params->get('project_amount_maximum');
 
         $this->minDays = $this->params->get('project_days_minimum', 30);
         $this->maxDays = $this->params->get('project_days_maximum');
@@ -362,50 +361,36 @@ class CrowdfundingViewProject extends JViewLegacy
                     $this->checkedDays = 'checked="checked"';
                 }
                 break;
-
         }
     }
 
     protected function prepareStory()
     {
-        $model = JModelLegacy::getInstance('Story', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelStory */
-
-        // Get state
-        $this->state = $model->getState();
-        /** @var  $state Joomla\Registry\Registry */
-
-        // Get item
-        $itemId     = $this->state->get('story.id');
-        $this->item = $model->getItem($itemId, $this->userId);
-
-        // Check if the item exists.
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'story')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
-
-        $this->form   = $model->getForm();
+        $this->form   = $this->model->getForm();
 
         $this->imageFolder = $this->params->get('images_directory', 'images/crowdfunding');
-        $this->pitchImage  = $this->item->pitch_image;
+        if ($this->item->pitch_image) {
+            $this->pitchImage          = $this->imageFolder . '/' . $this->item->pitch_image;
+            $this->displayRemoveButton = 'inline-block';
+            $this->imageStyleDisplay   = 'block';
+        }
 
         $this->pWidth  = $this->params->get('pitch_image_width', 600);
         $this->pHeight = $this->params->get('pitch_image_height', 400);
 
         $this->pathwayName = JText::_('COM_CROWDFUNDING_STEP_STORY');
+
+        // Remove the temporary pictures if they exists.
+        $this->model->removeTemporaryImage($this->app);
     }
 
     protected function prepareRewards()
     {
-        $model           = JModelLegacy::getInstance('Rewards', 'CrowdfundingModel', $config = array('ignore_request' => false));
-
-        // Get state
-        $this->state     = $model->getState();
+        $modelRewards    = JModelLegacy::getInstance('Rewards', 'CrowdfundingModel', $config = array('ignore_request' => false));
+        /** @var CrowdfundingModelRewards $modelRewards*/
 
         // Get params
-        $this->projectId = $this->state->get('rewards.project_id');
+        $this->projectId = $this->state->get('project.id');
 
         // Check if rewards are enabled.
         if (!$this->rewardsEnabled) {
@@ -414,20 +399,7 @@ class CrowdfundingViewProject extends JViewLegacy
             return;
         }
 
-        $this->items     = $model->getItems($this->projectId);
-
-        // Get project and validate it
-        $project = Crowdfunding\Project::getInstance(JFactory::getDbo(), $this->projectId);
-        $project = $project->getProperties();
-
-        $this->item = Joomla\Utilities\ArrayHelper::toObject($project);
-
-        // Check if the item exists.
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'rewards')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
+        $this->items    = $modelRewards->getItems($this->projectId);
 
         // Get money formatter.
         $container       = Prism\Container::getContainer();
@@ -463,20 +435,13 @@ class CrowdfundingViewProject extends JViewLegacy
 
     protected function prepareManager()
     {
-        $model = JModelLegacy::getInstance('Manager', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelManager */
-
-        // Get state
-        $this->state = $model->getState();
-        /** @var  $state Joomla\Registry\Registry */
-
         $this->imageWidth        = $this->params->get('image_width', 200);
         $this->imageHeight       = $this->params->get('image_height', 200);
         $this->titleLength       = $this->params->get('discover_title_length', 0);
         $this->descriptionLength = $this->params->get('discover_description_length', 0);
 
         // Get the folder with images
-        $this->imageFolder = $this->params->get('images_directory', 'images/crowdfunding');
+        $this->imageFolder       = $this->params->get('images_directory', 'images/crowdfunding');
 
         // Filter the URL.
         $uri = JUri::getInstance();
@@ -484,21 +449,9 @@ class CrowdfundingViewProject extends JViewLegacy
         $filter          = JFilterInput::getInstance();
         $this->returnUrl = $filter->clean($uri->toString());
 
-        // Get item
-        $itemId     = $this->state->get('manager.id');
-
         // Get money formatter.
         $container       = Prism\Container::getContainer();
         $this->money     = $this->getMoneyFormatter($container, $this->params);
-
-        $this->item = $model->getItem($itemId, $this->userId);
-
-        // Check if the item exists.
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'manager')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
 
         $statistics = new Crowdfunding\Statistics\Project(JFactory::getDbo(), $this->item->id);
         $this->statistics = array(
@@ -516,24 +469,6 @@ class CrowdfundingViewProject extends JViewLegacy
 
     protected function prepareExtras()
     {
-        $model = JModelLegacy::getInstance('Extras', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var $model CrowdfundingModelExtras */
-
-        // Get state
-        /** @var  $state Joomla\Registry\Registry */
-        $this->state = $model->getState();
-
-        // Get item
-        $itemId     = $this->state->get('extras.id');
-        $this->item = $model->getItem($itemId, $this->userId);
-
-        // Check if the item exists.
-        if (!CrowdfundingHelper::isAuthorized($this->userId, $this->item, 'extras')) {
-            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_SOMETHING_WRONG'), 'notice');
-            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
-            return;
-        }
-
         $this->pathwayName = JText::_('COM_CROWDFUNDING_STEP_EXTRAS');
 
         // Events
@@ -640,23 +575,47 @@ class CrowdfundingViewProject extends JViewLegacy
                 break;
 
             case 'story':
-                JHtml::_('Prism.ui.bootstrap3FileInput');
+                JHtml::_('Prism.ui.remodal');
+                JHtml::_('Prism.ui.cropper');
+                JHtml::_('Prism.ui.fileupload');
+                JHtml::_('Prism.ui.pnotify');
+                JHtml::_('Prism.ui.joomlaHelper');
 
                 // Include translation of the confirmation question for image removing.
                 JText::script('COM_CROWDFUNDING_QUESTION_REMOVE_IMAGE');
                 JText::script('COM_CROWDFUNDING_PICK_IMAGE');
                 JText::script('COM_CROWDFUNDING_REMOVE');
 
-                $this->document->addScript('media/' . $this->option . '/js/site/project_story.js?v='.$version->getShortVersion());
+                // Provide image size.
+                $js = '
+                    var projectWizardBasic = {
+                        imageWidth: '.$this->params->get('pitch_image_width', 600).',
+                        imageHeight: '.$this->params->get('pitch_image_height', 400).',
+                        aspectRatio: ' . $this->params->get('image_aspect_ratio', '""') . '
+                    };
+                ';
 
+                $this->document->addScriptDeclaration($js);
+
+                $this->document->addScript('media/' . $this->option . '/js/site/project_story.js?v='.$version->getShortVersion());
                 break;
 
             case 'manager':
+                JHtml::_('Prism.ui.chartjs');
                 $this->document->addScript('media/' . $this->option . '/js/site/project_manager.js?v='.$version->getShortVersion());
 
                 // Load language string in JavaScript
                 JText::script('COM_CROWDFUNDING_QUESTION_LAUNCH_PROJECT');
                 JText::script('COM_CROWDFUNDING_QUESTION_STOP_PROJECT');
+                JText::script('COM_CROWDFUNDING_DAILY_FUNDS');
+
+                $js = '
+                    var crowdfundingOptions = {
+                        projectId: ' . $this->item->id .',
+                        token: "'.JSession::getFormToken().'"
+                    }';
+
+                $this->document->addScriptDeclaration($js);
 
                 break;
 
@@ -667,7 +626,8 @@ class CrowdfundingViewProject extends JViewLegacy
             default: // Basic
                 if ($this->userId) {
                     JHtml::_('Prism.ui.bootstrapMaxLength');
-                    JHtml::_('Prism.ui.bootstrap3Typeahead');
+                    JHtml::_('Prism.ui.jQueryAutoComplete');
+                    JHtml::_('Prism.ui.remodal');
                     JHtml::_('Prism.ui.parsley');
                     JHtml::_('Prism.ui.cropper');
                     JHtml::_('Prism.ui.fileupload');
@@ -690,40 +650,5 @@ class CrowdfundingViewProject extends JViewLegacy
                 }
                 break;
         }
-    }
-
-    /**
-     * Remove the temporary images if a user upload or crop a picture,
-     * but he does not store it or reload the page.
-     *
-     * @param CrowdfundingModelProject $model
-     */
-    protected function removeTemporaryImages($model)
-    {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
-        // Remove old image if it exists.
-        $oldImage = $app->getUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT);
-        if (strlen($oldImage) > 0) {
-            $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_BASE);
-            $oldImage = JPath::clean($temporaryFolder . DIRECTORY_SEPARATOR . basename($oldImage));
-            if (JFile::exists($oldImage)) {
-                JFile::delete($oldImage);
-            }
-        }
-
-        // Set the name of the image in the session.
-        $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, null);
-
-        // Remove the temporary images if they exist.
-        $temporaryImages = $app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
-        if (strlen($temporaryImages) > 0) {
-            $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_BASE);
-            $model->removeTemporaryImages($temporaryImages, $temporaryFolder);
-        }
-
-        // Reset the temporary images.
-        $app->setUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT, null);
     }
 }

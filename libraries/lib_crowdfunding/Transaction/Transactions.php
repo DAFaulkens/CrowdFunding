@@ -3,11 +3,11 @@
  * @package      Crowdfunding
  * @subpackage   Transactions
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-namespace Crowdfunding;
+namespace Crowdfunding\Transaction;
 
 use Prism\Database;
 use Joomla\Utilities\ArrayHelper;
@@ -44,6 +44,8 @@ class Transactions extends Database\Collection
      * @param array $options
      *
      * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function load(array $options = array())
     {
@@ -53,14 +55,12 @@ class Transactions extends Database\Collection
         $results = array();
 
         if (count($ids) > 0) {
-            // Load project data
             $query = $this->db->getQuery(true);
-
             $query
                 ->select(
                     'a.id, a.txn_date, a.txn_id, a.txn_amount, a.txn_currency, a.txn_status, ' .
                     'a.extra_data, a.status_reason, a.project_id, a.reward_id, a.investor_id, ' .
-                    'a.receiver_id, a.service_provider, a.service_alias, a.reward_state'
+                    'a.receiver_id, a.service_provider, a.service_alias, a.reward_state, a.params'
                 )
                 ->from($this->db->quoteName('#__crowdf_transactions', 'a'))
                 ->where('a.id IN ( ' . implode(',', $ids) . ' )');

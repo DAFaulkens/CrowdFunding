@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Initialization
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -43,9 +43,11 @@ $lang = JFactory::getLanguage();
 $lang->load('lib_crowdfunding', CROWDFUNDING_PATH_COMPONENT_SITE);
 
 // Register class aliases.
-JLoader::registerAlias('CrowdfundingCategories', '\\Crowdfunding\\Categories');
-JLoader::registerAlias('Crowdfunding\\Transaction', '\\Crowdfunding\\Transaction\\Transaction');
-JLoader::registerAlias('Crowdfunding\\Transactions', '\\Crowdfunding\\Transaction\\Transactions');
+JLoader::registerAlias('CrowdfundingCategories', Crowdfunding\Category\Categories::class);
+JLoader::registerAlias('Crowdfunding\\Transaction', Crowdfunding\Transaction\Transaction::class);
+JLoader::registerAlias('Crowdfunding\\Transactions', Crowdfunding\Transaction\Transactions::class);
+JLoader::registerAlias('Crowdfunding\\Country', Crowdfunding\Country\Country::class);
+JLoader::registerAlias('Crowdfunding\\Countries', Crowdfunding\Country\Countries::class);
 
 JLog::addLogger(
     array(

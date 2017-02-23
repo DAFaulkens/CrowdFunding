@@ -25,11 +25,7 @@ echo $layout->render($this->layoutData);
                 <div class="col-md-2"><?php echo $this->form->getLabel('goal'); ?></div>
                 <div class="col-md-10">
                     <?php echo $this->form->getInput('goal'); ?>
-                    <?php if(!empty($this->maxAmount)) {?>
-                    <span class="help-block"><?php echo JText::sprintf('COM_CROWDFUNDING_MINIMUM_MAXIMUM_AMOUNT', $this->money->setAmount($this->minAmount)->formatCurrency(), $this->money->setAmount($this->maxAmount)->formatCurrency());?></span>
-                    <?php } else {?>
-                    <span class="help-block"><?php echo JText::sprintf('COM_CROWDFUNDING_MINIMUM_AMOUNT', $this->money->setAmount($this->minAmount)->formatCurrency());?></span>
-                    <?php }?>
+                    <span class="help-block"><?php echo JHtml::_('crowdfunding.infoMinMaxAmount', $this->minAmount, $this->maxAmount, $this->money); ?></span>
                 </div>
             </div>
 

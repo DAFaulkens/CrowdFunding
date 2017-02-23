@@ -10,15 +10,15 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_comments` (
 
 CREATE TABLE IF NOT EXISTS `#__crowdf_countries` (
   `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(128) NOT NULL,
-  `code` char(2) NOT NULL,
-  `locale` varchar(5) NOT NULL DEFAULT '',
+  `name` varchar(128) COLLATE utf8_unicode_ci NOT NULL,
+  `code` char(2) COLLATE utf8_unicode_ci NOT NULL,
+  `locale` varchar(5) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `latitude` float DEFAULT NULL,
   `longitude` float DEFAULT NULL,
-  `currency` char(3) DEFAULT NULL,
-  `timezone` varchar(64) DEFAULT NULL,
+  `currency` char(3) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `timezone` varchar(64) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__crowdf_currencies` (
   `id` smallint(6) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -46,15 +46,18 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_intentions` (
 
 CREATE TABLE IF NOT EXISTS `#__crowdf_locations` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) NOT NULL,
-  `latitude` varchar(64) NOT NULL,
-  `longitude` varchar(64) NOT NULL,
-  `country_code` char(2) NOT NULL,
-  `state_code` char(4) NOT NULL DEFAULT '',
-  `timezone` varchar(40) NOT NULL,
+  `name` varchar(191) COLLATE utf8_unicode_ci NOT NULL,
+  `latitude` varchar(64) COLLATE utf8_unicode_ci NOT NULL,
+  `longitude` varchar(64) COLLATE utf8_unicode_ci NOT NULL,
+  `country_code` char(2) COLLATE utf8_unicode_ci NOT NULL,
+  `timezone` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `admin1_code` varchar(20) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `admin1code_id` varchar(128) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `published` tinyint(3) UNSIGNED NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`),
+  KEY `idx_cflocations_name` (`name`),
+  KEY `idx_cflocations_cca1cid` (`country_code`,`admin1code_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__crowdf_logs` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -109,12 +112,25 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_projects` (
   `catid` int(11) UNSIGNED NOT NULL DEFAULT '0',
   `type_id` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
   `user_id` int(10) UNSIGNED NOT NULL,
+  `asset_id` int(11) NOT NULL DEFAULT '0' COMMENT 'FK to the #__assets table.',
+  `access` int(10) UNSIGNED NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `catid` (`catid`),
   KEY `user_id` (`user_id`),
   KEY `alias` (`alias`),
   KEY `location_id` (`location_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `#__crowdf_regions` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(191) COLLATE utf8_unicode_ci NOT NULL,
+  `country_code` char(2) COLLATE utf8_unicode_ci NOT NULL,
+  `admincode_id` varchar(128) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_cfregions_acid` (`admincode_id`),
+  KEY `idx_cfregions_cc` (`country_code`),
+  KEY `idx_cfregions_name` (`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__crowdf_reports` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -165,6 +181,7 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_transactions` (
   `service_data` tinyblob COMMENT 'Encrypted sensitive data',
   `reward_state` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
   `fee` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00',
+  `params` varchar(255) NOT NULL DEFAULT '{}',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uidx_cftransactions_txnid` (`txn_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -187,3 +204,11 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_updates` (
   `state` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `#__crowdf_users` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `passport_id` tinyblob,
+  `passport_type` enum('id','dl','ip') NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;

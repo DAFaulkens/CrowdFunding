@@ -34,8 +34,7 @@ $itemSpan = ($this->subcategoriesPerRow > 0) ? round(12 / $this->subcategoriesPe
                         </a>
                         <?php
                         if ($this->displayProjectsNumber) {
-                            $number = (!array_key_exists($item->id, $this->projectsNumber)) ? 0 : $this->projectsNumber[$item->id][0];
-                            echo '( '. $number . ' )';
+                            echo '( '. $item->project_number . ' )';
                         } ?>
                     </h3>
                     <?php } ?>

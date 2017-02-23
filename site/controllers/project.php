@@ -61,6 +61,14 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
             'id'   => $itemId
         );
 
+        if (!$this->allowSave($data)) {
+            $redirectOptions = array(
+                'force_direction' => JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false)
+            );
+            $this->displayNotice(JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS_TO_DO_ACTION'), $redirectOptions);
+            return;
+        }
+
         $model = $this->getModel();
         /** @var $model CrowdfundingModelProject */
 
@@ -82,24 +90,10 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
             return;
         }
 
-        if ($itemId > 0) { // Validate owner if the item already exists.
-
-            $userId = JFactory::getUser()->get('id');
-
-            $validator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $itemId, $userId);
-            if (!$validator->isValid()) {
-                $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), $redirectOptions);
-                return;
-            }
-
-        } else { // Verify terms of use during the process of creating a project.
-
-            if ($params->get('project_terms', 0) and !$terms) {
-                $redirectOptions = array('view' => 'project');
-                $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_TERMS_NOT_ACCEPTED'), $redirectOptions);
-                return;
-            }
-
+        // Verify terms of use during the process of creating a project.
+        if (!$itemId and $params->get('project_terms', 0) and !$terms) {
+            $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_TERMS_NOT_ACCEPTED'), $redirectOptions);
+            return;
         }
 
         // Include plugins to validate content.
@@ -125,16 +119,19 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
             $redirectOptions['id'] = $itemId;
 
             // Get the images from the session.
-            $images = $app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
+            $croppedImages = (array)$app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
 
             // Store the images to the project record.
-            if (($images !== null and is_array($images)) and $itemId > 0) {
-                // Get the folder where the images will be stored
-                $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_BASE);
+            if (count($croppedImages) > 0 and $itemId > 0) {
+                $options = array(
+                    'project_id'    => $itemId,
+                    'user_id'       => $userId,
+                    'source_folder' => CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT),
+                );
 
                 // Move the pictures from the temporary folder to the images folder.
                 // Store the names of the pictures in project record.
-                $model->updateImages($itemId, $images, $temporaryFolder);
+                $model->updateImages($croppedImages, $options, $params);
 
                 // Remove the pictures from the session.
                 $app->setUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT, null);
@@ -162,45 +159,55 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
     }
 
     /**
-     * Delete image
+     * Method override to check if you can add a new record.
+     *
+     * @param   array $data An array of input data.
+     *
+     * @return  boolean
+     *
+     * @since   1.6
      */
-    public function removeImage()
+    protected function allowAdd($data = array())
     {
-        // Check for request forgeries.
-        JSession::checkToken('get') or jexit(JText::_('JINVALID_TOKEN'));
+        $user  = JFactory::getUser();
 
-        // Check for registered user
-        $userId = JFactory::getUser()->get('id');
-        if (!$userId) {
-            $redirectOptions = array(
-                'force_direction' => 'index.php?option=com_users&view=login'
-            );
-            $this->displayNotice(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'), $redirectOptions);
-            return;
+        if ($user->authorise('core.create', 'com_crowdfunding')) {
+            return true;
         }
 
-        // Get item id
-        $itemId          = $this->input->get->getInt('id');
-        $redirectOptions = array(
-            'view' => 'project'
-        );
+        return false;
+    }
 
-        // Validate project owner.
-        $validator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $itemId, $userId);
-        if (!$itemId or !$validator->isValid()) {
-            $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_INVALID_IMAGE'), $redirectOptions);
-            return;
+    /**
+     * Method override to check if you can edit an existing record.
+     *
+     * @param   array  $data An array of input data.
+     * @param   string $key  The name of the key for the primary key; default is id.
+     *
+     * @return  boolean
+     *
+     * @throws \RuntimeException
+     */
+    protected function allowEdit($data = array(), $key = 'id')
+    {
+        $user     = JFactory::getUser();
+
+        if ($user->authorise('core.edit', 'com_crowdfunding')) {
+            return true;
         }
 
-        try {
-            $model = $this->getModel();
-            $model->removeImage($itemId, $userId);
-        } catch (Exception $e) {
-            JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+        // Validate item owner.
+        if ($user->authorise('core.edit.own', 'com_crowdfunding')) {
+            $itemId = Joomla\Utilities\ArrayHelper::getValue($data, $key);
+            $userId = $user->get('id');
+
+            // Validate item owner.
+            $itemValidator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $itemId, $userId);
+            if ($itemValidator->isValid()) {
+                return true;
+            }
         }
 
-        $redirectOptions['id'] = $itemId;
-        $this->displayMessage(JText::_('COM_CROWDFUNDING_IMAGE_DELETED'), $redirectOptions);
+        return false;
     }
 }

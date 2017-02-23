@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Plugins
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -13,6 +13,7 @@ use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\DI\Container;
 use Prism;
+use Prism\Payment\Result as PaymentResult;
 use Crowdfunding;
 use Emailtemplates;
 
@@ -164,13 +165,16 @@ class Plugin extends \JPlugin
     /**
      * Send emails to the administrator, project owner and the user who have made a donation.
      *
-     * @param \stdClass   $paymentResult
+     * @param PaymentResult   $paymentResult
      * @param Registry    $params
      *
      * @throws \InvalidArgumentException
+     * @throws \RuntimeException
+     * @throws \OutOfBoundsException
+     *
      * @return void
      */
-    protected function sendMails($paymentResult, $params)
+    protected function sendMails(PaymentResult $paymentResult, $params)
     {
         if (!\JComponentHelper::isInstalled('com_emailtemplates')) {
             \JLog::add(\JText::_('LIB_CROWDFUNDING_EMAIL_TEMPLATES_INSTALLATION'), \JLog::WARNING, 'com_crowdfunding');
@@ -190,10 +194,12 @@ class Plugin extends \JPlugin
         $uri       = \JUri::getInstance();
         $website   = $uri->toString(array('scheme', 'host'));
 
-        $emailMode  = $this->params->get('email_mode', 'plain');
+        $emailMode   = $this->params->get('email_mode', 'plain');
+        $isHtmlMode  = (bool)(strcmp('html', $emailMode) === 0);
 
-        $moneyHash  = Prism\Utilities\StringHelper::generateMd5Hash(Crowdfunding\Constants::CONTAINER_FORMATTER_MONEY, $params->get('project_currency'));
-        $money      = $this->container->get($moneyHash);
+        // Get money formatter.
+        $moneyHelper = new Crowdfunding\Container\Helper;
+        $money       = $moneyHelper->fetchMoneyFormatter($this->container, $params);
         /** @var Prism\Money\Money $money */
 
         // Prepare data for parsing.
@@ -209,6 +215,18 @@ class Plugin extends \JPlugin
             'payer_name'     => '',
             'payer_email'    => ''
         );
+
+        // Set data used in Bank Transfer payment plugin.
+        if (array_key_exists('banktransfer', $paymentResult->paymentData)) {
+            $bankTransfer = (array)$paymentResult->paymentData['banktransfer'];
+
+            $data['iban']         = array_key_exists('iban', $bankTransfer) ? $bankTransfer['iban'] : '';
+            $data['bank_account'] = array_key_exists('bank_account', $bankTransfer) ? $bankTransfer['bank_account'] : '';
+
+            if ($data['bank_account'] !== '' and $isHtmlMode) {
+                $bankTransfer['bank_account'] = nl2br($bankTransfer['bank_account']);
+            }
+        }
 
         // Prepare data about payer if he is NOT anonymous ( is registered user with profile ).
         if ((int)$transaction->getInvestorId() > 0) {
@@ -266,7 +284,7 @@ class Plugin extends \JPlugin
             $body    = $email->getBody($emailMode);
 
             $mailer = \JFactory::getMailer();
-            if (strcmp('html', $emailMode) === 0) { // Send as HTML message
+            if ($isHtmlMode) { // Send as HTML message
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_HTML);
             } else { // Send as plain text.
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
@@ -310,7 +328,7 @@ class Plugin extends \JPlugin
             $body    = $email->getBody($emailMode);
 
             $mailer = \JFactory::getMailer();
-            if (strcmp('html', $emailMode) === 0) { // Send as HTML message
+            if ($isHtmlMode) { // Send as HTML message
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_HTML);
             } else { // Send as plain text.
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
@@ -354,7 +372,7 @@ class Plugin extends \JPlugin
             $body    = $email->getBody($emailMode);
 
             $mailer = \JFactory::getMailer();
-            if (strcmp('html', $emailMode) === 0) { // Send as HTML message
+            if ($isHtmlMode) { // Send as HTML message
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_HTML);
             } else { // Send as plain text.
                 $return = $mailer->sendMail($email->getSenderEmail(), $email->getSenderName(), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
@@ -413,6 +431,7 @@ class Plugin extends \JPlugin
      *
      * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
+     * @throws \RuntimeException
      *
      * @return Crowdfunding\Payment\Session
      */
@@ -457,13 +476,24 @@ class Plugin extends \JPlugin
      * Generate a system message.
      *
      * @param string $message
-     * @param string $type
-     * @param string $title
+     * @param array $options
      *
      * @return string
+     *
+     * @todo Remove backward compatible break in v2.8
      */
-    protected function generateSystemMessage($message, $type = 'error', $title = '')
+    protected function generateSystemMessage($message, $options = array())
     {
+        if (is_array($options)) {
+            $title = array_key_exists('title', $options) ? $options['title'] : '';
+            $type  = array_key_exists('type', $options) ? $options['type'] : 'error';
+            $icon  = array_key_exists('icon', $options) ? $options['icon'] : 'info-circle';
+        } elseif (is_string($options)) { // BC fix
+            $type  = $options;
+            $title = '';
+            $icon  = 'info-circle';
+        }
+
         $html = '
         <div id="system-message-container">
 			<div id="system-message">
@@ -472,12 +502,18 @@ class Plugin extends \JPlugin
                     ';
 
         if ($title !== '') {
-            $html .= '<h4 class="alert-heading">'.$title.'</h4>';
+            $html .= '<h4 class="alert-heading"><span class="fa fa-'.$icon.'"></span> ' . $title . '</h4>';
         }
 
-        $html .= '  <div>
-                        <p>' . htmlentities($message, ENT_QUOTES, 'UTF-8') . '</p>
-                    </div>
+        $html .= '<div>';
+
+        if ($icon !== '' and $title === '') {
+            $html .= '<p><span class="fa fa-'.$icon.'"></span> ' . htmlentities($message, ENT_QUOTES, 'UTF-8') . '</p>';
+        } else {
+            $html .= '<p>' . htmlentities($message, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
+
+        $html .= '</div>
                 </div>
             </div>
 	    </div>';
@@ -754,14 +790,16 @@ class Plugin extends \JPlugin
      * </code>
      *
      * @param string $context
-     * @param \stdClass $paymentResult  Object that contains Transaction, Reward, Project, PaymentSession, etc.
+     * @param PaymentResult $paymentResult  Object that contains Transaction, Reward, Project, PaymentSession, etc.
      * @param Registry $params Component parameters
      *
      * @throws \InvalidArgumentException
+     * @throws \RuntimeException
+     * @throws \OutOfBoundsException
      */
     public function onAfterPaymentNotify($context, $paymentResult, $params)
     {
-        if (!preg_match('/com_crowdfunding\.(notify|payments)/', $context)) {
+        if (!preg_match('/com_crowdfunding\.(notify|payments).*\.'.$this->serviceAlias.'$/', $context)) {
             return;
         }
 
@@ -801,10 +839,11 @@ class Plugin extends \JPlugin
      * @param Registry $params Component parameters
      *
      * @throws \InvalidArgumentException
+     * @throws \RuntimeException
      */
     public function onAfterPayment($context, $paymentResult, $params)
     {
-        if (!preg_match('/com_crowdfunding\.(notify|payments)/', $context)) {
+        if (!preg_match('/com_crowdfunding\.(notify|payments).*\.'.$this->serviceAlias.'$/', $context)) {
             return;
         }
 

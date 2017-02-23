@@ -1,4 +1,4 @@
-jQuery(document).ready(function() {
+;jQuery(document).ready(function() {
     "use strict";
 
 	jQuery(".js-reward-amount").on("click", function() {

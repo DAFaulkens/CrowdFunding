@@ -13,7 +13,7 @@ defined('_JEXEC') or die;
 class CrowdfundingModelDetails extends JModelItem
 {
     protected $item = array();
-    
+
     /**
      * Model context string.
      *
@@ -25,7 +25,7 @@ class CrowdfundingModelDetails extends JModelItem
     /**
      * Returns a reference to the a Table object, always creating it.
      *
-     * @param   string $type    The table type to instantiate
+     * @param   string $type   The table type to instantiate
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
@@ -46,25 +46,23 @@ class CrowdfundingModelDetails extends JModelItem
      */
     protected function populateState()
     {
-        $app    = JFactory::getApplication();
+        $app = JFactory::getApplication();
         /** @var  $app JApplicationSite */
 
-        $params = $app->getParams();
-
-        // Load the object state.
-        $id = $app->input->getInt('id');
+        $id = $app->input->getUint('id');
         $this->setState($this->context . '.id', $id);
 
-        // Load the parameters.
+        $params = $app->getParams();
         $this->setState('params', $params);
     }
 
     /**
      * Method to get an object.
      *
-     * @param    integer  $id  The id of the object to get.
+     * @param   int $id The id of the object to get.
      *
-     * @return    mixed    Object on success, false on failure.
+     * @throws \RuntimeException
+     * @return mixed    Object on success, false on failure.
      */
     public function getItem($id = 0)
     {
@@ -73,56 +71,31 @@ class CrowdfundingModelDetails extends JModelItem
         }
         $storedId = $this->getStoreId($id);
 
-        if (!array_key_exists($storedId, $this->item)) {
-            $this->item[$storedId] = null;
-
-            $db    = $this->getDbo();
-            $query = $db->getQuery(true);
-
-            $query
-                ->select(
-                    'a.id, a.title, a.short_desc, a.description, a.image, a.location_id, ' .
-                    'a.funded, a.goal, a.pitch_video, a.pitch_image, ' .
-                    'a.funding_start, a.funding_end, a.funding_days, a.funding_type,  ' .
-                    'a.catid, a.user_id, a.published, a.approved, a.hits, ' .
-                    $query->concatenate(array('a.id', 'a.alias'), ':') . ' AS slug, ' .
-                    $query->concatenate(array('b.id', 'b.alias'), ':') . ' AS catslug'
-                )
-                ->from($db->quoteName('#__crowdf_projects', 'a'))
-                ->innerJoin($db->quoteName('#__categories', 'b') . ' ON a.catid = b.id')
-                ->where('a.id = ' . (int)$id);
-
-            $db->setQuery($query, 0, 1);
-            $result = $db->loadObject();
-
-            // Attempt to load the row.
-            if ($result !== null and is_object($result)) {
-
-                // Calculate end date
-                if ((int)$result->funding_days > 0) {
-
-                    $fundingStartDateValidator = new Prism\Validator\Date($result->funding_start);
-                    if (!$fundingStartDateValidator->isValid()) {
-                        $result->funding_end = '0000-00-00';
-                    } else {
-                        $fundingStartDate = new Crowdfunding\Date($result->funding_start);
-                        $fundingEndDate = $fundingStartDate->calculateEndDate($result->funding_days);
-                        $result->funding_end = $fundingEndDate->format('Y-m-d');
-                    }
-
-                }
-
-                // Calculate funded percentage.
-                $result->funded_percents = Prism\Utilities\MathHelper::calculatePercentage($result->funded, $result->goal, 0);
-
-                // Calculate days left.
-                $today = new Crowdfunding\Date();
-                $result->days_left = $today->calculateDaysLeft($result->funding_days, $result->funding_start, $result->funding_end);
-
-                $this->item[$storedId] = $result;
-
-            }
+        if (array_key_exists($storedId, $this->item)) {
+            return $this->item[$storedId];
         }
+
+        $this->item[$storedId] = null;
+
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true);
+
+        $query
+            ->select(
+                'a.id, a.title, a.short_desc, a.description, a.image, a.location_id, ' .
+                'a.funded, a.goal, a.pitch_video, a.pitch_image, a.params, ' .
+                'a.funding_start, a.funding_end, a.funding_days, a.funding_type,  ' .
+                'a.catid, a.user_id, a.published, a.approved, a.hits, a.access, ' .
+                'c.access AS category_access, ' .
+                $query->concatenate(array('a.id', 'a.alias'), ':') . ' AS slug, ' .
+                $query->concatenate(array('c.id', 'c.alias'), ':') . ' AS catslug'
+            )
+            ->from($db->quoteName('#__crowdf_projects', 'a'))
+            ->innerJoin($db->quoteName('#__categories', 'c') . ' ON a.catid = c.id')
+            ->where('a.id = ' . (int)$id);
+
+        $db->setQuery($query, 0, 1);
+        $this->item[$storedId] = $db->loadObject();
 
         return $this->item[$storedId];
     }
@@ -132,24 +105,24 @@ class CrowdfundingModelDetails extends JModelItem
      * If the project is not published and not approved,
      * only the owner will be able to view the project.
      *
-     * @param stdClass  $item
-     * @param integer $userId
+     * @param stdClass $item
+     * @param integer  $userId
      *
-     * @return boolean
+     * @return bool
      */
-    public function isRestricted($item, $userId)
+    public function isAllowed($item, $userId)
     {
         if (!is_object($item) or (!$item->id or !$item->user_id)) {
-            return true;
-        }
-        
-        // Check for the owner of the project.
-        // If it is not published and not approved, only the owner will be able to view the project.
-        if ((!$item->published or !$item->approved) and ((int)$item->user_id !== (int)$userId)) {
-            return true;
+            return (bool)Prism\Constants::NOT_ALLOWED;
         }
 
-        return false;
+        // Check for the owner of the project.
+        // If it is not published and not approved, only the owner will be able to view the project.
+        if ((!$item->published or !$item->approved) and ((int)$item->user_id === (int)$userId)) {
+            return (bool)Prism\Constants::ALLOWED;
+        }
+
+        return (bool)$item->params->get('access-view');
     }
 
     /**

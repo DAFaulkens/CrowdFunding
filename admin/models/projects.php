@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -35,9 +35,11 @@ class CrowdfundingModelProjects extends JModelList
                 'published', 'a.published',
                 'approved', 'a.approved',
                 'created', 'a.created',
-                'type_id', 'a.type_id',
-                'category', 'b.title',
-                'owner', 'd.name',
+                'type_id', 't.type',
+                'type', 't.title',
+                'category', 'c.title',
+                'owner', 'u.name',
+                'a.access'
             );
         }
 
@@ -67,12 +69,16 @@ class CrowdfundingModelProjects extends JModelList
         $this->setState('filter.featured', $value);
 
         // Load filter category.
-        $value = $this->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', 0, 'int');
-        $this->setState('filter.category_id', $value);
+        $value = $this->getUserStateFromRequest($this->context . '.filter.category', 'filter_category', 0, 'int');
+        $this->setState('filter.category', $value);
 
         // Load filter type.
-        $value = $this->getUserStateFromRequest($this->context . '.filter.type_id', 'filter_type_id', 0, 'int');
-        $this->setState('filter.type_id', $value);
+        $value = $this->getUserStateFromRequest($this->context . '.filter.type', 'filter_type', 0, 'int');
+        $this->setState('filter.type', $value);
+
+        // Get filter author
+        $value = $this->getUserStateFromRequest($this->context . '.filter.access', 'filter_access');
+        $this->setState('filter.access', $value);
 
         // List state information.
         parent::populateState('a.created', 'desc');
@@ -97,8 +103,9 @@ class CrowdfundingModelProjects extends JModelList
         $id .= ':' . $this->getState('filter.state');
         $id .= ':' . $this->getState('filter.approved');
         $id .= ':' . $this->getState('filter.featured');
-        $id .= ':' . $this->getState('filter.category_id');
-        $id .= ':' . $this->getState('filter.type_id');
+        $id .= ':' . $this->getState('filter.category');
+        $id .= ':' . $this->getState('filter.type');
+        $id .= ':' . $this->getState('filter.access');
 
         return parent::getStoreId($id);
     }
@@ -126,22 +133,26 @@ class CrowdfundingModelProjects extends JModelList
                 'a.id, a.title, a.goal, a.funded, a.funding_start, a.funding_end, a.user_id, ' .
                 'a.funding_days, a.ordering, a.created, a.catid, ROUND( (a.funded/a.goal) * 100, 1 ) AS funded_percents, ' .
                 'a.featured, a.published, a.approved, ' .
-                'b.title AS category, ' .
-                'c.title AS type, ' .
-                'd.name AS username,' .
+                'c.title AS category, ' .
+                't.title AS type, ' .
+                'u.name AS username,' .
                 $query->concatenate(array('a.id', 'a.alias'), ':') . ' AS slug, ' .
-                $query->concatenate(array('b.id', 'b.alias'), ':') . ' AS catslug'
+                $query->concatenate(array('c.id', 'c.alias'), ':') . ' AS catslug, ' .
+                'ag.title AS access_level'
             )
         );
         $query->from($db->quoteName('#__crowdf_projects', 'a'));
-        $query->leftJoin($db->quoteName('#__categories', 'b') . ' ON a.catid = b.id');
-        $query->leftJoin($db->quoteName('#__crowdf_types', 'c') . ' ON a.type_id = c.id');
-        $query->leftJoin($db->quoteName('#__users', 'd') . ' ON a.user_id = d.id');
+        $query->leftJoin($db->quoteName('#__categories', 'c') . ' ON a.catid = c.id');
+        $query->leftJoin($db->quoteName('#__crowdf_types', 't') . ' ON a.type_id = t.id');
+        $query->leftJoin($db->quoteName('#__users', 'u') . ' ON a.user_id = u.id');
+
+        // Join over the asset groups.
+        $query->leftJoin($db->quoteName('#__viewlevels', 'ag') .' ON ag.id = a.access');
 
         // Filter by category
-        $categoryId = (int)$this->getState('filter.category_id');
+        $categoryId = (int)$this->getState('filter.category');
         if ($categoryId > 0) {
-            $query->where('b.id = ' . (int)$categoryId);
+            $query->where('c.id = ' . (int)$categoryId);
         }
 
         // Filter by state
@@ -169,9 +180,22 @@ class CrowdfundingModelProjects extends JModelList
         }
 
         // Filter by type
-        $typeId = (int)$this->getState('filter.type_id');
+        $typeId = (int)$this->getState('filter.type');
         if ($typeId > 0) {
             $query->where('a.type_id = ' . (int)$typeId);
+        }
+
+        // Filter by access level.
+        $access = (int)$this->getState('filter.access');
+        if ($access > 0) {
+            $query->where('a.access = ' . (int)$access);
+        }
+
+        // Implement View Level Access
+        $user = JFactory::getUser();
+        if (!$user->authorise('core.admin')) {
+            $groups = implode(',', $user->getAuthorisedViewLevels());
+            $query->where('a.access IN (' . $groups . ')');
         }
 
         // Filter by search in title

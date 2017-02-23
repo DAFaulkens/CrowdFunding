@@ -1,6 +1,14 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6
+* Improved functionality for cropping images on project wizard.
+* Added crop functionality on step Story.
+* Added checks for changed fields in the forms of the project wizard. The system will show you a warning message if you try to leave the page but changes have not been submitted.
+* Added options for minimum and maximum amount that could be made in one transaction.
+* Implemented Joomla! ACL on front-end project wizard (Edit and Create campaign).
+* Implemented Access View option for campaigns.
+
 ###v2.5.3
 * It was made compatible with PHP 5.5.
 

@@ -3,16 +3,13 @@
  * @package      Crowdfunding
  * @subpackage   Statistics
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
 namespace Crowdfunding\Statistics;
 
-use Joomla\Registry\Registry;
 use Prism;
-use Crowdfunding\Amount;
-use Crowdfunding\Currency;
 
 defined('JPATH_PLATFORM') or die;
 
@@ -88,7 +85,9 @@ class Project
      * $amount = $statistics->getFullPeriodAmounts();
      * </code>
      *
-     * @return int
+     * @throws \RuntimeException
+     *
+     * @return array
      */
     public function getFullPeriodAmounts()
     {
@@ -108,9 +107,7 @@ class Project
             return array();
         }
 
-        $dataset = array();
-
-        $date  = new Prism\Date();
+        $date    = new Prism\Date();
 
         $timezone = $date->getTimezone();
 
@@ -130,28 +127,28 @@ class Project
         $results = (array)$this->db->loadAssocList();
 
         // Prepare data
-        $data = array();
+        $data_ = array();
         foreach ($results as $result) {
-            $date         = new \JDate($result['date']);
-            $index        = $date->format('d.m');
-            $data[$index] = $result;
+            $date          = new \JDate($result['date']);
+            $index         = $date->format('d.m');
+            $data_[$index] = $result;
         }
 
         /** @var $day \JDate */
+        $data = array();
         foreach ($period as $day) {
             $day->setTimezone($timezone);
 
+            $amount   = 0;
             $dayMonth = $day->format('d.m');
-            if (array_key_exists($dayMonth, $data)) {
-                $amount = $data[$dayMonth]['amount'];
-            } else {
-                $amount = 0;
+            if (array_key_exists($dayMonth, $data_)) {
+                $amount = $data_[$dayMonth]['amount'];
             }
 
-            $dataset[] = array('date' => $dayMonth, 'amount' => $amount);
+            $data[] = array('date' => $dayMonth, 'amount' => $amount);
         }
 
-        return $dataset;
+        return $data;
     }
 
     /**
@@ -164,64 +161,40 @@ class Project
      * $data = $statistics->getFundedAmount();
      * </code>
      *
-     * @return array
-     *
      * # Example result:
      * array(
-     *    "goal" = array("label" => "Goal", "amount" => 1000),
-     *    "funded" = array("label" => "Funded", "amount" => 100),
-     *    "remaining" = array("label" => "Remaining", "amount" => 900)
+     *    "goal" = 1000,
+     *    "funded" = 100,
+     *    "remaining" = 900
      * )
+     *
+     * @throws \RuntimeException
+     *
+     * @return array
      */
     public function getFundedAmount()
     {
-        $data = array();
-
         $query = $this->db->getQuery(true);
         $query
-            ->select('a.funded, a.goal')
+            ->select('a.goal, a.funded')
             ->from($this->db->quoteName('#__crowdf_projects', 'a'))
             ->where('a.id = ' . (int)$this->id);
 
         $this->db->setQuery($query);
-        $result = $this->db->loadObject();
-        /** @var $result \stdClass */
+        $result = (array)$this->db->loadAssoc();
 
-        if ($result->funded === null or $result->goal === null) {
-            return $data;
+        if (count($result) === 0) {
+            return $result;
         }
 
-        // Get currency
-        $params = \JComponentHelper::getParams('com_crowdfunding');
-        /** @var  $params Registry */
-
-        $currencyId = $params->get('project_currency');
-        $currency   = Currency::getInstance(\JFactory::getDbo(), $currencyId, $params);
-
-        $amount = new Amount();
-        $amount->setCurrency($currency);
-
-        $data['goal'] = array(
-            'label'  => \JText::sprintf('COM_CROWDFUNDINGFINANCE_GOAL_S', $amount->setValue($result->goal)->formatCurrency()),
-            'amount' => (float)$result->goal
-        );
-
-        $data['funded'] = array(
-            'label'  => \JText::sprintf('COM_CROWDFUNDINGFINANCE_FUNDED_S', $amount->setValue($result->funded)->formatCurrency()),
-            'amount' => (float)$result->funded
-        );
-
-        $remaining = (float)($result->goal - $result->funded);
+        // Remaining
+        $remaining = (float)($result['goal'] - $result['funded']);
         if ($remaining < 0) {
             $remaining = 0;
         }
 
-        $data['remaining'] = array(
-            'label'  => \JText::sprintf('COM_CROWDFUNDINGFINANCE_REMAINING_S', $amount->setValue($remaining)->formatCurrency()),
-            'amount' => $remaining
-        );
-
-        return $data;
+        $result['remaining'] = $remaining;
+        return $result;
     }
 
     /**

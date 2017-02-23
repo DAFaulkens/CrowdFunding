@@ -3,9 +3,11 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
+
+use Joomla\Utilities\ArrayHelper;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -256,10 +258,10 @@ abstract class CrowdfundingHelper
         $params = JComponentHelper::getParams(self::$extension);
         /** @var $params Joomla\Registry\Registry */
 
-        $folder = $path .DIRECTORY_SEPARATOR. $params->get('images_directory', 'images/crowdfunding');
+        $folder = $path .'/'. $params->get('images_directory', 'images/crowdfunding');
 
         if ((int)$userId > 0) {
-            $folder .= DIRECTORY_SEPARATOR . 'user' . (int)$userId;
+            $folder .= '/user' . (int)$userId;
         }
 
         return JPath::clean($folder, '/');
@@ -430,6 +432,13 @@ abstract class CrowdfundingHelper
         return $amount->parse();
     }
 
+    /**
+     * @param $items
+     *
+     * @return array
+     *
+     * @deprecated v2.5 Use Crowdfunding\Helper\PrepareCategoriesHelper
+     */
     public static function prepareCategories($items)
     {
         $result = array();
@@ -642,6 +651,8 @@ abstract class CrowdfundingHelper
      * @param string $layout
      *
      * @return bool
+     *
+     * @deprecated v2.6
      */
     public static function isAuthorized($userId, $item, $layout)
     {
@@ -708,5 +719,88 @@ abstract class CrowdfundingHelper
         }
 
         return $image;
+    }
+
+    /**
+     * Generates a link that will be used for sorting results.
+     *
+     * @param string $label
+     * @param string $type
+     * @param array  $options
+     *
+     * @throws \InvalidArgumentException
+     * @return string
+     */
+    public static function filterByLink($label, $type, array $options = array())
+    {
+        $html      = array();
+
+        $filter = ArrayHelper::getValue($options, 'filter');
+
+        $class  = ArrayHelper::getValue($options, 'class', '', 'string');
+        if ($class) {
+            $class = ' class="'.$class.'"';
+        }
+
+        switch ($type) {
+            case 'category':
+                $params = array(
+                    'filter_category' => rawurlencode($filter)
+                );
+
+                $html[] = '<span class="fa fa-folder"></span> ';
+                $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute($params)) . '" ' . $class . '>';
+                $html[] = $label;
+                $html[] = '</a>';
+                break;
+
+            case 'type':
+                $params = array(
+                    'filter_projecttype' => (int)$filter
+                );
+
+                $html[] = '<span class="fa fa-cube"></span> ';
+                $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute($params)) . '" ' . $class . '>';
+                $html[] = $label;
+                $html[] = '</a>';
+
+                break;
+
+            case 'country':
+                $params = array(
+                    'filter_country' => rawurlencode($filter)
+                );
+
+                $html[] = '<span class="fa fa-globe"></span> ';
+                $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute($params)) . '" ' . $class . '>';
+                $html[] = $label;
+                $html[] = '</a>';
+
+                break;
+
+            case 'location':
+                $params = array(
+                    'filter_location' => (int)$filter
+                );
+
+                $html[] = '<span class="fa fa-map-marker"></span> ';
+                $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute($params)) . '" ' . $class . '>';
+                $html[] = $label;
+                $html[] = '</a>';
+                break;
+
+            case 'region':
+                $params = array(
+                    'filter_region' => rawurlencode($filter)
+                );
+
+                $html[] = '<span class="fa fa-map-marker"></span> ';
+                $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute($params)) . '" ' . $class . '>';
+                $html[] = $label;
+                $html[] = '</a>';
+                break;
+        }
+
+        return implode("\n", $html);
     }
 }

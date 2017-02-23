@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\String\StringHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -55,14 +57,22 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected $paymentAmount;
     protected $option;
     protected $container;
-
     protected $paymentSessionContext;
-    protected $paymentSession;
-    
-    protected $wizardType;
+    protected $paymentSessionLocal;
     protected $event;
-    protected $secondStepTask;
-    protected $fourSteps;
+
+    protected $nextStepTask;
+    protected $nextStepLayout;
+    protected $nextStepLink;
+    protected $nextStepAllowed;
+
+    protected $wizardSteps = array();
+    protected $stepContext;
+
+    /**
+     * @var JEventDispatcher
+     */
+    protected $dispatcher;
 
     protected $pageclass_sfx;
 
@@ -70,6 +80,11 @@ class CrowdfundingViewBacking extends JViewLegacy
      * @var JApplicationSite
      */
     protected $app;
+
+    /**
+     * @var JUser
+     */
+    protected $user;
 
     public function display($tpl = null)
     {
@@ -81,7 +96,6 @@ class CrowdfundingViewBacking extends JViewLegacy
 
         // Get params
         $this->params = $this->state->get('params');
-
         if (!$this->item) {
             $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), 'notice');
             $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false));
@@ -93,7 +107,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->prepareMoneyFormatter($this->container, $this->params);
 
         // Create an object that will contain the data during the payment process.
-        $this->paymentSessionContext = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT . $this->item->id;
+        $this->paymentSessionContext = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$this->item->id;
         $paymentSessionLocal         = $this->app->getUserState($this->paymentSessionContext);
 
         // Create payment session object.
@@ -101,35 +115,36 @@ class CrowdfundingViewBacking extends JViewLegacy
             $paymentSessionLocal = $this->createPaymentSession();
         }
 
-        // Images
-        $this->imageFolder = $this->params->get('images_directory', 'images/crowdfunding');
+        // Prepare media folder
+        $this->imageFolder = CrowdfundingHelper::getImagesFolder();
 
-        // Get money formatter.
+        // Prepare money formatter.
         $this->money    = $this->getMoneyFormatter($this->container, $this->params);
         $this->currency = $this->money->getCurrency();
 
         // Set a link that points to project page
         $filter    = JFilterInput::getInstance();
-        $host      = JUri::getInstance()->toString(array('scheme', 'host'));
-        $host      = $filter->clean($host);
-
-        $this->item->link =  $host . JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($this->item->slug, $this->item->catslug), false);
+        $host      = $filter->clean(JUri::getInstance()->toString(array('scheme', 'host')));
 
         // Set a link to image
+        $this->item->link =  $host . JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($this->item->slug, $this->item->catslug), false);
         $this->item->link_image = $host . '/' . $this->imageFolder . '/' . $this->item->image;
 
+        $this->user = JFactory::getUser();
         // Get wizard type
-        $this->wizardType = $this->params->get('backing_wizard_type', 'three_steps');
-        $this->fourSteps  = (strcmp('four_steps', $this->wizardType) === 0);
+//        $this->wizardType = $this->params->get('backing_wizard_type', 'three_steps');
+//        $this->fourSteps  = (strcmp('four_steps', $this->wizardType) === 0);
 
-        // Import 'crowdfundingpayment' plugins.
         JPluginHelper::importPlugin('crowdfundingpayment');
+        $this->dispatcher = JEventDispatcher::getInstance();
 
-        $this->layout = $this->getLayout();
+        $this->prepareWizardSteps();
+        $this->prepareLayout();
+        $this->prepareNextStep();
 
-        switch ($this->layout) {
-            case 'step2': // Step 2 on wizard in four steps.
-                $this->prepareStep2();
+        switch ($this->getLayout()) {
+            case 'step': // Step 2 on wizard in four steps.
+                $this->prepareStep();
                 break;
 
             case 'payment': // Step 2
@@ -159,13 +174,14 @@ class CrowdfundingViewBacking extends JViewLegacy
             'layout'          => $this->layout,
             'item'            => $this->item,
             'paymentSession'  => $paymentSessionLocal,
-            'rewards_enabled' => $this->rewardsEnabled
+            'rewards_enabled' => $this->rewardsEnabled,
+            'wizard_steps'    => $this->wizardSteps
         ));
 
         $this->prepareDebugMode($paymentSessionLocal);
         $this->prepareDocument();
 
-        $this->paymentSession = $paymentSessionLocal;
+        $this->paymentSessionLocal = $paymentSessionLocal;
 
         // Store the new values of the payment process to the user session.
         $this->app->setUserState($this->paymentSessionContext, $paymentSessionLocal);
@@ -175,17 +191,25 @@ class CrowdfundingViewBacking extends JViewLegacy
 
     /**
      * This method displays a content from a Crowdfunding Plugin.
+     *
+     * @throws \InvalidArgumentException
      */
-    protected function prepareStep2()
+    protected function prepareStep()
     {
-        // Trigger the event on step 2 and display the content.
-        $dispatcher = JEventDispatcher::getInstance();
-        $results    = $dispatcher->trigger('onPaymentExtras', array('com_crowdfunding.payment.step2', &$this->item, &$this->params));
+        $nextStepParams = new JData([
+            'task'    => $this->nextStepTask,
+            'layout'  => $this->nextStepLayout,
+            'link'    => $this->nextStepLink,
+            'allowed' => $this->nextStepAllowed
+        ]);
+
+        // Trigger the event on a step and display the content.
+        $context    = 'com_crowdfunding.payment.step.'. $this->stepContext;
+        $results    = $this->dispatcher->trigger('onPreparePaymentStep', array($context, &$this->item, &$nextStepParams, &$this->params));
 
         $result                 = (string)array_pop($results);
-
         $this->event            = new stdClass();
-        $this->event->onDisplay = JString::trim($result);
+        $this->event->onDisplay = StringHelper::trim($result);
     }
 
     protected function prepareRewards($paymentSession)
@@ -221,12 +245,6 @@ class CrowdfundingViewBacking extends JViewLegacy
             }
         }
 
-        // Set the next task.
-        $this->secondStepTask = 'backing.process';
-        if ($this->fourSteps) {
-            $this->secondStepTask = 'backing.step2';
-        }
-
         return $paymentSession;
     }
 
@@ -235,16 +253,23 @@ class CrowdfundingViewBacking extends JViewLegacy
         // If missing the flag "step1", redirect to first step.
         if (!$paymentSession->step1) {
             $this->returnToStep1($paymentSession, JText::_('COM_CROWDFUNDING_ERROR_INVALID_AMOUNT'));
+            return $this->createPaymentSession();
+        }
+
+        // Authorise the user
+        if (!$this->user->authorise('crowdfunding.donate', 'com_crowdfunding')) {
+            $this->returnToStep1($paymentSession, JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS'));
+            return $this->createPaymentSession();
         }
 
         // Check for both user states. The user must have only one state - registered user or anonymous user.
-        $userId  = (int)JFactory::getUser()->get('id');
+        $userId  = (int)$this->user->get('id');
         $aUserId = $this->app->getUserState('auser_id');
 
         if (($userId > 0 and strlen($aUserId) > 0) or ($userId === 0 and !$aUserId)) {
             // Reset anonymous hash user ID and redirect to first step.
             $this->app->setUserState('auser_id', '');
-            $this->returnToStep1($paymentSession);
+//            $this->returnToStep1($paymentSession);
         }
 
         if (!$this->item->days_left) {
@@ -293,7 +318,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         // onBeforePaymentAuthorize
         JPluginHelper::importPlugin('crowdfundingpayment');
         $dispatcher = JEventDispatcher::getInstance();
-        $results    = (array)$dispatcher->trigger('onBeforePaymentAuthorize', array('com_crowdfunding.before.payment.authorize', &$item, &$this->money, &$this->params));
+        $results    = (array)$dispatcher->trigger('onBeforePaymentAuthorize', array('com_crowdfunding.before.payment.authorize', &$item, &$this->params));
 
         if (count($results) > 0) {
             $this->item->event->onBeforePaymentAuthorize = trim(implode("\n", $results));
@@ -334,6 +359,86 @@ class CrowdfundingViewBacking extends JViewLegacy
 
         // Initialize the payment session creating new one.
         return $this->createPaymentSession();
+    }
+
+    protected function prepareWizardSteps()
+    {
+        // onPrepareWizardSteps
+        $results    = (array)$this->dispatcher->trigger('onPrepareWizardSteps', array('com_crowdfunding.payment.wizard'));
+
+        if (count($results) > 0) {
+            foreach ($results as $result) {
+                $result['layout']    = 'step.'.$result['context'];
+                $this->wizardSteps[] = $result;
+            }
+        }
+        return $results;
+    }
+
+    protected function prepareLayout()
+    {
+        $context       = '';
+        $this->layout  = $this->getLayout();
+
+        if (strpos($this->layout, 'step.') === 0) {
+            list($layout, $context) = explode('.', $this->layout);
+            $this->setLayout($layout);
+        }
+
+        $this->stepContext = $context;
+    }
+
+    protected function prepareNextStep()
+    {
+        $this->nextStepTask   = 'backing.process';
+        $this->nextStepLayout = 'payment';
+
+        if (count($this->wizardSteps) > 0) {
+            $nextStepLayout = '';
+            $lastStep       = end($this->wizardSteps);
+
+            // If it is default layout, get first custom step as next one.
+            if (strcmp('default', $this->layout) === 0) {
+                $nextStep       = reset($this->wizardSteps);
+                $nextStepLayout = $nextStep['layout'];
+
+                if (is_array($nextStep)) {
+                    if (array_key_exists('task', $nextStep)) {
+                        $this->nextStepTask = $nextStep['task'];
+                    }
+
+                    if (array_key_exists('allowed', $nextStep)) {
+                        $this->nextStepAllowed = (bool)$nextStep['allowed'];
+                    }
+                }
+
+            // If it is the last custom step, set the layout of the next step 'payment'.
+            } elseif (strcmp($lastStep['layout'], $this->layout) === 0) {
+                $nextStepLayout = 'payment';
+            } else {
+                foreach ($this->wizardSteps as $step) {
+                    if (strcmp($step['layout'], $this->layout) === 0) {
+                        $nextStep       = current($this->wizardSteps);
+                        $nextStepLayout = $nextStep['layout'];
+
+                        if (is_array($nextStep)) {
+                            if (array_key_exists('task', $nextStep)) {
+                                $this->nextStepTask = $nextStep['task'];
+                            }
+
+                            if (array_key_exists('allowed', $nextStep)) {
+                                $this->nextStepAllowed = (bool)$nextStep['allowed'];
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+//            $this->nextStepTask   = 'backing.step';
+            $this->nextStepLayout = $nextStepLayout;
+            $this->nextStepLink   = JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug, $nextStepLayout));
+        }
     }
 
     /**
@@ -445,7 +550,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $paymentSession->step1 = false;
         $this->app->setUserState($this->paymentSessionContext, $paymentSession);
 
-        if (JString::strlen($message) > 0) {
+        if ($message !== '') {
             $this->app->enqueueMessage($message, 'notice');
         }
         $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug), false));
@@ -459,6 +564,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $paymentSession->amount     = 0.00;
         $paymentSession->rewardId   = 0;
         $paymentSession->session_id = '';
+        $paymentSession->terms      = 0;
 
         return $paymentSession;
     }

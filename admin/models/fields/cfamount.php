@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -42,6 +42,9 @@ class JFormFieldCfAmount extends JFormField
         $class     = (!empty($this->element['class'])) ? ' class="' . (string)$this->element['class'] . '"' : '';
         $required  = $this->required ? ' required aria-required="true"' : '';
 
+        $format    = $this->element['format'] ? (string)$this->element['format'] : '1';
+        $format    = (bool)$format;
+
         $cssLayout = (!empty($this->element['css_layout'])) ? (string)$this->element['css_layout'] : 'Bootstrap 2';
 
         // Initialize JavaScript field attributes.
@@ -51,13 +54,17 @@ class JFormFieldCfAmount extends JFormField
         /** @var  $params Joomla\Registry\Registry */
 
         // Get the currency and money formatter from the container.
-        $container        = Prism\Container::getContainer();
-        $containerHelper  = new Crowdfunding\Container\Helper();
+        $container       = Prism\Container::getContainer();
+        $containerHelper = new Crowdfunding\Container\Helper();
 
-        $moneyFormatter   = $containerHelper->fetchMoneyFormatter($container, $params);
-        $moneyFormatter->setAmount($this->value);
+        $moneyFormatter = $containerHelper->fetchMoneyFormatter($container, $params);
+        $currency       = $moneyFormatter->getCurrency();
 
-        $currency         = $moneyFormatter->getCurrency();
+        // Format amount.
+        $formattedAmount = $this->value;
+        if ($format and $this->value > 0) {
+            $formattedAmount = $moneyFormatter->setAmount($this->value)->format();
+        }
 
         $html   = array();
         if ($cssLayout === 'Bootstrap 3') {
@@ -67,7 +74,7 @@ class JFormFieldCfAmount extends JFormField
                 $html[] = '<div class="input-group-addon">' . $currency->getSymbol() . '</div>';
             }
 
-            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format() . '"' . $class . $size . $disabled . $readonly . $maxLength . $onchange . $required . '/>';
+            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $formattedAmount . '"' . $class . $size . $disabled . $readonly . $maxLength . $onchange . $required . '/>';
 
             // Prepend
             $html[] = '<div class="input-group-addon">' . $currency->getCode() . '</div>';
@@ -82,7 +89,7 @@ class JFormFieldCfAmount extends JFormField
                 $html[] = '<div class="input-append">';
             }
 
-            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format() . '"' . $class . $size . $disabled . $readonly . $maxLength . $onchange . $required . '/>';
+            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $formattedAmount . '"' . $class . $size . $disabled . $readonly . $maxLength . $onchange . $required . '/>';
 
             // Appended
             $html[] = '<span class="add-on">' . $currency->getCode() . '</span></div>';

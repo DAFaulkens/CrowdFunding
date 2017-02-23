@@ -17,13 +17,9 @@ defined('_JEXEC') or die;
 	
 	<div class="row">
 		<div class="col-md-12">
-    		<?php 
-    		  if(strcmp('three_steps', $this->wizardType) === 0) {
-        		$layout      = new JLayoutFile('payment_wizard');
-    		  } else {
-        		$layout      = new JLayoutFile('payment_wizard_four_steps');
-    		  }
-        	  echo $layout->render($this->layoutData);
+    		<?php
+				$layout      = new JLayoutFile('payment_wizard');
+        	  	echo $layout->render($this->layoutData);
     		?>	
     	</div>
 	</div>
@@ -35,6 +31,7 @@ defined('_JEXEC') or die;
                 <div class="panel-body">
                     <form method="post" action="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug));?>" class="mt-0" id="form-pledge" autocomplete="off">
     				<?php echo JHtml::_('crowdfunding.inputAmount', $this->rewardAmount, $this->money, array('name'=>'amount', 'id'=>'js-current-amount')); ?>
+					<?php echo JHtml::_('crowdfunding.minMaxAllowedAmount', $this->params->get('backing_minimum_amount'), $this->params->get('backing_maximum_amount'), $this->money); ?>
     				<?php if($this->params->get('backing_terms', 0)) {
     				    $termsUrl = $this->params->get('backing_terms_url', '');
     				?>
@@ -47,17 +44,18 @@ defined('_JEXEC') or die;
                     <?php }?>
     				<input type="hidden" name="id" value="<?php echo $this->item->id; ?>" />
     				<input type="hidden" name="rid" value="<?php echo $this->rewardId; ?>" id="js-reward-id" />
-    				<input type="hidden" name="task" value="<?php echo $this->secondStepTask; ?>" />
+    				<input type="hidden" name="task" value="<?php echo $this->nextStepTask; ?>" />
+    				<input type="hidden" name="layout" value="<?php echo $this->nextStepLayout; ?>" />
     				<?php echo JHtml::_('form.token'); ?>
     				
     				<button type="submit" class="btn btn-primary" <?php echo $this->disabledButton;?>>
-                        <?php echo JText::_('COM_CROWDFUNDING_CONTINUE');?>
+						<span class="fa fa-check"></span>
+                        <?php echo JText::_('COM_CROWDFUNDING_SUBMIT_CONTINUE');?>
                     </button>
                     </form>
                 </div>
             </div>
 
-			
 			<?php if($this->rewardsEnabled) {?>
 			<div class="cfrewards">
 			    <div class="reward_title pull-center"><?php echo JText::_('COM_CROWDFUNDING_REWARDS');?></div>

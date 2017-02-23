@@ -10,9 +10,7 @@
 // no direct access
 defined('_JEXEC') or die;
 
-JLoader::register('CrowdfundingModelProjectItem', CROWDFUNDING_PATH_COMPONENT_SITE . '/models/projectitem.php');
-
-class CrowdfundingModelManager extends CrowdfundingModelProjectItem
+class CrowdfundingModelManager extends CrowdfundingModelProject
 {
     /**
      * Return information about project rewards and their receivers.

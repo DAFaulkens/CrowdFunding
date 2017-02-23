@@ -46,7 +46,7 @@
                label="COM_CROWDFUNDING_DATETIME"
                description="COM_CROWDFUNDING_TXN_DATETIME_DESC"
                filter="trim"
-               hint="2016-02-29 18:45:02"
+               hint="2017-02-29 18:45:02"
         />
 
         <field name="service_provider" type="text"

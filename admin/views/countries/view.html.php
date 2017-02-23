@@ -3,7 +3,7 @@
  * @package      Crowdfunding
  * @subpackage   Components
  * @author       Todor Iliev
- * @copyright    Copyright (C) 2016 Todor Iliev <todor@itprism.com>. All rights reserved.
+ * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
@@ -34,6 +34,8 @@ class CrowdfundingViewCountries extends JViewLegacy
     protected $sortFields;
 
     protected $sidebar;
+    
+    protected $regionsNumber;
 
     public function display($tpl = null)
     {
@@ -43,8 +45,11 @@ class CrowdfundingViewCountries extends JViewLegacy
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
 
-        // Add submenu
-        CrowdfundingHelper::addSubmenu($this->getName());
+        $countryCodes = Joomla\Utilities\ArrayHelper::getColumn($this->items, 'code');
+
+        // Get number of rewards.
+        $countryStatistic    = new Crowdfunding\Country\Statistic\Counter(JFactory::getDbo());
+        $this->regionsNumber = $countryStatistic->countRegions($countryCodes);
 
         // Prepare sorting data
         $this->prepareSorting();
@@ -81,7 +86,6 @@ class CrowdfundingViewCountries extends JViewLegacy
             'a.timezone'  => JText::_('COM_CROWDFUNDING_COUNTRY_TIMEZONE'),
             'a.id'        => JText::_('JGRID_HEADING_ID')
         );
-
     }
 
     /**
@@ -89,6 +93,8 @@ class CrowdfundingViewCountries extends JViewLegacy
      */
     protected function addSidebar()
     {
+        CrowdfundingHelper::addSubmenu($this->getName());
+
         $this->sidebar = JHtmlSidebar::render();
     }
 
@@ -110,11 +116,11 @@ class CrowdfundingViewCountries extends JViewLegacy
 
         // Import
         $link = JRoute::_('index.php?option=com_crowdfunding&view=import&type=countries');
-        $bar->appendButton('Link', 'upload', JText::_('COM_CROWDFUNDING_IMPORT'), $link);
+        $bar->appendButton('Link', 'upload', JText::_('COM_CROWDFUNDING_IMPORT_COUNTRIES'), $link);
 
-        // Export
-        $link = JRoute::_('index.php?option=com_crowdfunding&task=export.download&format=raw&type=countries');
-        $bar->appendButton('Link', 'download', JText::_('COM_CROWDFUNDING_EXPORT'), $link);
+        // Import Regions
+        $link = JRoute::_('index.php?option=com_crowdfunding&view=import&type=regions');
+        $bar->appendButton('Link', 'upload', JText::_('COM_CROWDFUNDING_IMPORT_REGIONS'), $link);
 
         JToolbarHelper::divider();
         JToolbarHelper::deleteList(JText::_('COM_CROWDFUNDING_DELETE_ITEMS_QUESTION'), 'countries.delete');
@@ -137,6 +143,6 @@ class CrowdfundingViewCountries extends JViewLegacy
 
         JHtml::_('formbehavior.chosen', 'select');
 
-        JHtml::_('prism.ui.joomlaList');
+        JHtml::_('Prism.ui.joomlaList');
     }
 }
