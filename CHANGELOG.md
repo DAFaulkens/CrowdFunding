@@ -1,6 +1,9 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6.1
+* Fixed an issue with payment process.
+
 ###v2.6
 * Improved functionality for cropping images on project wizard.
 * Added crop functionality on step Story.

@@ -4,7 +4,7 @@
 
         <field name="username" type="text"
                labelclass="col-sm-2 control-label"
-               class="validate-username col-sm-10 form-control"
+               class="validate-username col-sm-10"
                filter="username"
                label="COM_CROWDFUNDING_USERNAME"
                size="25"
@@ -14,7 +14,7 @@
 
         <field name="password" type="password"
                labelclass="col-sm-2 control-label"
-               class="validate-password col-sm-10 form-control"
+               class="validate-password col-sm-10"
                required="true"
                filter="raw"
                label="JGLOBAL_PASSWORD"

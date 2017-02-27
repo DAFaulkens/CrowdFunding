@@ -238,7 +238,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             // Get the result, that comes from the plugin.
             if (is_array($results) and count($results) > 0) {
                 foreach ($results as $result) {
-                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
+                    if (is_object($result) and ($result instanceof PaymentResult)) {
                         $paymentResult = $result;
                         $redirectUrl   = $result->redirectUrl ?: null;
                         $message       = $result->message ?: null;
