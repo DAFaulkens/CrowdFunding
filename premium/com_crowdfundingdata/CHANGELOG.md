@@ -1,6 +1,9 @@
 Crowdfunding Data Changelog
 ===============================
 
+###v2.4.1
+* Fixed an issue in the plugin CrowdfundingPayment - Data.
+
 ###v2.4
 * It was made compatible with Crowdfunding v2.6.
 

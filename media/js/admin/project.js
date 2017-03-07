@@ -74,7 +74,5 @@ jQuery(document).ready(function() {
         onSelect: function(item) {
             jQuery("#jform_location_id").attr("value", item.value);
         }
-
     });
-	
 });

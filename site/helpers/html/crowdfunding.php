@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -37,17 +39,84 @@ abstract class JHtmlCrowdfunding
     public static function approved($value, $hint = true, $iconOk = 'fa fa-check-circle', $iconRemove = 'fa fa-times-circle')
     {
         if (!$hint) {
-            $html = '<span class="{ICON}" aria-hidden="true"></span>';
+            $html = '<span class="{LABEL}"><span class="{ICON}" aria-hidden="true"></span></span>';
         } else {
             $title = (!$value) ? ' title="'.JText::_('COM_CROWDFUNDING_NOTAPPROVED').'"' : ' title="'.JText::_('COM_CROWDFUNDING_APPROVED').'"';
-            $html  = '<span class="{ICON} hasTooltip cursor-pointer" aria-hidden="true"'. $title .'></span>';
+            $html  = '<span class="{LABEL}"><span class="{ICON} hasTooltip cursor-pointer" aria-hidden="true"'. $title .'></span></span>';
         }
 
         if ((int)$value === Prism\Constants::PUBLISHED) {
-            $html = str_replace('{ICON}', $iconOk, $html);
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconOk, 'label label-success'), $html);
         } else {// Unpublished
-            $html = str_replace('{ICON}', $iconRemove, $html);
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconRemove, 'label label-danger'), $html);
         }
+
+        return $html;
+    }
+
+    /**
+     * Display an icon for the current state of an unit.
+     *
+     * @param int $value
+     * @param array $options
+     *
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function unitState($value, array $options = array())
+    {
+        $value      = (int)$value;
+        $hint       = ArrayHelper::getValue($options, 'hint', false, 'bool');
+        $iconTrue   = ArrayHelper::getValue($options, 'icon_true', 'fa fa-check-circle');
+        $iconFalse  = ArrayHelper::getValue($options, 'icon_false', 'fa fa-times-circle');
+        $titleTrue  = ArrayHelper::getValue($options, 'title_true');
+        $titleFalse = ArrayHelper::getValue($options, 'title_false');
+
+        if (!$hint) {
+            $html = '<span class="{LABEL}"><span class="{ICON}" aria-hidden="true"></span></span>';
+        } else {
+            $title = $value ? ' title="'.$titleTrue.'"' : ' title="'.$titleFalse.'"';
+            $html  = '<span class="{LABEL}"><span class="{ICON} hasTooltip cursor-pointer" aria-hidden="true"'. $title .'></span></span>';
+        }
+
+        if ($value === Prism\Constants::PUBLISHED) {
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconTrue, 'label label-success'), $html);
+        } else {// Unpublished
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconFalse, 'label label-danger'), $html);
+        }
+
+        return $html;
+    }
+
+    /**
+     * Display an icon for the current state of an unit.
+     *
+     * @param int $value
+     * @param array $options
+     *
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function featured($value, array $options = array())
+    {
+        $value      = (int)$value;
+        if (!$value) {
+            return '';
+        }
+
+        $hint   = ArrayHelper::getValue($options, 'hint', false, 'bool');
+        $icon   = ArrayHelper::getValue($options, 'icon', 'fa fa-star');
+        $title  = ArrayHelper::getValue($options, 'title');
+
+        if (!$hint) {
+            $html = '<span class="{LABEL}"><span class="{ICON}" aria-hidden="true"></span></span>';
+        } else {
+            $html = '<span class="{LABEL}"><span class="{ICON} hasTooltip cursor-pointer" aria-hidden="true" title="'.$title.'"></span></span>';
+        }
+
+        $html = str_replace(array('{ICON}', '{LABEL}'), array($icon, ' label label-warning'), $html);
 
         return $html;
     }
@@ -289,7 +358,7 @@ abstract class JHtmlCrowdfunding
     {
         if ($value > 100) {
             $value = 100;
-        };
+        }
 
         return $value;
     }

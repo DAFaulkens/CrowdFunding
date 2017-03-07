@@ -42,8 +42,7 @@ echo $layout->render($this->layoutData);
                 </a>
 
                 <span class="fa fa-spinner fa-spin" id="js-uploader-loader" style="display: none;" aria-hidden="true"></span>
-
-                <span class="help-block"><?php echo JText::sprintf('COM_CROWDFUNDING_FIELD_IMAGE_HELP_BLOCK', $this->pWidth, $this->pHeight);?></span>
+                <span class="help-block"><?php echo JText::sprintf('COM_CROWDFUNDING_FIELD_IMAGE_HELP_BLOCK_S', $this->pWidth, $this->pHeight);?></span>
             </div>
 
             <div class="mtb-20" style="display: <?php echo $this->imageStyleDisplay; ?>" id="js-wizard-image-wrapper">

@@ -25,7 +25,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelStory    The model.
+     * @return   CrowdfundingModelStory    The model.
      * @since    1.5
      */
     public function getModel($name = 'Story', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
@@ -72,7 +72,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         }
 
         $file = $this->input->files->get('pitch_image');
-        if (!$file) {
+        if (!$file or empty($file['name'])) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
                 ->setText(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
@@ -85,25 +85,44 @@ class CrowdfundingControllerStory extends JControllerLegacy
         $fileDataResponse  = null;
 
         try {
-            if (!empty($file['name'])) {
-                $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
+            $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
 
-                $model    = $this->getModel();
-                /** @var $model CrowdfundingModelStory */
+            $model    = $this->getModel();
+            /** @var $model CrowdfundingModelStory */
 
-                $fileData = $model->uploadImage($file, $temporaryFolder);
+            $fileData = $model->uploadImage($file, $temporaryFolder);
 
-                if (array_key_exists('filename', $fileData) and $fileData['filename'] !== '') {
-                    $filename = basename($fileData['filename']);
-                    $fileUrl  = JUri::base() . CrowdfundingHelper::getTemporaryImagesFolderUri() . '/' . $filename;
-                    $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, $filename);
+            if (array_key_exists('filename', $fileData) and $fileData['filename'] !== '') {
+                $filename = basename($fileData['filename']);
+                $fileUrl  = JUri::base() . CrowdfundingHelper::getTemporaryImagesFolderUri() . '/' . $filename;
+                $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, $filename);
 
-                    $fileDataResponse = array(
-                        'url'    => $fileUrl,
-                        'width'  => $fileData['attributes']['width'],
-                        'height' => $fileData['attributes']['height']
-                    );
-                }
+                $fileDataResponse = array(
+                    'url'    => $fileUrl,
+                    'width'  => $fileData['attributes']['width'],
+                    'height' => $fileData['attributes']['height']
+                );
+            }
+
+            if ($fileDataResponse === null) {
+                $response
+                    ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
+                    ->setText(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
+                    ->failure();
+
+                echo $response;
+                $app->close();
+            }
+
+            $params = JComponentHelper::getParams('com_crowdfunding');
+            if ($fileDataResponse['width'] < $params->get('pitch_image_width', 600) or $fileDataResponse['height'] < $params->get('pitch_image_height', 400)) {
+                $response
+                    ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
+                    ->setText(JText::sprintf('COM_CROWDFUNDING_ERROR_PICTURE_SIZE_S', $params->get('pitch_image_width', 600), $params->get('pitch_image_height', 400)))
+                    ->failure();
+
+                echo $response;
+                $app->close();
             }
 
         } catch (InvalidArgumentException $e) {

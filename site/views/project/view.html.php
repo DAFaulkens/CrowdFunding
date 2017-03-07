@@ -65,6 +65,9 @@ class CrowdfundingViewProject extends JViewLegacy
     protected $images;
     protected $rewards;
     protected $types;
+    protected $goal;
+    protected $raised;
+    protected $showStatistics = false;
     protected $options = array();
 
     protected $imageWidth;
@@ -460,6 +463,14 @@ class CrowdfundingViewProject extends JViewLegacy
             'funders'  => $statistics->getTransactionsNumber(),
         );
 
+        $this->goal    = $this->money->setAmount($this->item->goal)->formatCurrency();
+        $this->raised  = $this->money->setAmount($this->item->funded)->formatCurrency();
+
+        $campaignValidator = new Crowdfunding\Validator\Project\LaunchedCampaign($this->item->funding_start, $this->item->funding_end);
+        if ($campaignValidator->isValid()) {
+            $this->showStatistics = true;
+        }
+
         // Get rewards
         $this->rewards = new Crowdfunding\Rewards(JFactory::getDbo());
         $this->rewards->load(array('project_id' => $this->item->id));
@@ -533,11 +544,11 @@ class CrowdfundingViewProject extends JViewLegacy
         JHtml::_('jquery.framework');
 
         // Scripts
-        if ($this->userId) {
+        if ((int)$this->userId > 0) {
             JHtml::_('behavior.core');
             JHtml::_('behavior.keepalive');
 
-            if ($this->params->get('enable_chosen', 1)) {
+            if ((bool)$this->params->get('enable_chosen', 1)) {
                 JHtml::_('formbehavior.chosen', '.cf-advanced-select');
             }
         }

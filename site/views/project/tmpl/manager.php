@@ -16,15 +16,12 @@ if (strcmp('five_steps', $this->wizardType) === 0) {
     $layout      = new JLayoutFile('project_wizard_six_steps');
 }
 echo $layout->render($this->layoutData);
+
+// Prepare the value that I am going to display
+$progressBarFundedPercent = JHtml::_('crowdfunding.funded', $this->item->fundedPercent);
 ?>
 <div class="row">
     <div class="col-md-4">
-        <?php
-            $this->raised = $this->money->setAmount($this->item->funded)->formatCurrency();
-
-            // Prepare the value that I am going to display
-            $fundedPercents = JHtml::_('crowdfunding.funded', $this->item->fundedPercent);
-            ?>
             <div class="thumbnail cf-project">
                 <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($this->item->slug, $this->item->catslug)); ?>">
                     <?php if (!$this->item->image) { ?>
@@ -44,7 +41,7 @@ echo $layout->render($this->layoutData);
                 </div>
 
                 <div class="cf-caption-info absolute-bottom">
-                    <?php echo JHtml::_('crowdfunding.progressbar', $fundedPercents, $this->item->daysLeft, $this->item->funding_type, false, $this->item->funding_start); ?>
+                    <?php echo JHtml::_('crowdfunding.progressbar', $progressBarFundedPercent, $this->item->daysLeft, $this->item->funding_type, false, $this->item->funding_start); ?>
                     <div class="row-fluid">
                         <div class="col-md-4 hidden-xs">
                             <div class="bolder"><?php echo $this->item->fundedPercent; ?>%</div>
@@ -60,7 +57,6 @@ echo $layout->render($this->layoutData);
                         </div>
                     </div>
                 </div>
-
             </div>
     </div>
 
@@ -69,6 +65,7 @@ echo $layout->render($this->layoutData);
     </div>
 
     <div class="col-md-4">
+        <?php echo $this->loadTemplate('basicinfo'); ?>
         <?php echo $this->loadTemplate('settings'); ?>
     </div>
 </div>
@@ -81,8 +78,10 @@ echo $layout->render($this->layoutData);
 </div>
 <?php } ?>
 
+<?php if ($this->showStatistics) { ?>
 <div class="row">
     <div class="col-md-12">
         <?php echo $this->loadTemplate('statistics'); ?>
     </div>
 </div>
+<?php } ?>

@@ -217,7 +217,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
         $paymentResult  = null;
         $redirectUrl    = null;
         $message        = null;
-        $triggerEvents  = false;
+        $triggerEvents  = array();
 
         $model       = $this->getModel();
 

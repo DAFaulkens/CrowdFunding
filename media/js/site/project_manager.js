@@ -122,6 +122,13 @@
                                         return data.tooltips[tooltipItem.index];
                                     }
                                 }
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero:true
+                                    }
+                                }]
                             }
                         }
 

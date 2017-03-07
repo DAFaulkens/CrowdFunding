@@ -28,7 +28,7 @@ foreach ($wizardSteps as $step) {
 $steps['payment'] = false;
 $steps['share']   = false;
 
-// Find active step.
+// Prepare active steps.
 foreach ($steps as $step => $value) {
     if (strcmp($displayData->layout, $step) === 0) {
         $steps[$step] = true;
@@ -52,14 +52,16 @@ foreach ($steps as $step => $value) {
 
                 <?php
                 $i = 2;
-                foreach ($wizardSteps as $step) {?>
+                foreach ($wizardSteps as $step) {
+                    $isActive = array_key_exists('is_active', $step) ? (bool)$step['is_active'] : false;
+                    $url =  $isActive ? JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug, $step['layout'])) : 'javascript: void(0);';
+                ?>
                 <li <?php echo $steps[$step['layout']] ? 'class="active"' : ''; ?>>
-                    <a href="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($displayData->item->slug, $displayData->item->catslug, $step['layout'])); ?>">
+                    <a href="<?php echo $url; ?>">
                         (<?php echo $i; ?>) <?php echo htmlspecialchars($step['title'], ENT_COMPAT, 'UTF-8'); ?>
                     </a>
                 </li>
-                <?php
-                    $i++;
+                <?php $i++;
                 } ?>
 
                 <li <?php echo $steps['payment'] ? 'class="active"' : ''; ?>>

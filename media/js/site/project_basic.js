@@ -135,23 +135,32 @@
             this.initCloseModal();
         },
 
-        changeCropperSize: function(fileData) {
+        calculateWrapperSize: function(fileData) {
             var imageWidth    = parseInt(fileData.width);
             var imageHeight   = parseInt(fileData.height);
 
-            var p = 0;
+            var wrapper = {
+                width: imageWidth,
+                height: imageHeight
+            };
+
             if (imageWidth > 600) {
-                p = 600 / imageWidth;
+                var x = (imageWidth/600).toFixed(3);
+                wrapper.width = Math.round(imageWidth / x);
             }
 
-            var wrapperHeight  = imageHeight;
-            if (p > 0) {
-                wrapperHeight = imageHeight * p;
+            if (imageHeight > 400) {
+                var y = (imageHeight / 400).toFixed(3);
+                wrapper.height = Math.round(imageHeight / y);
             }
 
+            return wrapper;
+        },
+
+        changeCropperSize: function(wrapper) {
             this.$pictureWrapper.css({
-                width: "100%",
-                height: wrapperHeight
+                width: wrapper.width,
+                height: wrapper.height
             });
         },
 
@@ -180,7 +189,11 @@
                         } else {
                             $this.$cropperImage.attr("src", response.result.data.url);
 
+                            // Calculate Wrapper Size.
+                            var wrapper = $this.calculateWrapperSize(response.result.data);
+
                             $this.$cropperImage.cropper({
+                                viewMode: 3,
                                 aspectRatio: $this.aspectRatio,
                                 autoCropArea: 0.6, // Center 60%
                                 multiple: false,
@@ -189,15 +202,15 @@
                                 movable: false,
                                 resizable: true,
                                 zoomable: false,
-                                minWidth: $this.imageWidth,
-                                minHeight: $this.imageHeight,
+                                minContainerWidth: wrapper.width,
+                                minContainerHeight: wrapper.height,
                                 built: function() {
                                     $this.cropperInitialized = true;
                                 }
                             });
                         }
 
-                        $this.changeCropperSize(response.result.data);
+                        $this.changeCropperSize(wrapper);
 
                         $this.$modal.open();
                     }

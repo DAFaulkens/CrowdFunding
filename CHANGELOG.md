@@ -1,6 +1,11 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6.2
+* Improved image cropping.
+* Improved the payment process.
+* Fixed some issues.
+
 ###v2.6.1
 * Fixed an issue with payment process.
 

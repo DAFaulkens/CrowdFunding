@@ -19,7 +19,7 @@ defined('_JEXEC') or die;
         <span class="fa fa-check"></span>
         <?php echo JText::_('COM_CROWDFUNDING_LAUNCH');?>
     </a>
-    <p class="bg-info mt-10 p-5 text-justify">
+    <p class="alert alert-info mt-10 p-5 text-justify font-small">
         <span class="fa fa-info-circle"></span>
         <?php echo JText::_('COM_CROWDFUNDING_NOTE_LAUNCH_PROJECT'); ?>
     </p>

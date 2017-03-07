@@ -26,7 +26,7 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      * @param    array   $data     An optional array of data for the form to interrogate.
      * @param    boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return    JForm    A JForm object on success, false on failure
+     * @return   JForm|bool    A JForm object on success, false on failure
      * @since    1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -45,6 +45,8 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      *
      * @return    mixed    The data for the form.
      * @since    1.6
+     *
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -241,9 +243,10 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      */
     public function cropImage($file, array $options, Registry $params)
     {
+
         $image              = new Prism\File\Image($file);
         $destinationFolder  = ArrayHelper::getValue($options, 'temporary_folder');
-
+        
         // Generate temporary file name
         $generatedName = Prism\Utilities\StringHelper::generateRandomString(24);
 

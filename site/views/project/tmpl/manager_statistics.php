@@ -14,7 +14,10 @@ defined('_JEXEC') or die;
     <div class="col-md-4">
         <canvas id="js-funded-chart" width="400" height="400" ></canvas>
     </div>
-    <div class="col-md-8" >
+</div>
+
+<div class="row">
+    <div class="col-md-12">
         <canvas id="js-transactions-chart" height="400"></canvas>
     </div>
 </div>
