@@ -10,6 +10,7 @@
 namespace Crowdfunding\Region\Manager;
 
 use Prism\Utilities\FileHelper;
+use Prism\Utilities\DatabaseHelper;
 use Joomla\String\StringHelper;
 use Joomla\Utilities\ArrayHelper;
 
@@ -43,7 +44,11 @@ class Importer
     public function import($file, array $options)
     {
         if (is_file($file)) {
-            $this->dropIndexes();
+            $isMariaDb = DatabaseHelper::isMariaDB($this->db);
+
+            if ($isMariaDb) {
+                $this->dropIndexes();
+            }
 
             $countryCodeOptions = ArrayHelper::getValue($options, 'country_code', '', 'cmd');
 
@@ -120,7 +125,9 @@ class Importer
 
             unset($content, $items);
 
-            $this->addIndexes();
+            if ($isMariaDb) {
+                $this->addIndexes();
+            }
         }
     }
 

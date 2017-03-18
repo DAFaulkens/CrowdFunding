@@ -95,6 +95,9 @@ class CrowdfundingControllerPayments extends JControllerLegacy
     /**
      * Task used for user authorization in their payment gateways.
      *
+     * Event Actions:
+     * authorize (onPaymentsAuthorize) - Authorize or obtain access token from payment gateways.
+     *
      * @throws Exception
      */
     public function authorize()
@@ -170,11 +173,12 @@ class CrowdfundingControllerPayments extends JControllerLegacy
     }
 
     /**
-     * Process action triggering an event that comes from remote server.
+     * Triggers an event and process data that comes from payment gateways.
      *
-     * Actions:
-     * * authorize - Authorize or obtain access token from payment gateways.
-     * * doCheckout - Authorize or obtain access token from payment gateways.
+     * Event Actions:
+     * doCheckout (onPaymentsDoCheckout) - pre-process payment checkout.
+     * checkout (onPaymentsCheckout) - process payment checkout.
+     * checkoutComplete (onPaymentsCheckoutComplete) - process the data after completion of the payment
      *
      * @throws Exception
      */

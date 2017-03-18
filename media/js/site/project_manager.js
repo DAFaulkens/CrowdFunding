@@ -140,7 +140,6 @@
             });
         }
 
-        console.log(crowdfundingOptions);
         var projectId = crowdfundingOptions.projectId;
         var fundedChartElement = document.getElementById("js-funded-chart");
         var txnChartElement = document.getElementById("js-transactions-chart");
@@ -148,6 +147,5 @@
         buildFundedChart(projectId, fundedChartElement);
         buildDailyFundsChart(projectId, txnChartElement);
     })();
-
 
 });

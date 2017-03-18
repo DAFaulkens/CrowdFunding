@@ -10,6 +10,7 @@
 namespace Crowdfunding\Location\Manager;
 
 use Prism\Utilities\FileHelper;
+use Prism\Utilities\DatabaseHelper;
 use Joomla\String\StringHelper;
 use Joomla\Utilities\ArrayHelper;
 
@@ -43,7 +44,11 @@ class Importer
     public function import($file, array $options)
     {
         if (is_file($file)) {
-            $this->dropLocationIndexes();
+            $isMariaDb = DatabaseHelper::isMariaDB($this->db);
+
+            if ($isMariaDb) {
+                $this->dropIndexes();
+            }
 
             $maxPopulation      = ArrayHelper::getValue($options, 'minimum_population', 0, 'int');
             $countryCodeOptions = ArrayHelper::getValue($options, 'country_code', '', 'cmd');
@@ -133,11 +138,13 @@ class Importer
 
             unset($content, $items);
 
-            $this->addLocationIndexes();
+            if ($isMariaDb) {
+                $this->addIndexes();
+            }
         }
     }
 
-    protected function dropLocationIndexes()
+    protected function dropIndexes()
     {
         $sql = '
         ALTER TABLE '.$this->db->quoteName('#__crowdf_locations').'
@@ -149,7 +156,7 @@ class Importer
         $this->db->execute();
     }
 
-    protected function addLocationIndexes()
+    protected function addIndexes()
     {
         $sql = '
         ALTER TABLE '.$this->db->quoteName('#__crowdf_locations').'

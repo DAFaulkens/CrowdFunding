@@ -1,6 +1,9 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6.3
+* Fixed an issue during the process of importing locations and regions if the database server is not MariaDB.
+
 ###v2.6.2
 * Improved image cropping.
 * Improved the payment process.
