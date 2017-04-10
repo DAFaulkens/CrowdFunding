@@ -1,6 +1,11 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6.4
+* Fixed project wizard. It did not show Intro Article.
+* Changed the message that a user receives when he tries to make payment but he has no permissions. The message was changed from "You have no permissions..." to "Please, sign in to the website to make a payment."
+* Improved PayPal Standard and its IPN listener.
+
 ###v2.6.3
 * Fixed an issue during the process of importing locations and regions if the database server is not MariaDB.
 

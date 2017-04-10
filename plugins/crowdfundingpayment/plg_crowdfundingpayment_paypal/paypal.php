@@ -13,6 +13,7 @@ use Crowdfunding\Payment;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\Registry\Registry;
 use Prism\Payment\Result as PaymentResult;
+use Prism\Payment\PayPal;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -213,11 +214,13 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
             return null;
         }
 
+        $postData  = PayPal\Ipn::getRawPostData();
+
         // DEBUG DATA
-        JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_RESPONSE'), $this->debugType, $_POST) : null;
+        JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_RESPONSE'), $this->debugType, $postData) : null;
 
         // Decode custom data
-        $custom = ArrayHelper::getValue($_POST, 'custom');
+        $custom = ArrayHelper::getValue($postData, 'custom');
         $custom = json_decode(base64_decode($custom), true);
 
         // DEBUG DATA
@@ -231,15 +234,14 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         }
 
         // Get PayPal URL
-        if ($this->params->get('paypal_sandbox', 1)) {
-            $url = trim($this->params->get('paypal_sandbox_url', 'https://www.sandbox.paypal.com/cgi-bin/webscr'));
+        if ($this->params->get('paypal_sandbox', Prism\Constants::OK)) {
+            $url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
         } else {
-            $url = trim($this->params->get('paypal_url', 'https://www.paypal.com/cgi-bin/webscr'));
+            $url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
         }
 
-        $paypalIpn       = new Prism\Payment\PayPal\Ipn($url, $_POST);
-        $loadCertificate = (bool)$this->params->get('paypal_load_certificate', 0);
-        $paypalIpn->verify($loadCertificate);
+        $paypalIpn       = new PayPal\Ipn($url, $postData);
+        $paypalIpn->verify((bool)$this->params->get('paypal_load_certificate', 0));
 
         // DEBUG DATA
         JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_VERIFY_OBJECT'), $this->debugType, $paypalIpn) : null;
@@ -333,7 +335,13 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
     protected function validateData($data, $currencyCode, $paymentSessionRemote)
     {
         $txnDate = ArrayHelper::getValue($data, 'payment_date');
-        $date    = new JDate($txnDate);
+        $dateValidator = new Prism\Validator\Date($txnDate);
+
+        if (!$dateValidator->isValid()) {
+            $date = new JDate();
+        } else {
+            $date = new JDate($txnDate);
+        }
 
         // Prepare transaction data
         $transactionData = array(

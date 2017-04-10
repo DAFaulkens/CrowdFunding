@@ -42,7 +42,7 @@ class CrowdfundingModelIntro extends JModelItem
         /** @var $app JApplicationSite */
 
         // Load the object state.
-        $value = $app->input->getInt('id');
+        $value = $app->input->getUint('id');
         $this->setState($this->getName() . '.id', $value);
 
         // Load the parameters.
@@ -56,6 +56,8 @@ class CrowdfundingModelIntro extends JModelItem
      * @param    integer $id   The id of the object to get.
      *
      * @return    mixed    Object on success, false on failure.
+     *
+     * @throws \RuntimeException
      */
     public function getItem($id = null)
     {

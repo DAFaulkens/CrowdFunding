@@ -17,28 +17,7 @@ JLoader::register('CrowdfundingModelProject', CROWDFUNDING_PATH_COMPONENT_SITE .
 
 class CrowdfundingModelStory extends CrowdfundingModelProject
 {
-    /**
-     * Method to get the profile form.
-     *
-     * The base form is loaded from XML and then an event is fired
-     * for users plugins to extend the form with extra fields.
-     *
-     * @param    array   $data     An optional array of data for the form to interrogate.
-     * @param    boolean $loadData True if the form is to load its own data (default case), false if not.
-     *
-     * @return   JForm|bool    A JForm object on success, false on failure
-     * @since    1.6
-     */
-    public function getForm($data = array(), $loadData = true)
-    {
-        // Get the form.
-        $form = $this->loadForm($this->option . '.story', 'story', array('control' => 'jform', 'load_data' => $loadData));
-        if (empty($form)) {
-            return false;
-        }
-
-        return $form;
-    }
+    protected $formName = 'story';
 
     /**
      * Method to get the data that should be injected in the form.
@@ -77,12 +56,12 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      */
     public function save($data)
     {
-        $id          = ArrayHelper::getValue($data, 'id');
+        $projectId   = ArrayHelper::getValue($data, 'id', 0, 'int');
         $description = ArrayHelper::getValue($data, 'description');
 
         $keys = array(
-            'id' => $id,
-            'user_id' => JFactory::getUser()->get('id'),
+            'id'      => $projectId,
+            'user_id' => (int)JFactory::getUser()->get('id'),
         );
 
         // Load a record from the database.
@@ -243,7 +222,6 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      */
     public function cropImage($file, array $options, Registry $params)
     {
-
         $image              = new Prism\File\Image($file);
         $destinationFolder  = ArrayHelper::getValue($options, 'temporary_folder');
         

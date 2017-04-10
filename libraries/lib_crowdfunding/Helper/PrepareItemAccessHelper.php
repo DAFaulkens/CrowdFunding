@@ -47,9 +47,9 @@ class PrepareItemAccessHelper implements HelperInterface
     public function handle(&$data, array $options = array())
     {
         if (is_object($data)) {
-            $userId = (int)$this->user->get('id');
-            $guest  = $this->user->get('guest');
-            $groups = $this->user->getAuthorisedViewLevels();
+            $userId     = (int)$this->user->get('id');
+            $guest      = $this->user->get('guest');
+            $viewGroups = $this->user->getAuthorisedViewLevels();
 
             // Compute the asset access permissions.
             // Technically guest could edit an article, but lets not check that to improve performance a little.
@@ -70,9 +70,9 @@ class PrepareItemAccessHelper implements HelperInterface
 
             // If no access filter is set, the layout takes some responsibility for display of limited information.
             if (!$data->catid or !$data->category_access) {
-                $data->params->set('access-view', in_array((int)$data->access, $groups, true));
+                $data->params->set('access-view', in_array((int)$data->access, $viewGroups, true));
             } else {
-                $data->params->set('access-view', in_array((int)$data->access, $groups, true) and in_array((int)$data->category_access, $groups, true));
+                $data->params->set('access-view', in_array((int)$data->access, $viewGroups, true) and in_array((int)$data->category_access, $viewGroups, true));
             }
         }
     }

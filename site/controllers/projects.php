@@ -38,7 +38,7 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
     {
         JSession::checkToken('get') or jexit(JText::_('JINVALID_TOKEN'));
 
-        $userId = JFactory::getUser()->get('id');
+        $userId = (int)JFactory::getUser()->get('id');
         if (!$userId) {
             $redirectOptions = array(
                 'force_direction' => 'index.php?option=com_users&view=login'
@@ -46,10 +46,6 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
             $this->displayNotice(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'), $redirectOptions);
             return;
         }
-
-        // Get component parameters
-        $params = JComponentHelper::getParams($this->option);
-        /** @var  $params Joomla\Registry\Registry */
 
         // Get the data from the form
         $itemId = $this->input->get->get('id', 0, 'int');
@@ -60,7 +56,7 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         $returnLink = JRoute::_(CrowdfundingHelperRoute::getProjectsRoute(), false);
 
         // Get return link from parameters.
-        if (strlen($return) > 0) {
+        if ($return !== '') {
             $returnLink = base64_decode($return);
         }
 
@@ -75,22 +71,6 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         if (!$item->id) {
             $this->displayNotice(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), $redirectOptions);
             return;
-        }
-
-        // Include plugins to validate content.
-        $dispatcher = JEventDispatcher::getInstance();
-        JPluginHelper::importPlugin('content');
-
-        // Trigger onContentValidate event.
-        $context = $this->option . '.projects.changestate';
-        $results = $dispatcher->trigger('onContentValidateChangeState', array($context, &$item, &$params, $state));
-
-        // If there is an error, redirect to another page.
-        foreach ($results as $result) {
-            if ((bool)$result['success'] === false) {
-                $this->displayNotice(Joomla\Utilities\ArrayHelper::getValue($result, 'message'), $redirectOptions);
-                return;
-            }
         }
 
         try {

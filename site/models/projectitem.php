@@ -7,11 +7,18 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\DI\ContainerAwareInterface;
+use Joomla\DI\ContainerAwareTrait;
+use Joomla\Utilities\ArrayHelper;
+use Joomla\Registry\Registry;
+
 // no direct access
 defined('_JEXEC') or die;
 
-class CrowdfundingModelProjectItem extends JModelItem
+class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareInterface
 {
+    use ContainerAwareTrait;
+
     protected $items = array();
 
     /**
@@ -21,7 +28,7 @@ class CrowdfundingModelProjectItem extends JModelItem
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  CrowdfundingTableProject  A database object
+     * @return  CrowdfundingTableProject|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Project', $prefix = 'CrowdfundingTable', $config = array())
@@ -50,65 +57,112 @@ class CrowdfundingModelProjectItem extends JModelItem
         // Load the parameters.
         $value = $app->getParams($this->option);
         $this->setState('params', $value);
-
     }
 
+    /**
+     * Method to get a single record.
+     *
+     * @param   int $itemId     The id of the primary key.
+     * @param   int $userId The id of the user.
+     *
+     * @return  stdClass  Object on success, false on failure.
+     *
+     * @throws  \Exception
+     *
+     * @since   11.1
+     */
     public function getItem($itemId, $userId)
     {
         $storedId = $this->getStoreId($itemId.$userId);
 
         if (!array_key_exists($storedId, $this->items)) {
-            $db = $this->getDbo();
-            /** @var $db JDatabaseDriver */
+            $table = $this->getTable();
 
-            // Create a new query object.
-            $query = $db->getQuery(true);
+            if ($itemId > 0 and $userId > 0) {
+                $keys = array(
+                    'id'      => $itemId,
+                    'user_id' => $userId
+                );
 
-            // Select the required fields from the table.
-            $query->select(
-                'a.id, a.title, a.alias, a.short_desc, a.description, a.image, a.image_square, a.image_small, a.location_id, ' .
-                'a.goal, a.funded, a.funding_type, a.funding_start, a.funding_end, a.funding_days, ' .
-                'a.pitch_video, a.pitch_image, a.hits, a.created, a.featured, a.published, a.approved, a.ordering, a.catid, a.type_id, a.user_id, ' .
-                $query->concatenate(array('a.id', 'a.alias'), ':') . ' AS slug, ' .
-                'b.name AS user_name, ' .
-                $query->concatenate(array('c.id', 'c.alias'), ':') . ' AS catslug'
-            );
+                // Attempt to load the row.
+                $return = $table->load($keys);
 
-            $query->from($db->quoteName('#__crowdf_projects', 'a'));
-            $query->innerJoin($db->quoteName('#__users', 'b') . ' ON a.user_id = b.id');
-            $query->innerJoin($db->quoteName('#__categories', 'c') . ' ON a.catid = c.id');
-
-            $query->where('a.id = '. (int)$itemId);
-            $query->where('a.user_id = '. (int)$userId);
-
-            $db->setQuery($query);
-
-            $item = $db->loadObject();
-
-            if (is_object($item)) {
-                // Calculate funding end date
-                $startingDateValidator = new Prism\Validator\Date($item->funding_start);
-                if ((int)$item->funding_days > 0 and $startingDateValidator->isValid()) {
-                    $fundingStartDate  = new Crowdfunding\Date($item->funding_start);
-                    $fundingEndDate    = $fundingStartDate->calculateEndDate($item->funding_days);
-                    $item->funding_end = $fundingEndDate->format(Prism\Constants::DATE_FORMAT_SQL_DATE);
+                // Check for a table object error.
+                if ($return === false) {
+                    throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
                 }
+            }
 
-                // Calculate funded percentage.
-                $item->funded_percents = Prism\Utilities\MathHelper::calculatePercentage($item->funded, $item->goal, 0);
+            // Convert to the JObject before adding other data.
+            $properties = $table->getProperties();
+            $item       = ArrayHelper::toObject($properties);
 
-                // Calculate days left
-                $today = new Crowdfunding\Date();
-                $item->days_left       = $today->calculateDaysLeft($item->funding_days, $item->funding_start, $item->funding_end);
+            if (property_exists($item, 'params')) {
+                $registry = new Registry;
+                /** @var  $registry Registry */
 
-            } else {
-                $item = new stdClass();
+                $registry->loadString($item->params);
+                $item->params = $registry;
+            }
+
+            if ((int)$item->id > 0) {
+                $this->prepareAccess($item);
             }
 
             $this->items[$storedId] = $item;
         }
 
         return $this->items[$storedId];
+    }
+
+    /**
+     * Method to prepare access data.
+     *
+     * @param   stdClass $item
+     */
+    public function prepareAccess($item)
+    {
+        $user      = JFactory::getUser();
+
+        $helperBus = new Prism\Helper\HelperBus($item);
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemAccessHelper($user));
+        $helperBus->handle();
+    }
+
+    /**
+     * Check if the item can be edited.
+     *
+     * @param   stdClass $item
+     *
+     * @return bool
+     */
+    public function canEdit($item)
+    {
+        $canEdit = false;
+
+        $user   = JFactory::getUser();
+
+        $userId = (int)$user->get('id');
+        $guest  = $user->get('guest');
+
+        // Compute the asset access permissions.
+        // Technically guest could edit an article, but lets not check that to improve performance a little.
+        if (!$guest) {
+            $asset = 'com_crowdfunding.item.' . $item->id;
+
+            // Check general edit permission first.
+            if ($userId > 0 and $user->authorise('core.edit', $asset)) {
+                $canEdit = true;
+            } // Now check if edit.own is available.
+            elseif ($userId > 0 and $user->authorise('core.edit.own', $asset)) {
+                // Check for a valid user and that they are the owner.
+                if ($userId === (int)$item->user_id) {
+                    $canEdit = true;
+                }
+            }
+        }
+
+        return $canEdit;
     }
 
     /**
@@ -128,6 +182,10 @@ class CrowdfundingModelProjectItem extends JModelItem
             'user_id' => $userId
         );
 
+        // Include plugins to validate content.
+        $dispatcher = JEventDispatcher::getInstance();
+        JPluginHelper::importPlugin('content');
+        
         /** @var $row CrowdfundingTableProject */
         $row = $this->getTable();
         $row->load($keys);
@@ -145,24 +203,24 @@ class CrowdfundingModelProjectItem extends JModelItem
 
             $this->prepareTable($row);
 
-            // Validate dates
+            // Validate data.
 
-            $params = JComponentHelper::getParams('com_crowdfunding');
+            // Get component parameters
+            $params = JComponentHelper::getParams($this->option);
             /** @var  $params Joomla\Registry\Registry */
 
-            $minDays = (int)$params->get('project_days_minimum', 15);
-            $maxDays = (int)$params->get('project_days_maximum');
+            $item    = $row->getProperties();
+            $item    = ArrayHelper::toObject($item);
 
-            // If there is an ending date, validate the period.
-            $fundingEndDate = new Prism\Validator\Date($row->get('funding_end'));
-            if ($fundingEndDate->isValid()) {
-                $validatorPeriod = new Crowdfunding\Validator\Project\Period($row->get('funding_start'), $row->get('funding_end'), $minDays, $maxDays);
-                if (!$validatorPeriod->isValid()) {
-                    if ($maxDays > 0) {
-                        throw new RuntimeException(JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_MAX_DAYS', $minDays, $maxDays));
-                    } else {
-                        throw new RuntimeException(JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_DAYS', $minDays));
-                    }
+            $context = $this->option . '.projects.changestate';
+
+            // Trigger onContentValidate event.
+            $results = $dispatcher->trigger('onContentValidateChangeState', array($context, &$item, &$params, $state));
+
+            // If there is an error, redirect to another page.
+            foreach ($results as $result) {
+                if ((bool)$result['success'] === false) {
+                    throw new RuntimeException(ArrayHelper::getValue($result, 'message'));
                 }
             }
         }
@@ -175,13 +233,8 @@ class CrowdfundingModelProjectItem extends JModelItem
         $context = $this->option . '.project';
         $pks     = array($row->get('id'));
 
-        // Include the content plugins for the change of state event.
-        JPluginHelper::importPlugin('content');
-
         // Trigger the onContentChangeState event.
-        $dispatcher = JEventDispatcher::getInstance();
         $results    = $dispatcher->trigger('onContentChangeState', array($context, $pks, $state));
-
         if (in_array(false, $results, true)) {
             throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_CHANGE_STATE'));
         }
@@ -213,28 +266,5 @@ class CrowdfundingModelProjectItem extends JModelItem
                 $table->set('funding_end', $endDate->toSql());
             }
         }
-    }
-
-    /**
-     * This method counts the rewards of the project.
-     *
-     * @param  integer $itemId Project id
-     *
-     * @return number
-     */
-    protected function countRewards($itemId)
-    {
-        $db    = $this->getDbo();
-        $query = $db->getQuery(true);
-
-        $query
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__crowdf_rewards', 'a'))
-            ->where('a.project_id = ' . (int)$itemId);
-
-        $db->setQuery($query);
-        $result = $db->loadResult();
-
-        return (int)$result;
     }
 }

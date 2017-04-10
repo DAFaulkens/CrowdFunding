@@ -99,7 +99,7 @@ class CrowdfundingControllerStory extends Prism\Controller\Form\Frontend
 
         // If there is an error, redirect to current step.
         foreach ($results as $result) {
-            if ($result['success'] == false) {
+            if ($result['success'] === false) {
                 $this->displayWarning(Joomla\Utilities\ArrayHelper::getValue($result, 'message'), $redirectOptions);
                 return;
             }

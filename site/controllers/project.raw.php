@@ -27,10 +27,10 @@ class CrowdfundingControllerProject extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return   CrowdfundingModelProject    The model.
+     * @return   CrowdfundingModelProjectbasic|JModelLegacy    The model.
      * @since    1.5
      */
-    public function getModel($name = 'Project', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
+    public function getModel($name = 'Projectbasic', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
         $model = parent::getModel($name, $prefix, $config);
         return $model;
@@ -126,7 +126,7 @@ class CrowdfundingControllerProject extends JControllerLegacy
 
         // Get the model
         $model = $this->getModel();
-        /** @var $model CrowdfundingModelProject */
+        /** @var $model CrowdfundingModelProjectbasic */
 
         $projectId = $this->input->post->get('id', 0, 'int');
 
@@ -240,7 +240,7 @@ class CrowdfundingControllerProject extends JControllerLegacy
 
         // Get the model
         $model = $this->getModel();
-        /** @var $model CrowdfundingModelProject */
+        /** @var $model CrowdfundingModelProjectbasic */
 
         $projectId = $this->input->post->getUint('id');
 
@@ -339,7 +339,7 @@ class CrowdfundingControllerProject extends JControllerLegacy
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
             ->setText(JText::_('COM_CROWDFUNDING_IMAGE_SAVED'))
-            ->setData($imageUrl)
+            ->setData(['src' => $imageUrl])
             ->success();
 
         echo $response;

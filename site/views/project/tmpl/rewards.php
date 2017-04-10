@@ -36,7 +36,7 @@ echo $layout->render($this->layoutData);
     </div>
 
     <input type="hidden" name="task" value="rewards.save" />
-    <input type="hidden" name="id" value="<?php echo $this->projectId;?>" />
+    <input type="hidden" name="id" value="<?php echo $this->itemId;?>" />
     <input type="hidden" name="items_number" id="items_number" value="<?php echo (count($this->items) === 0) ? 1 : count($this->items);?>" />
     <?php echo JHtml::_('form.token'); ?>
 

@@ -139,11 +139,9 @@ class plgContentCrowdfundingValidator extends JPlugin
 
     protected function validateStepBasic(&$data, &$params)
     {
-        $result = array(
+        return array(
             'success' => true
         );
-
-        return $result;
     }
 
     /**
@@ -158,8 +156,12 @@ class plgContentCrowdfundingValidator extends JPlugin
      *
      * @return null|array
      */
-    public function onContentValidateChangeState($context, &$item, &$params, $state)
+    public function onContentValidateChangeState($context, $item, $params, $state)
     {
+        if (strcmp('com_crowdfunding.projects.changestate', $context) !== 0) {
+            return null;
+        }
+
         $app = JFactory::getApplication();
         /** @var $app JApplicationSite */
 
@@ -176,17 +178,13 @@ class plgContentCrowdfundingValidator extends JPlugin
             return null;
         }
 
-        if (strcmp('com_crowdfunding.projects.changestate', $context) !== 0) {
-            return null;
-        }
-
         $result = array(
             'success' => false,
             'message' => ''
         );
 
         // If the project is approved, do not allow unpublishing.
-        if ($this->params->get('validate_state_approved', Prism\Constants::YES) and ($item->published === Prism\Constants::PUBLISHED and $item->approved === Prism\Constants::APPROVED)) {
+        if ($this->params->get('validate_state_approved', Prism\Constants::YES) and ((int)$item->published === Prism\Constants::PUBLISHED and (int)$item->approved === Prism\Constants::APPROVED)) {
             $result['message'] = JText::_('PLG_CONTENT_CROWDFUNDINGVALIDATOR_ERROR_APPROVED_UNPUBLISH');
             return $result;
         }
@@ -215,13 +213,32 @@ class plgContentCrowdfundingValidator extends JPlugin
             return $result;
         }
 
+        // Validate the period.
+        $minDays = (int)$params->get('project_days_minimum', 15);
+        $maxDays = (int)$params->get('project_days_maximum');
+
+        // If there is ending date, validate the period.
+        $fundingEndDate = new Prism\Validator\Date($item->funding_end);
+        if ($fundingEndDate->isValid()) {
+            $validatorPeriod = new Crowdfunding\Validator\Project\Period($item->funding_start, $item->funding_end, $minDays, $maxDays);
+            if (!$validatorPeriod->isValid()) {
+                if ($maxDays > 0) {
+                    $result['message'] = JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_MAX_DAYS', $minDays, $maxDays);
+                } else {
+                    $result['message'] = JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_DAYS', $minDays);
+                }
+
+                return $result;
+            }
+        }
+
         // Validate pitch image and video.
-        if ($this->params->get('validate_story_image_video', 1) and (!$item->pitch_image and !$item->pitch_video)) {
+        if ($this->params->get('validate_story_image_video', Prism\Constants::YES) and (!$item->pitch_image and !$item->pitch_video)) {
             $result['message'] = JText::_('PLG_CONTENT_CROWDFUNDINGVALIDATOR_ERROR_INVALID_PITCH_IMAGE_OR_VIDEO');
             return $result;
         }
 
-        if (!$item->description) {
+        if (!Joomla\String\StringHelper::trim(strip_tags($item->description))) {
             $result['message'] = JText::_('PLG_CONTENT_CROWDFUNDINGVALIDATOR_ERROR_INVALID_DESCRIPTION');
             return $result;
         }
@@ -234,11 +251,9 @@ class plgContentCrowdfundingValidator extends JPlugin
 
     protected function validateStepStory(&$data, &$params)
     {
-        $result = array(
+        return array(
             'success' => true
         );
-
-        return $result;
     }
 
     /**

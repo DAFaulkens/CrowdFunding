@@ -73,7 +73,7 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
 
         // Prepare context
         $filter         = new JFilterInput();
-        $paymentService = $filter->clean(trim(strtolower($this->input->getCmd('payment_service'))), 'ALNUM');
+        $paymentService = $filter->clean(strtolower(trim($this->input->getCmd('payment_service'))), 'ALNUM');
         $this->context  = $paymentService !== '' ? 'com_crowdfunding.notify.' . $paymentService : 'com_crowdfunding.notify';
 
         // Prepare params

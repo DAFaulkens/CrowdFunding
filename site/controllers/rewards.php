@@ -39,7 +39,7 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
         // Check for request forgeries.
         JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
 
-        $userId = JFactory::getUser()->get('id');
+        $userId = (int)JFactory::getUser()->get('id');
         if (!$userId) {
             $redirectOptions = array(
                 'force_direction' => 'index.php?option=com_users&view=login'

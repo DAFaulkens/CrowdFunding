@@ -278,7 +278,7 @@
                         $this.$modalLoader.hide();
                         $this.$modal.close();
 
-                        $this.$image.attr("src", response.data);
+                        $this.$image.attr("src", response.data.src);
 
                         // Display the button "Remove Image".
                         $this.$btnImageRemove.show();

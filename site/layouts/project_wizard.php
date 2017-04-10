@@ -36,7 +36,7 @@ switch($displayData['layout']) {
     <div class="container-fluid">
         <div class="navbar-header">
             <a class="navbar-brand" href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=project'.$idParam);?>">
-                <?php echo JText::_('COM_CROWDFUNDING_WIZARD');?>
+                <?php echo JText::_('COM_CROWDFUNDING_PROJECT');?>
             </a>
         </div>
         <div class="collapse navbar-collapse">

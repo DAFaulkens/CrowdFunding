@@ -13,7 +13,7 @@ use Joomla\Utilities\ArrayHelper;
 // no direct access
 defined('_JEXEC') or die;
 
-class CrowdfundingModelRewards extends JModelList
+class CrowdfundingModelRewards extends JModelLegacy
 {
     use Crowdfunding\Helper\MoneyHelper;
 
@@ -32,25 +32,8 @@ class CrowdfundingModelRewards extends JModelList
         return JTable::getInstance($type, $prefix, $config);
     }
 
-    protected function populateState($ordering = null, $direction = null)
+    public function getItems($projectId)
     {
-        parent::populateState();
-
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
-        // Get the pk of the record from the request.
-        $this->setState($this->getName() . '.project_id', $app->input->getInt('id'));
-
-        // Load the parameters.
-        $value = $app->getParams($this->option);
-        $this->setState('params', $value);
-    }
-
-    public function getItems()
-    {
-        $projectId = (int)$this->getState($this->getName() . '.project_id');
-
         $db    = $this->getDbo();
         $query = $db->getQuery(true);
 

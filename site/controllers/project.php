@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -25,13 +27,12 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return   CrowdfundingModelProject    The model.
+     * @return   CrowdfundingModelProjectbasic|JModelLegacy    The model.
      * @since    1.5
      */
-    public function getModel($name = 'Project', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
+    public function getModel($name = 'Projectbasic', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function save($key = null, $urlVar = null)
@@ -70,7 +71,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
         }
 
         $model = $this->getModel();
-        /** @var $model CrowdfundingModelProject */
+        /** @var $model CrowdfundingModelProjectbasic */
 
         // Get component parameters
         $params = JComponentHelper::getParams($this->option);
@@ -187,18 +188,18 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
      * @return  boolean
      *
      * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     protected function allowEdit($data = array(), $key = 'id')
     {
         $user     = JFactory::getUser();
-
         if ($user->authorise('core.edit', 'com_crowdfunding')) {
             return true;
         }
 
         // Validate item owner.
         if ($user->authorise('core.edit.own', 'com_crowdfunding')) {
-            $itemId = Joomla\Utilities\ArrayHelper::getValue($data, $key);
+            $itemId = ArrayHelper::getValue($data, $key);
             $userId = $user->get('id');
 
             // Validate item owner.

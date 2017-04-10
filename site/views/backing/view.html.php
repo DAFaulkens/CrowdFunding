@@ -257,7 +257,7 @@ class CrowdfundingViewBacking extends JViewLegacy
 
         // Authorise the user
         if (!$this->user->authorise('crowdfunding.donate', 'com_crowdfunding')) {
-            $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS'));
+            $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_NO_SIGNED_PAYMENT'));
             return $this->createPaymentSession();
         }
 
@@ -551,7 +551,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->app->setUserState($this->paymentSessionContext, $this->paymentSessionLocal);
 
         if ($message !== '') {
-            $this->app->enqueueMessage($message, 'notice');
+            $this->app->enqueueMessage($message, 'warning');
         }
         $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug), false));
     }
