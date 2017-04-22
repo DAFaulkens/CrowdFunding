@@ -37,7 +37,7 @@ defined('_JEXEC') or die;
         <?php
         if (!empty($this->extraData)) {
             $layout = new JLayoutFile('transaction_info', $this->layoutsBasePath);
-            echo $layout->render($this->extraData);
+            echo $layout->render(['extra_data' => $this->extraData]);
         }
         ?>
     </div>

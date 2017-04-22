@@ -304,6 +304,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $item->title          = $this->item->title;
         $item->slug           = $this->item->slug;
         $item->catslug        = $this->item->catslug;
+        $item->fundingType    = $this->item->funding_type;
         $item->rewardId       = $this->paymentSessionLocal->rewardId;
         $item->amount         = $this->paymentSessionLocal->amount;
         $item->currencyCode   = $this->currency->getCode();

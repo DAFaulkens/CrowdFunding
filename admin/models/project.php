@@ -442,8 +442,8 @@ class CrowdfundingModelProject extends JModelAdmin
                     $params = JComponentHelper::getParams('com_crowdfunding');
                     /** @var  $params Joomla\Registry\Registry */
 
-                    $minDays = $params->get('project_days_minimum', 15);
-                    $maxDays = $params->get('project_days_maximum');
+                    $minDays = (int)$params->get('project_days_minimum', 15);
+                    $maxDays = (int)$params->get('project_days_maximum');
 
                     $startDateValidator = new Prism\Validator\Date($table->get('funding_start'));
                     if ($startDateValidator->isValid()) {

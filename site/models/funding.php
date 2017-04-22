@@ -41,7 +41,7 @@ class CrowdfundingModelFunding extends CrowdfundingModelProject
             if (!$dateValidator->isValid()) {
                 // Get minimum days.
                 $params  = $this->getState('params');
-                $minDays = $params->get('project_days_minimum', 30);
+                $minDays = (int)$params->get('project_days_minimum', 30);
 
                 // Generate end date.
                 $today             = new Crowdfunding\Date();

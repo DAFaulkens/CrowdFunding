@@ -72,9 +72,9 @@ class Plugin extends \JPlugin
     {
         parent::__construct($subject, $config);
 
-        $this->textPrefix     .= '_' . strtoupper($this->serviceAlias);
-        $this->debugType      .= '_' . strtoupper($this->serviceAlias);
-        $this->errorType      .= '_' . strtoupper($this->serviceAlias);
+        $this->textPrefix  .= '_' . strtoupper($this->serviceAlias);
+        $this->debugType   .= '_' . strtoupper($this->serviceAlias);
+        $this->errorType   .= '_' . strtoupper($this->serviceAlias);
 
         // Create log object
         $this->log = new Prism\Log\Log();
@@ -402,10 +402,8 @@ class Plugin extends \JPlugin
         $adminId = (int)$componentParams->get('administrator_id', 0);
         if ($adminId > 0) {
             $recipient     = \JFactory::getUser($adminId);
-            $recipientName = $recipient->get('name');
             $recipientMail = $recipient->get('email');
         } else {
-            $recipientName = $app->get('fromname');
             $recipientMail = $app->get('mailfrom');
         }
 
@@ -416,7 +414,7 @@ class Plugin extends \JPlugin
         $body    = \JText::sprintf($this->textPrefix . '_ERROR_BODY', $this->serviceProvider, $website, htmlentities($message, ENT_QUOTES, 'UTF-8'));
 
         $mailer  = \JFactory::getMailer();
-        $return  = $mailer->sendMail($subject, $recipientName, $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
+        $return  = $mailer->sendMail($app->get('mailfrom'), $app->get('fromname'), $recipientMail, $subject, $body, Prism\Constants::MAIL_MODE_PLAIN);
 
         // Check for an error.
         if ($return !== true) {
@@ -538,21 +536,21 @@ class Plugin extends \JPlugin
 
             if (strcmp('FIXED', $fundingType) === 0) {
                 if ($params->get('fees_fixed_campaign_percent')) {
-                    $fees['fixed_campaign_percent'] = $params->get('fees_fixed_campaign_percent');
+                    $fees['fixed_campaign_percent'] = (float)$params->get('fees_fixed_campaign_percent');
                 }
 
                 if ($params->get('fees_fixed_campaign_amount')) {
-                    $fees['fixed_campaign_amount'] = $params->get('fees_fixed_campaign_amount');
+                    $fees['fixed_campaign_amount'] = (float)$params->get('fees_fixed_campaign_amount');
                 }
             }
 
             if (strcmp('FLEXIBLE', $fundingType) === 0) {
                 if ($params->get('fees_flexible_campaign_percent')) {
-                    $fees['flexible_campaign_percent'] = $params->get('fees_flexible_campaign_percent');
+                    $fees['flexible_campaign_percent'] = (float)$params->get('fees_flexible_campaign_percent');
                 }
 
                 if ($params->get('fees_flexible_campaign_amount')) {
-                    $fees['flexible_campaign_amount'] = $params->get('fees_flexible_campaign_amount');
+                    $fees['flexible_campaign_amount'] = (float)$params->get('fees_flexible_campaign_amount');
                 }
             }
         }

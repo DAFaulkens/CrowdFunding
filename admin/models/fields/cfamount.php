@@ -42,7 +42,7 @@ class JFormFieldCfAmount extends JFormField
         $class     = (!empty($this->element['class'])) ? ' class="' . (string)$this->element['class'] . '"' : '';
         $required  = $this->required ? ' required aria-required="true"' : '';
 
-        $format    = $this->element['format'] ? (string)$this->element['format'] : '1';
+        $format    = isset($this->element['format']) ? (string)$this->element['format'] : Prism\Constants::YES;
         $format    = (bool)$format;
 
         $cssLayout = (!empty($this->element['css_layout'])) ? (string)$this->element['css_layout'] : 'Bootstrap 2';
@@ -62,8 +62,9 @@ class JFormFieldCfAmount extends JFormField
 
         // Format amount.
         $formattedAmount = $this->value;
-        if ($format and $this->value > 0) {
-            $formattedAmount = $moneyFormatter->setAmount($this->value)->format();
+        $floatAmount     = (float)$this->value;
+        if ($format and $floatAmount > 0) {
+            $formattedAmount = $moneyFormatter->setAmount($floatAmount)->format();
         }
 
         $html   = array();

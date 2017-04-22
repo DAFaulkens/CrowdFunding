@@ -64,11 +64,11 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->imagesUrl = JUri::root() . $imagesFolder;
 
         // Set minimum values - days, amount,...
-        $this->minAmount = $this->params->get('project_amount_minimum', 100);
-        $this->maxAmount = $this->params->get('project_amount_maximum');
+        $this->minAmount = (float)$this->params->get('project_amount_minimum', 100);
+        $this->maxAmount = (float)$this->params->get('project_amount_maximum');
 
-        $this->minDays = $this->params->get('project_days_minimum', 30);
-        $this->maxDays = $this->params->get('project_days_maximum');
+        $this->minDays = (int)$this->params->get('project_days_minimum', 30);
+        $this->maxDays = (int)$this->params->get('project_days_maximum');
 
         $this->prepareFundingDurationType();
 

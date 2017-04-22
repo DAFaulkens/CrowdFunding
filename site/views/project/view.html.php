@@ -329,8 +329,8 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->minAmount = (float)$this->params->get('project_amount_minimum');
         $this->maxAmount = (float)$this->params->get('project_amount_maximum');
 
-        $this->minDays = $this->params->get('project_days_minimum', 30);
-        $this->maxDays = $this->params->get('project_days_maximum');
+        $this->minDays = (int)$this->params->get('project_days_minimum', 30);
+        $this->maxDays = (int)$this->params->get('project_days_maximum');
 
         // Prepare funding duration type
         $this->prepareFundingDurationType();

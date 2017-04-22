@@ -1,6 +1,10 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.6.5
+* Fixed an issue with fees during the payment process.
+* Fixed the layout that shows extra payment data.
+
 ###v2.6.4
 * Fixed project wizard. It did not show Intro Article.
 * Changed the message that a user receives when he tries to make payment but he has no permissions. The message was changed from "You have no permissions..." to "Please, sign in to the website to make a payment."

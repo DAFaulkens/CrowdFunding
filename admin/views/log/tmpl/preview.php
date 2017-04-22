@@ -10,5 +10,4 @@
 // no direct access
 defined('_JEXEC') or die;
 
-echo $this->escape($this->item->data);
-?>
+echo $this->escape(stripslashes($this->item->data));

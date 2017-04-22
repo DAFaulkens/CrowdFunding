@@ -10,10 +10,10 @@
 // no direct access
 defined('_JEXEC') or die;
 ?>
-<h2><?php echo JText::_("COM_CROWDFUNDING_ADDITIONAL_INFORMATION"); ?></h2>
+<h2><?php echo JText::_('COM_CROWDFUNDING_ADDITIONAL_INFORMATION'); ?></h2>
 <table class="table table-condensed">
     <tbody>
-    <?php foreach ($displayData as $key => $value) { ?>
+    <?php foreach ($displayData['extra_data'] as $key => $value) { ?>
         <?php if (!is_array($value)) { ?>
             <tr>
                 <th><?php echo $this->escape($key); ?></th>

@@ -48,9 +48,9 @@ class CrowdfundingViewTransaction extends JViewLegacy
 
         $this->params = $this->state->get('params');
 
-        $this->extraData = $this->item->extra_data;
-        if (!empty($this->extraData)) {
-            $this->extraData = json_decode($this->extraData, true);
+        $this->extraData = array();
+        if (!empty($this->item->extra_data)) {
+            $this->extraData = json_decode($this->item->extra_data, true);
         }
 
         // Prepare actions, behaviors, scripts and document.

@@ -24,17 +24,15 @@ class CrowdfundingViewLog extends JViewLegacy
         $layout = $this->getLayout();
 
         switch ($layout) {
-
-            case "preview":
+            case 'preview':
                 $this->item = $this->get('Item');
                 break;
 
-            case "file":
-
+            case 'file':
                 $app = JFactory::getApplication();
                 /** @var $app JApplicationAdministrator */
 
-                $file = $app->input->get("file", "", "raw");
+                $file = $app->input->get('file', '', 'raw');
                 if (!empty($file)) {
                     $model        = $this->getModel();
                     $this->output = $model->loadLogFile($file);
