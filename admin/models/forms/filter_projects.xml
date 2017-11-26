@@ -74,10 +74,10 @@
 		<field
 			name="fullordering"
 			type="list"
-			label="COM_CROWDFUNDING_LIST_FULL_ORDERING"
-			description="COM_CROWDFUNDING_LIST_FULL_ORDERING_DESC"
+			label="JGLOBAL_SORT_BY"
+			description="JGLOBAL_SORT_BY"
 			onchange="this.form.submit();"
-			default="a.id DESC"
+			default="a.created DESC"
 			>
 			<option value="">JGLOBAL_SORT_BY</option>
 			<option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
@@ -92,28 +92,22 @@
 			<option value="c.title DESC">JCATEGORY_DESC</option>
 			<option value="a.goal ASC">COM_CROWDFUNDING_GOAL_ASC</option>
 			<option value="a.goal DESC">COM_CROWDFUNDING_GOAL_DESC</option>
-			<option value="ag.title ASC">JGRID_HEADING_ACCESS_ASC</option>
-			<option value="ag.title DESC">JGRID_HEADING_ACCESS_DESC</option>
 			<option value="u.name ASC">COM_CROWDFUNDING_OWNER_ASC</option>
 			<option value="u.name DESC">COM_CROWDFUNDING_OWNER_DESC</option>
 			<option value="a.created ASC">COM_CROWDFUNDING_CREATED_ASC</option>
 			<option value="a.created DESC">COM_CROWDFUNDING_CREATED_DESC</option>
 			<option value="a.id ASC">JGRID_HEADING_ID_ASC</option>
 			<option value="a.id DESC">JGRID_HEADING_ID_DESC</option>
-			<option value="a.hits ASC">JGLOBAL_HITS_ASC</option>
-			<option value="a.hits DESC">JGLOBAL_HITS_DESC</option>
 			<option value="t.title ASC">COM_CROWDFUNDING_TYPE_ASC</option>
 			<option value="t.title DESC">COM_CROWDFUNDING_TYPE_DESC</option>
 			<option value="a.funded ASC">COM_CROWDFUNDING_FUNDED_ASC</option>
 			<option value="a.funded DESC">COM_CROWDFUNDING_FUNDED_DESC</option>
-			<option value="funded_percents ASC">COM_CROWDFUNDING_FUNDED_PERCENTS_ASC</option>
-			<option value="funded_percents DESC">COM_CROWDFUNDING_FUNDED_PERCENTS_DESC</option>
 			<option value="a.funding_start ASC">COM_CROWDFUNDING_START_DATE_ASC</option>
 			<option value="a.funding_start DESC">COM_CROWDFUNDING_START_DATE_DESC</option>
 			<option value="a.funding_end ASC">COM_CROWDFUNDING_END_DATE_ASC</option>
 			<option value="a.funding_end DESC">COM_CROWDFUNDING_END_DATE_DESC</option>
-			<option value="a.access ASC">JGRID_HEADING_ACCESS_ASC</option>
-			<option value="a.access DESC">JGRID_HEADING_ACCESS_DESC</option>
+			<option value="access_level ASC">JGRID_HEADING_ACCESS_ASC</option>
+			<option value="access_level DESC">JGRID_HEADING_ACCESS_DESC</option>
 		</field>
 		<field
 			name="limit"

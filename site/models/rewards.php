@@ -9,14 +9,13 @@
 
 use Joomla\String\StringHelper;
 use Joomla\Utilities\ArrayHelper;
+use Crowdfunding\Container\MoneyHelper;
 
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingModelRewards extends JModelLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * Returns a reference to the a Table object, always creating it.
      *
@@ -60,10 +59,11 @@ class CrowdfundingModelRewards extends JModelLegacy
         $params = JComponentHelper::getParams('com_crowdfunding');
         /** @var  $params Joomla\Registry\Registry */
 
-        $money      = $this->getMoneyFormatter($params);
+        $container    = Prism\Container::getContainer();
+        $moneyParser  = MoneyHelper::getMoneyParser($container, $params);
 
         foreach ($data as $key => &$item) {
-            $item['amount'] = $money->setAmount($item['amount'])->parse();
+            $item['amount'] = $moneyParser->parse($item['amount']);
 
             // Filter data
             if (!is_numeric($item['amount'])) {
@@ -127,6 +127,11 @@ class CrowdfundingModelRewards extends JModelLegacy
         $ids = array();
 
         $ordering = 1;
+
+        JPluginHelper::importPlugin('content');
+
+        $dispatcher = JEventDispatcher::getInstance();
+        $dispatcher->trigger('onBeforeRewardsSave', array('com_crowdfunding.project.wizard.rewards', &$data));
 
         foreach ($data as $item) {
             // Load a record from the database

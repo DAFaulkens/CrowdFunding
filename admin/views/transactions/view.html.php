@@ -7,13 +7,14 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use \Crowdfunding\Container\Helper\Money as MoneyHelper;
+use \Crowdfunding\Currency\Gateway\JoomlaGateway as CurrencyGateway;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewTransactions extends JViewLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -32,7 +33,8 @@ class CrowdfundingViewTransactions extends JViewLegacy
     protected $items;
     protected $pagination;
 
-    protected $money;
+    protected $moneyFormatter;
+    protected $currency;
     protected $currencies;
     protected $enabledSpecificPlugins;
 
@@ -61,31 +63,47 @@ class CrowdfundingViewTransactions extends JViewLegacy
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
+        $this->params     = $this->state->get('params');
 
-        $this->params = $this->state->get('params');
+        $currencyGateway  = new CurrencyGateway(JFactory::getDbo());
 
-        // Get currencies
-        $currencies = array();
+        // Prepare currencies
+        $currencyCodes = array();
         foreach ($this->items as $item) {
-            $currencies[] = $item->txn_currency;
+            $currencyCodes[] = $item->txn_currency;
         }
-        $currencies   = array_filter(array_unique($currencies));
-        
-        if (count($currencies) > 0) {
-            $options = new Joomla\Registry\Registry;
-            $options->set('locale_intl', $this->params->get('locale_intl'));
-            $options->set('amount_format', $this->params->get('amount_format'));
+        $currencyCodes = array_filter(array_unique($currencyCodes));
 
-            $this->currencies = new Crowdfunding\Currencies(JFactory::getDbo(), $options);
-            $this->currencies->load(array('codes' => $currencies));
+        if (count($currencyCodes) > 0) {
+            $mapper             = new \Crowdfunding\Currency\Mapper($currencyGateway);
+            $repository         = new \Crowdfunding\Currency\Repository($mapper);
+
+            $databaseRequest    = new \Prism\Database\Request\Request;
+            $databaseRequest->addSpecificCondition(
+                'codes',
+                new \Prism\Database\Request\Condition([
+                    'column'   => 'code',
+                    'value'    => $currencyCodes,
+                    'operator' => 'IN',
+                    'table'    => 'a'
+                ])
+            );
+
+            $this->currencies   = $repository->fetchCollection($databaseRequest);
         }
 
-        $this->money = $this->getMoneyFormatter($this->params);
+        $locale               = JFactory::getLanguage()->getTag();
+
+        $container            = Prism\Container::getContainer();
+
+        $containerHelper      = new MoneyHelper($container);
+        $this->currency       = $containerHelper->getCurrency($this->params->get('project_currency'), $currencyGateway);
+        $this->moneyFormatter = $containerHelper->getFormatter($locale);
 
         // Get enabled specific plugins.
         $extensions                   = new Prism\Extensions(JFactory::getDbo(), $this->specificPlugins);
         $this->enabledSpecificPlugins = $extensions->getEnabled();
-        
+
         // Prepare sorting data
         $this->prepareSorting();
 
@@ -131,7 +149,7 @@ class CrowdfundingViewTransactions extends JViewLegacy
     {
         // Add submenu
         CrowdfundingHelper::addSubmenu($this->getName());
-        
+
         // Create object Filters and load some filters options.
         $filters = Crowdfunding\Filters::getInstance(JFactory::getDbo());
 

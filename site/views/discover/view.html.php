@@ -7,17 +7,22 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewDiscover extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
     public $document;
+
+    /**
+     * @var JApplicationSite
+     */
+    public $app;
 
     /**
      * @var Joomla\Registry\Registry
@@ -32,7 +37,7 @@ class CrowdfundingViewDiscover extends JViewLegacy
     protected $items;
     protected $pagination;
 
-    protected $money;
+    protected $currency;
     protected $filterPaginationLimit;
     protected $socialProfiles;
     protected $layoutData;
@@ -45,8 +50,9 @@ class CrowdfundingViewDiscover extends JViewLegacy
     {
         $container         = Prism\Container::getContainer();
 
-        $this->option      = JFactory::getApplication()->input->getCmd('option');
-        
+        $this->app         = JFactory::getApplication();
+        $this->option      = $this->app->input->getCmd('option');
+
         $this->state       = $this->get('State');
         $this->items       = $this->get('Items');
         $this->pagination  = $this->get('Pagination');
@@ -65,7 +71,8 @@ class CrowdfundingViewDiscover extends JViewLegacy
         $this->layoutData                 = new stdClass;
         $this->layoutData->items          = $this->items;
         $this->layoutData->params         = $this->params;
-        $this->layoutData->money          = $this->getMoneyFormatter($container, $this->params);
+        $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
+        $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
         $this->layoutData->socialProfiles = $this->socialProfiles;
         $this->layoutData->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
 
@@ -101,12 +108,9 @@ class CrowdfundingViewDiscover extends JViewLegacy
 
     private function preparePageHeading()
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
         // Because the application sets a default page title,
         // we need to get it from the menu item itself
-        $menus = $app->getMenu();
+        $menus = $this->app->getMenu();
         $menu  = $menus->getActive();
 
         // Prepare page heading
@@ -119,19 +123,16 @@ class CrowdfundingViewDiscover extends JViewLegacy
 
     private function preparePageTitle()
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
         // Prepare page title
         $title = $this->params->get('page_title', '');
 
         // Add title before or after Site Name
         if (!$title) {
-            $title = $app->get('sitename');
-        } elseif ((int)$app->get('sitename_pagetitles', 0) === 1) {
-            $title = JText::sprintf('JPAGETITLE', $app->get('sitename'), $title);
-        } elseif ((int)$app->get('sitename_pagetitles', 0) === 2) {
-            $title = JText::sprintf('JPAGETITLE', $title, $app->get('sitename'));
+            $title = $this->app->get('sitename');
+        } elseif ((int)$this->app->get('sitename_pagetitles', 0) === 1) {
+            $title = JText::sprintf('JPAGETITLE', $this->app->get('sitename'), $title);
+        } elseif ((int)$this->app->get('sitename_pagetitles', 0) === 2) {
+            $title = JText::sprintf('JPAGETITLE', $title, $this->app->get('sitename'));
         }
 
         $this->document->setTitle($title);

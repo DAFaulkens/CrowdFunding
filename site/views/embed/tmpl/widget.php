@@ -41,7 +41,7 @@ defined('_JEXEC') or die; ?>
                             <div class="text-uppercase"><?php echo JText::_('COM_CROWDFUNDING_FUNDED'); ?></div>
                         </div>
                         <div class="col-md-4">
-                            <div class="bolder"><?php echo $this->money->setAmount($this->item->funded)->formatCurrency(); ?></div>
+                            <div class="bolder"><?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($this->item->funded, $this->currency)); ?></div>
                             <div class="text-uppercase"><?php echo JText::_('COM_CROWDFUNDING_RAISED'); ?></div>
                         </div>
                         <div class="col-md-4">

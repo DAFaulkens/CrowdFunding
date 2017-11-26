@@ -29,9 +29,6 @@ defined('_JEXEC') or die;
     <th width="5%" class="nowrap hidden-phone">
         <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_FUNDED', 'a.funded', $this->listDirn, $this->listOrder); ?>
     </th>
-    <th width="5%" class="nowrap hidden-phone">
-        <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_FUNDED_PERCENTS', 'funded_percents', $this->listDirn, $this->listOrder); ?>
-    </th>
     <th width="10%" class="hidden-phone">
         <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_START_DATE', 'a.funding_start', $this->listDirn, $this->listOrder); ?>
     </th>
@@ -42,10 +39,10 @@ defined('_JEXEC') or die;
         <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_CREATED', 'a.created', $this->listDirn, $this->listOrder); ?>
     </th>
     <th width="5%" class="nowrap hidden-phone">
-        <?php echo JHtml::_('searchtools.sort', 'JGRID_HEADING_ACCESS', 'a.access', $this->listDirn, $this->listOrder); ?>
+        <?php echo JHtml::_('searchtools.sort', 'JGRID_HEADING_ACCESS', 'access_level', $this->listDirn, $this->listOrder); ?>
     </th>
     <th width="5%" class="nowrap">
-        <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_OWNER', 'd.name', $this->listDirn, $this->listOrder); ?>
+        <?php echo JHtml::_('searchtools.sort', 'COM_CROWDFUNDING_OWNER', 'u.name', $this->listDirn, $this->listOrder); ?>
     </th>
     <th width="3%" class="center nowrap hidden-phone">
         <?php echo JHtml::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.id', $this->listDirn, $this->listOrder); ?>

@@ -138,7 +138,10 @@ defined('_JEXEC') or die;
                         </tr>
                         </thead>
                         <tbody>
-                        <?php for ($i = 0, $max = count($this->mostFunded); $i < $max; $i++) { ?>
+                        <?php
+                        for ($i = 0, $max = count($this->mostFunded); $i < $max; $i++) {
+                            $moneyAmount = new Prism\Money\Money($this->mostFunded[$i]['funded'], $this->currency);
+                        ?>
                             <tr>
                                 <td><?php echo $i + 1; ?></td>
                                 <td>
@@ -147,7 +150,7 @@ defined('_JEXEC') or die;
                                     </a>
                                 </td>
                                 <td>
-                                    <?php echo $this->money->setAmount($this->mostFunded[$i]['funded'])->formatCurrency();?>
+                                    <?php echo $this->moneyFormatter->formatCurrency($moneyAmount);?>
                                 </td>
                             </tr>
                         <?php } ?>

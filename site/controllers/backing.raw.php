@@ -7,8 +7,6 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Joomla\String\StringHelper;
-
 // no direct access
 defined('_JEXEC') or die;
 
@@ -20,8 +18,6 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerBacking extends JControllerLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * Method to get a model object, loading it if required.
      *
@@ -76,7 +72,7 @@ class CrowdfundingControllerBacking extends JControllerLegacy
 
         if ($responseData !== null) {
             if (isset($responseData->message)) {
-                $response->setText($responseData->message);
+                $response->setContent($responseData->message);
             }
 
             if ($responseData->success) {

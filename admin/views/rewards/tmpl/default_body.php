@@ -41,7 +41,7 @@ defined('_JEXEC') or die; ?>
                 <i class="icon icon-eye"></i>
             </a>
         </td>
-        <td class="center"><?php echo $this->money->setAmount($item->amount)->formatCurrency(); ?></td>
+        <td class="center"><?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($item->amount, $this->currency)); ?></td>
         <td class="center hidden-phone"><?php echo $item->number; ?></td>
         <td class="center hidden-phone"><?php echo $item->distributed; ?></td>
         <td class="center hidden-phone"><?php echo $item->number - $item->distributed; ?></td>

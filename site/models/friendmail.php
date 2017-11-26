@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -25,10 +27,9 @@ class CrowdfundingModelFriendmail extends JModelForm
         /** @var $app JApplicationSite */
 
         // Get the pk of the record from the request.
-        $value = $app->input->getInt('id');
+        $value = $app->input->getUint('id');
         $this->setState($this->getName() . '.id', $value);
 
-        // Load the parameters.
         $params = $app->getParams();
         $this->setState('params', $params);
     }
@@ -76,7 +77,12 @@ class CrowdfundingModelFriendmail extends JModelForm
 
             // Prepare default content of the form
             if ((int)$item->id > 0) {
-                $link = JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($item->slug, $item->catslug));
+                $filter = JFilterInput::getInstance();
+
+                $uri  = JUri::getInstance();
+                $host = $filter->clean($uri->getScheme() .'://'. $uri->getHost());
+
+                $link = $host . JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($item->slug, $item->catslug));
                 $data = array(
                     'id'      => $item->id,
                     'subject' => JText::sprintf('COM_CROWDFUNDING_SEND_FRIEND_DEFAULT_SUBJECT', $item->title),
@@ -146,11 +152,11 @@ class CrowdfundingModelFriendmail extends JModelForm
     public function send($data)
     {
         // Send email to the administrator
-        $subject   = Joomla\Utilities\ArrayHelper::getValue($data, 'subject');
-        $body      = Joomla\Utilities\ArrayHelper::getValue($data, 'message');
-        $from      = Joomla\Utilities\ArrayHelper::getValue($data, 'sender');
-        $fromName  = Joomla\Utilities\ArrayHelper::getValue($data, 'sender_name');
-        $recipient = Joomla\Utilities\ArrayHelper::getValue($data, 'receiver');
+        $subject   = ArrayHelper::getValue($data, 'subject');
+        $body      = ArrayHelper::getValue($data, 'message');
+        $from      = ArrayHelper::getValue($data, 'sender');
+        $fromName  = ArrayHelper::getValue($data, 'sender_name');
+        $recipient = ArrayHelper::getValue($data, 'receiver');
 
         $return = JFactory::getMailer()->sendMail($from, $fromName, $recipient, $subject, $body);
 

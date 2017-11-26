@@ -7,12 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewCategory extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
     use Crowdfunding\Helper\AccessHelper;
 
     /**
@@ -104,7 +105,8 @@ class CrowdfundingViewCategory extends JViewLegacy
         $this->layoutData                 = new stdClass;
         $this->layoutData->items          = $this->items;
         $this->layoutData->params         = $this->params;
-        $this->layoutData->money          = $this->getMoneyFormatter($container, $this->params);
+        $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
+        $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
         $this->layoutData->socialProfiles = $this->socialProfiles;
         $this->layoutData->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
 

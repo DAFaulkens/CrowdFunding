@@ -299,7 +299,7 @@ class CrowdfundingModelProject extends JModelAdmin
                 } else {
                     $fundingStartDate   = new Crowdfunding\Date($table->funding_start);
                     $fundingEndDate     = $fundingStartDate->calculateEndDate($table->funding_days);
-                    $table->funding_end = $fundingEndDate->toSql();
+                    $table->funding_end = $fundingEndDate->format(Prism\Constants::DATE_FORMAT_SQL_DATETIME);
                 }
                 break;
 
@@ -434,7 +434,7 @@ class CrowdfundingModelProject extends JModelAdmin
                         if ((int)$table->get('funding_days') > 0) {
                             $fundingStartDate   = new Crowdfunding\Date($table->get('funding_start'));
                             $fundingEndDate     = $fundingStartDate->calculateEndDate($table->get('funding_days'));
-                            $table->funding_end = $fundingEndDate->toSql();
+                            $table->funding_end = $fundingEndDate->format(Prism\Constants::DATE_FORMAT_SQL_DATETIME);
                         }
                     }
 

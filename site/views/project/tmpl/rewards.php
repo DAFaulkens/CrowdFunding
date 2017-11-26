@@ -27,7 +27,7 @@ echo $layout->render($this->layoutData);
     } else {
         $this->formIndex = 1;
         foreach ($this->items as $item) {
-            $item['amount']  = $this->money->setAmount($item['amount'])->format();
+            $item['amount']  = $this->moneyFormatter->format(new Prism\Money\Money($item['amount'], $this->currency));
             $this->formItem  = $item;
             echo $this->loadTemplate('form');
             $this->formIndex++;

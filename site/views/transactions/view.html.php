@@ -7,12 +7,17 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewTransactions extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
+    /**
+     * @var JApplicationSite
+     */
+    protected $app;
 
     /**
      * @var JDocumentHtml
@@ -33,7 +38,8 @@ class CrowdfundingViewTransactions extends JViewLegacy
     protected $pagination;
 
 
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
     protected $listOrder;
     protected $listDirn;
     protected $saveOrder;
@@ -43,11 +49,6 @@ class CrowdfundingViewTransactions extends JViewLegacy
     protected $option;
 
     protected $pageclass_sfx;
-
-    /**
-     * @var JApplicationSite
-     */
-    protected $app;
 
     public function display($tpl = null)
     {
@@ -69,8 +70,9 @@ class CrowdfundingViewTransactions extends JViewLegacy
         /** @var  $params Joomla\Registry\Registry */
 
         if (is_array($this->items) and count($this->items) > 0) {
-            $container   = Prism\Container::getContainer();
-            $this->money = $this->getMoneyFormatter($container, $this->params);
+            $container              = Prism\Container::getContainer();
+            $this->currency         = MoneyHelper::getCurrency($container, $this->params);
+            $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
         }
 
         // Prepare filters

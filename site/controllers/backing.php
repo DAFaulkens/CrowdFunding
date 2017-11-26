@@ -8,6 +8,7 @@
  */
 
 use Joomla\String\StringHelper;
+use Crowdfunding\Container\MoneyHelper;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -20,8 +21,6 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerBacking extends JControllerLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * Method to get a model object, loading it if required.
      *
@@ -29,13 +28,12 @@ class CrowdfundingControllerBacking extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelBacking    The model.
+     * @return    CrowdfundingModelBacking|bool
      * @since    1.5
      */
     public function getModel($name = 'Backing', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     /**
@@ -57,7 +55,21 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $item   = $model->getItem($itemId);
         $user   = JFactory::getUser();
 
-        if (!$this->isAuthorisedStep($item, $params, $user)) {
+        $isAuthorisedStep = true;
+
+        // Trigger the event of a plugin that authorize payment process.
+        JPluginHelper::importPlugin('crowdfundingpayment');
+        $dispatcher = JEventDispatcher::getInstance();
+        $results    = $dispatcher->trigger('onPaymentAuthorize', array('com_crowdfunding.payment.authorize', &$item, &$params, &$user));
+
+        foreach ($results as $result) {
+            if (false === $result) {
+                $isAuthorisedStep = false;
+                break;
+            }
+        }
+
+        if (!$isAuthorisedStep) {
             $returnUrl = CrowdfundingHelperRoute::getBackingRoute($item->slug, $item->catslug);
             $this->setRedirect(JRoute::_($returnUrl, false), JText::_('COM_CROWDFUNDING_ERROR_NO_PERMISSIONS'), 'warning');
             return;
@@ -67,34 +79,6 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $layout = $this->input->getCmd('layout');
         $link   = CrowdfundingHelperRoute::getBackingRoute($item->slug, $item->catslug, $layout);
         $this->setRedirect(JRoute::_($link, false));
-    }
-
-    /**
-     * Authorize payment process using plugin event onPaymentAuthorize.
-     *
-     * @param stdClass $item
-     * @param Joomla\Registry\Registry $params
-     * @param JUser $user
-     *
-     * @return bool
-     */
-    protected function isAuthorisedStep($item, $params, $user)
-    {
-        $authorisedStep = true;
-
-        // Trigger the event of a plugin that authorize payment process.
-        JPluginHelper::importPlugin('crowdfundingpayment');
-        $dispatcher = JEventDispatcher::getInstance();
-        $results    = $dispatcher->trigger('onPaymentAuthorize', array('com_crowdfunding.payment.authorize', &$item, &$params, &$user));
-
-        foreach ($results as $result) {
-            if (false === $result) {
-                $authorisedStep = false;
-                break;
-            }
-        }
-
-        return $authorisedStep;
     }
 
     public function process()
@@ -132,23 +116,26 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $model   = $this->getModel();
         /** @var $model CrowdfundingModelBacking */
 
-        // Get the item
+        /** @var stdClass $item */
         $item    = $model->getItem($itemId);
 
         // Check for valid project
-        if (is_object($item) and (int)$item->id === 0) {
+        if ($item !== null && is_object($item) && (int)$item->id === 0) {
             $this->setRedirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()), JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), 'warning');
             return;
         }
 
         $returnUrl = CrowdfundingHelperRoute::getBackingRoute($item->slug, $item->catslug);
 
-        $rewardId = $this->input->getInt('rid', 0);
-        $amount   = $this->input->getString('amount');
+        $rewardId  = $this->input->getUint('rid', 0);
+        $amount    = $this->input->getString('amount');
 
+        $container    = Prism\Container::getContainer();
+        /** @var  $container Joomla\DI\Container */
+        
         // Parse the amount.
-        $money  = $this->getMoneyFormatter($params);
-        $amount = $money->setAmount($amount)->parse();
+        $moneyParser  = MoneyHelper::getMoneyParser($container, $params);
+        $amount       = $moneyParser->parse($amount);
 
         // Get user ID
         $user   = JFactory::getUser();
@@ -184,23 +171,24 @@ class CrowdfundingControllerBacking extends JControllerLegacy
             return;
         }
 
-        $container       = Prism\Container::getContainer();
-        /** @var  $container Joomla\DI\Container */
-
-        $containerHelper = new Crowdfunding\Container\Helper();
-        $money           = $containerHelper->fetchMoneyFormatter($container, $params);
+        $currency         = MoneyHelper::getCurrency($container, $params);
+        $moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $params);
 
         // Check minimum allowed amount.
-        $minimumAmount          = (float)$params->get('backing_minimum_amount');
-        $minimumAmountFormatted = $money->setAmount($minimumAmount)->formatCurrency();
+        $minimumAmount  = (float)$params->get('backing_minimum_amount');
+        $moneyAmount    = new Prism\Money\Money($minimumAmount, $currency);
+            
+        $minimumAmountFormatted = $moneyFormatter->formatCurrency($moneyAmount);
         if ($minimumAmount > 0 and ($minimumAmount > $amount)) {
             $this->setRedirect(JRoute::_($returnUrl, false), JText::sprintf('COM_CROWDFUNDING_ERROR_MINIMUM_AMOUNT_S', $minimumAmountFormatted), 'warning');
             return;
         }
 
         // Check maximum allowed amount.
-        $maximumAmount           = (float)$params->get('backing_maximum_amount');
-        $maximumAmountFormatted  = $money->setAmount($maximumAmount)->formatCurrency();
+        $maximumAmount  = (float)$params->get('backing_maximum_amount');
+        $moneyAmount    = new Prism\Money\Money($maximumAmount, $currency);
+        
+        $maximumAmountFormatted  = $moneyFormatter->formatCurrency($moneyAmount);
         if ($maximumAmount > 0 and ($maximumAmount < $amount)) {
             $this->setRedirect(JRoute::_($returnUrl, false), JText::sprintf('COM_CROWDFUNDING_ERROR_MAXIMUM_AMOUNT_S', $maximumAmountFormatted), 'warning');
             return;
@@ -210,22 +198,22 @@ class CrowdfundingControllerBacking extends JControllerLegacy
 
         // Get the payment process object and
         // store the selected data from the user.
-        $paymentSessionContext         = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$item->id;
-        $paymentSessionLocal           = $app->getUserState($paymentSessionContext);
-        $paymentSessionLocal->step1    = true;
-        $paymentSessionLocal->amount   = $amount;
-        $paymentSessionLocal->rewardId = $rewardId;
-        $paymentSessionLocal->terms    = $terms;
-        $app->setUserState($paymentSessionContext, $paymentSessionLocal);
+        $wizardSessionContext    = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$item->id;
+        $wizardSession           = $app->getUserState($wizardSessionContext);
+
+        $wizardSession->step1    = true;
+        $wizardSession->amount   = $amount;
+        $wizardSession->rewardId = $rewardId;
+        $wizardSession->terms    = $terms;
+
+        $app->setUserState($wizardSessionContext, $wizardSession);
 
         // Generate hash user ID used for anonymous payment.
         if (!$userId) {
             $aUserId = $app->getUserState('auser_id');
             if (!$aUserId) {
                 // Generate a hash ID for anonymous user.
-                $anonymousUserId = Prism\Utilities\StringHelper::generateRandomString(32);
-
-                $aUserId = (string)$anonymousUserId;
+                $aUserId = Prism\Utilities\StringHelper::generateRandomString(32);
                 $app->setUserState('auser_id', $aUserId);
             }
         }
@@ -256,20 +244,23 @@ class CrowdfundingControllerBacking extends JControllerLegacy
             $intentionId = $intention->getId();
         }
 
-        // Create remote payment session.
-        $paymentSessionRemote = new Crowdfunding\Payment\Session(JFactory::getDbo());
+        // Create payment session.
+        $paymentSession = new Crowdfunding\Payment\Session\Session;
         $paymentSessionData = array(
             'user_id'      => $userId,
             'auser_id'     => $aUserId, // Anonymous user hash ID
             'project_id'   => $item->id,
             'reward_id'    => $rewardId,
             'record_date'  => $date->toSql(),
-            'session_id'   => $paymentSessionLocal->session_id,
+            'session_id'   => $wizardSession->session_id,
             'intention_id' => $intentionId
         );
 
-        $paymentSessionRemote->bind($paymentSessionData);
-        $paymentSessionRemote->store();
+        $paymentSession->bind($paymentSessionData);
+
+        $gateway     = new Crowdfunding\Payment\Session\Gateway\JoomlaGateway(\JFactory::getDbo());
+        $repository  = new Crowdfunding\Payment\Session\Repository(new Crowdfunding\Payment\Session\Mapper($gateway));
+        $repository->store($paymentSession);
 
         // Redirect to next page
         $layout = $this->input->getCmd('layout', 'default');

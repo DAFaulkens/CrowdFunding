@@ -61,6 +61,7 @@ class Constants
     const CONTAINER_REWARD  = 'com_crowdfunding.reward';
     const CONTAINER_PROFILE  = 'com_crowdfunding.profile';
     const CONTAINER_PROOF_PROFILE  = 'com_crowdfunding.profile.proof';
-    const CONTAINER_FORMATTER_MONEY = 'com_crowdfunding.money';
+    const CONTAINER_FORMATTER_MONEY = 'com_crowdfunding.money.formatter';
+    const CONTAINER_PARSER_MONEY = 'com_crowdfunding.money.parser';
     const CONTAINER_FORMATTER_NUMBER = 'com_crowdfunding.number';
 }

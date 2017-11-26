@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewEmbed extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -36,7 +36,8 @@ class CrowdfundingViewEmbed extends JViewLegacy
 
     protected $item;
 
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
     protected $imageFolder;
     protected $embedLink;
     protected $socialProfileLink;
@@ -70,8 +71,9 @@ class CrowdfundingViewEmbed extends JViewLegacy
             return;
         }
 
-        $container    = Prism\Container::getContainer();
-        $this->money  = $this->getMoneyFormatter($container, $this->params);
+        $container              = Prism\Container::getContainer();
+        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
+        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
 
         // Integrate with social profile.
         $this->displayCreator = $this->params->get('integration_display_creator', true);

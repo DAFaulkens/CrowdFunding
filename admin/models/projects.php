@@ -39,14 +39,14 @@ class CrowdfundingModelProjects extends JModelList
                 'type', 't.title',
                 'category', 'c.title',
                 'owner', 'u.name',
-                'a.access'
+                'access_level', 'ag.title'
             );
         }
 
         parent::__construct($config);
     }
 
-    protected function populateState($ordering = null, $direction = null)
+    protected function populateState($ordering = 'a.created', $direction = 'desc')
     {
         // Load the component parameters.
         $params = JComponentHelper::getParams($this->option);
@@ -69,11 +69,11 @@ class CrowdfundingModelProjects extends JModelList
         $this->setState('filter.featured', $value);
 
         // Load filter category.
-        $value = $this->getUserStateFromRequest($this->context . '.filter.category', 'filter_category', 0, 'int');
+        $value = $this->getUserStateFromRequest($this->context . '.filter.category', 'filter_category', '', 'int');
         $this->setState('filter.category', $value);
 
         // Load filter type.
-        $value = $this->getUserStateFromRequest($this->context . '.filter.type', 'filter_type', 0, 'int');
+        $value = $this->getUserStateFromRequest($this->context . '.filter.type', 'filter_type', '', 'int');
         $this->setState('filter.type', $value);
 
         // Get filter author
@@ -81,7 +81,7 @@ class CrowdfundingModelProjects extends JModelList
         $this->setState('filter.access', $value);
 
         // List state information.
-        parent::populateState('a.created', 'desc');
+        parent::populateState($ordering, $direction);
     }
 
     /**
@@ -98,7 +98,6 @@ class CrowdfundingModelProjects extends JModelList
      */
     protected function getStoreId($id = '')
     {
-        // Compile the store id.
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.state');
         $id .= ':' . $this->getState('filter.approved');
@@ -123,7 +122,6 @@ class CrowdfundingModelProjects extends JModelList
         $db = $this->getDbo();
         /** @var $db JDatabaseDriver*/
 
-        // Create a new query object.
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.

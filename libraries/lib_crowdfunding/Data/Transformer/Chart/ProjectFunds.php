@@ -10,6 +10,8 @@
 namespace Crowdfunding\Data\Transformer\Chart;
 
 use League\Fractal\TransformerAbstract;
+use Prism\Money\Currency;
+use Prism\Money\Formatter;
 use Prism\Money\Money;
 
 defined('JPATH_PLATFORM') or die;
@@ -22,11 +24,13 @@ defined('JPATH_PLATFORM') or die;
  */
 class ProjectFunds extends TransformerAbstract
 {
-    protected $money;
+    protected $formatter;
+    protected $currency;
 
-    public function __construct(Money $money)
+    public function __construct(Formatter $formatter, Currency $currency)
     {
-        $this->money  = $money;
+        $this->formatter  = $formatter;
+        $this->currency   = $currency;
     }
 
     public function transform(array $projectData)
@@ -41,15 +45,15 @@ class ProjectFunds extends TransformerAbstract
         }
 
         // Goal
-        $data['goal']['label']  = \JText::sprintf('COM_CROWDFUNDING_GOAL_S', $this->money->setAmount($projectData['goal'])->formatCurrency());
+        $data['goal']['label']  = \JText::sprintf('COM_CROWDFUNDING_GOAL_S', $this->formatter->formatCurrency(new Money($projectData['goal'], $this->currency)));
         $data['goal']['amount'] = (float)$projectData['goal'];
 
         // Funded
-        $data['funded']['label']   = \JText::sprintf('COM_CROWDFUNDING_FUNDED_S', $fundedFormatted = $this->money->setAmount($projectData['funded'])->formatCurrency());
+        $data['funded']['label']   = \JText::sprintf('COM_CROWDFUNDING_FUNDED_S', $fundedFormatted = $this->formatter->formatCurrency(new Money($projectData['funded'], $this->currency)));
         $data['funded']['amount']  = (float)$projectData['funded'];
 
         if ((float)$projectData['remaining'] < (float)$projectData['goal']) {
-            $data['remaining']['label']  = \JText::sprintf('COM_CROWDFUNDING_REMAINING_S', $this->money->setAmount($projectData['remaining'])->formatCurrency());
+            $data['remaining']['label']  = \JText::sprintf('COM_CROWDFUNDING_REMAINING_S', $this->formatter->formatCurrency(new Money($projectData['remaining'], $this->currency)));
             $data['remaining']['amount'] = (float)$projectData['remaining'];
         }
 

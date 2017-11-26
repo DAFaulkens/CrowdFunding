@@ -13,7 +13,7 @@ defined('_JEXEC') or die;
 <?php foreach ($this->items as $i => $item) {
     $ordering = ($this->listOrder === 'a.ordering');
 
-    $numberOfProjects = isset($this->projects[$item->id]) ? $this->projects[$item->id]->number : 0;
+    $numberOfProjects = array_key_exists($item->id, $this->projects) ? $this->projects[$item->id]->number : 0;
 
     $invested = Joomla\Utilities\ArrayHelper::getValue($this->amounts['invested'], $item->id);
     $received = Joomla\Utilities\ArrayHelper::getValue($this->amounts['received'], $item->id);
@@ -48,7 +48,7 @@ defined('_JEXEC') or die;
             </div>
         </td>
         <td class="hidden-phone">
-        <?php echo $this->money->setAmount($investedAmount)->formatCurrency(); ?>
+        <?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($investedAmount, $this->currency)); ?>
         <div class="small">
             <a href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=transactions&filter_search=sid:' . $item->id); ?>">
                 <?php echo JText::sprintf('COM_CROWDFUNDING_TRANSACTIONS_N', $investedTxnNumber); ?>
@@ -56,7 +56,7 @@ defined('_JEXEC') or die;
         </div>
         </td>
         <td class="hidden-phone">
-        <?php echo $this->money->setAmount($receiverAmount)->formatCurrency(); ?>
+        <?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($receiverAmount, $this->currency)); ?>
         <div class="small">
             <a href="<?php echo JRoute::_('index.php?option=com_crowdfunding&view=transactions&filter_search=bid:' . $item->id); ?>">
                 <?php echo JText::sprintf('COM_CROWDFUNDING_TRANSACTIONS_N', $receivedTxnNumber); ?>

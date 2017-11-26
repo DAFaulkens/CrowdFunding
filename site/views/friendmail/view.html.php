@@ -51,7 +51,7 @@ class CrowdfundingViewFriendmail extends JViewLegacy
         $this->app    = JFactory::getApplication();
         /** @var $this->app JApplicationSite */
 
-        $this->option = JFactory::getApplication()->input->get('option');
+        $this->option = $this->app->input->get('option');
 
         $this->state  = $this->get('State');
         $this->item   = $this->get('Item');

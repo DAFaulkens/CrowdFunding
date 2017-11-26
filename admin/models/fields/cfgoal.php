@@ -12,6 +12,9 @@ defined('JPATH_PLATFORM') or die;
 jimport('Prism.init');
 jimport('Crowdfunding.init');
 
+use Crowdfunding\Container\MoneyHelper;
+use Prism\Money\Money;
+
 class JFormFieldCfGoal extends JFormField
 {
     /**
@@ -31,6 +34,7 @@ class JFormFieldCfGoal extends JFormField
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
+     * @throws \Prism\Domain\BindException
      */
     protected function getInput()
     {
@@ -50,12 +54,9 @@ class JFormFieldCfGoal extends JFormField
 
         // Get the currency and money formatter from the container.
         $container        = Prism\Container::getContainer();
-        $containerHelper  = new Crowdfunding\Container\Helper();
 
-        $moneyFormatter   = $containerHelper->fetchMoneyFormatter($container, $params);
-        $moneyFormatter->setAmount($this->value);
-
-        $currency         = $moneyFormatter->getCurrency();
+        $moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $params);
+        $currency         = MoneyHelper::getCurrency($container, $params);
 
         $html = array();
 
@@ -66,7 +67,7 @@ class JFormFieldCfGoal extends JFormField
                 $html[] = '<div class="input-group-addon">' . $currency->getSymbol() . '</div>';
             }
 
-            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format() . '"' . $class . $size . $disabled . $readonly . $maxLength . $required . '/>';
+            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format(new Money($this->value, $currency)) . '"' . $class . $size . $disabled . $readonly . $maxLength . $required . '/>';
 
             // Prepend
             $html[] = '<div class="input-group-addon">' . $currency->getCode() . '</div>';
@@ -81,7 +82,7 @@ class JFormFieldCfGoal extends JFormField
                 $html[] = '<div class="input-append">';
             }
 
-            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format() . '"' . $class . $size . $disabled . $readonly . $maxLength . $required . '/>';
+            $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' . $moneyFormatter->format(new Money($this->value, $currency)) . '"' . $class . $size . $disabled . $readonly . $maxLength . $required . '/>';
 
             // Appended
             $html[] = '<span class="add-on">' . $currency->getCode() . '</span></div>';

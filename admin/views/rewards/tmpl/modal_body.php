@@ -24,7 +24,7 @@ defined('_JEXEC') or die;
                 <?php echo JText::sprintf('COM_CROWDFUNDING_PROJECT_ID_D', $item->project_id); ?>
             </div>
         </td>
-        <td class="center"><?php echo $this->money->setAmount($item->amount)->formatCurrency(); ?></td>
+        <td class="center"><?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($item->amount, $this->currency)); ?></td>
         <td class="center hidden-phone"><?php echo $item->number; ?></td>
         <td class="center hidden-phone"><?php echo $item->distributed; ?></td>
         <td class="center hidden-phone"><?php echo $item->number - $item->distributed; ?></td>

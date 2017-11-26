@@ -1,6 +1,11 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.7
+* Improved Project Manager on front-end.
+* Improved payment process.
+* Fixed issue with payment session if you use several payment plugins.
+
 ###v2.6.5
 * Fixed an issue with fees during the payment process.
 * Fixed the layout that shows extra payment data.

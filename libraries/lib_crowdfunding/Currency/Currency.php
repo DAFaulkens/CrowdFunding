@@ -7,21 +7,27 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-namespace Crowdfunding;
+namespace Crowdfunding\Currency;
 
-use Prism;
-
-defined('JPATH_PLATFORM') or die;
+use Prism\Database;
+use Prism\Domain;
+use Prism\Money\LegalTender;
 
 /**
- * This class contains methods that are used for managing currency.
+ * Currency class of the crowdfunding platform.
  *
  * @package      Crowdfunding
  * @subpackage   Currencies
+ *
+ * @todo Change this class to be Entity. Implement Domain\Populator.
  */
-class Currency extends Prism\Database\TableImmutable implements Prism\Money\CurrencyInterface
+class Currency extends Database\TableImmutable implements LegalTender, Domain\Entity
 {
-    protected $id;
+    use Domain\EntityId;
+
+    const SYMBOL_BEFORE = 0;
+    const SYMBOL_AFTER  = 1;
+
     protected $title;
     protected $code;
     protected $symbol;
@@ -75,6 +81,7 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
      * @param array $options
      *
      * @throws \RuntimeException
+     * @deprecated v2.6.6 Use Crowdfunding\Currency\Repository.
      */
     public function load($keys, array $options = array())
     {
@@ -98,34 +105,14 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
     }
 
     /**
-     * Return currency ID.
-     *
-     * <code>
-     * $currencyId  = 1;
-     *
-     * $currency    = new Crowdfunding\Currency(\JFactory::getDbo());
-     * $currency->load($currencyId);
-     *
-     * if (!$currency->getId()) {
-     * ....
-     * }
-     * </code>
-     *
-     * @return int
-     */
-    public function getId()
-    {
-        return (int)$this->id;
-    }
-
-    /**
      * Return currency title.
      *
      * <code>
      * $currencyId  = 1;
      *
-     * $currency    = new Crowdfunding\Currency(\JFactory::getDbo());
-     * $currency->load($currencyId);
+     * $gateway     = new Crowdfunding\Currency\Gateway\JoomlaGateway(\JFactory::getDbo());
+     * $repository  = new Crowdfunding\Currency\Repository($gateway);
+     * $currency    = $repository->findById($currencyId);
      *
      * echo $currency->getTitle();
      * </code>
@@ -143,8 +130,9 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
      * <code>
      * $currencyId  = 1;
      *
-     * $currency    = new Crowdfunding\Currency(\JFactory::getDbo());
-     * $currency->load($currencyId);
+     * $gateway     = new Crowdfunding\Currency\Gateway\JoomlaGateway(\JFactory::getDbo());
+     * $repository  = new Crowdfunding\Currency\Repository($gateway);
+     * $currency    = $repository->findById($currencyId);
      *
      * // Return GBP
      * $code = $currency->getCode();
@@ -163,8 +151,9 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
      * <code>
      * $currencyId  = 1;
      *
-     * $currency    = new Crowdfunding\Currency(\JFactory::getDbo());
-     * $currency->load($currencyId);
+     * $gateway     = new Crowdfunding\Currency\Gateway\JoomlaGateway(\JFactory::getDbo());
+     * $repository  = new Crowdfunding\Currency\Repository($gateway);
+     * $currency    = $repository->findById($currencyId);
      *
      * // Return £
      * $symbol = $currency->getSymbol();
@@ -183,8 +172,9 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
      * <code>
      * $currencyId  = 1;
      *
-     * $currency    = new Crowdfunding\Currency(\JFactory::getDbo());
-     * $currency->load($currencyId);
+     * $gateway     = new Crowdfunding\Currency\Gateway\JoomlaGateway(\JFactory::getDbo());
+     * $repository  = new Crowdfunding\Currency\Repository($gateway);
+     * $currency    = $repository->findById($currencyId);
      *
      * // Return 0 = beginning; 1 = end;
      * if (0 == $currency->getPosition()) {
@@ -197,5 +187,63 @@ class Currency extends Prism\Database\TableImmutable implements Prism\Money\Curr
     public function getPosition()
     {
         return (int)$this->position;
+    }
+
+    /**
+     * Check if currency symbol should stay at the beginning of the formatted amount string.
+     *
+     * <code>
+     * $data = array(
+     *     'title'    => 'EURO',
+     *     'code'     => 'EUR',
+     *     'symbol'   => '€',
+     *     'position' => '0'
+     * );
+     *
+     * $currency  = new Prism\Money\Currency($data);
+     * if ($currency->symbolBefore()) {
+     * }
+     * </code>
+     *
+     * @return bool
+     */
+    public function symbolBefore()
+    {
+        return (self::SYMBOL_BEFORE === $this->getPosition());
+    }
+
+    /**
+     * Check if currency symbol should stay at the end of the formatted amount string.
+     *
+     * <code>
+     * $data = array(
+     *     'title'    => 'EURO',
+     *     'code'     => 'EUR',
+     *     'symbol'   => '€',
+     *     'position' => '0'
+     * );
+     *
+     * $currency  = new Prism\Money\Currency($data);
+     * if ($currency->symbolAfter()) {
+     * }
+     * </code>
+     *
+     * @return bool
+     */
+    public function symbolAfter()
+    {
+        return (self::SYMBOL_AFTER === $this->getPosition());
+    }
+
+    /**
+     * Checks whether this currency is the same as an other.
+     *
+     * @param LegalTender $other
+     *
+     * @return bool
+     */
+    public function equals(LegalTender $other)
+    {
+        return $this->code === $other->getCode();
     }
 }

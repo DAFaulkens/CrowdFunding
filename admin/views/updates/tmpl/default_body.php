@@ -18,10 +18,10 @@ defined('_JEXEC') or die;
         <td>
             <a href="<?php echo JRoute::_("index.php?option=com_crowdfunding&view=update&layout=edit&id=" . $item->id); ?>"><?php echo $item->title; ?></a>
         </td>
-        <td class="center hidden-phone">
+        <td class="hidden-phone">
             <a href="<?php echo JRoute::_("index.php?option=com_crowdfunding&view=projects&filter_search:id=" . $item->project_id); ?>"><?php echo $item->project; ?></a>
         </td>
-        <td class="center hidden-phone">
+        <td class="hidden-phone">
             <?php echo JHTML::_('date', $item->record_date, JText::_('DATE_FORMAT_LC3')); ?>
         </td>
         <td class="cente hidden-phone hidden-phone">
@@ -29,4 +29,3 @@ defined('_JEXEC') or die;
         </td>
     </tr>
 <?php } ?>
-	  

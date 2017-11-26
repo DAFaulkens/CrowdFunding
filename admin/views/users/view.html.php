@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewUsers extends JViewLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -32,7 +32,8 @@ class CrowdfundingViewUsers extends JViewLegacy
     protected $items;
     protected $pagination;
 
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
     protected $projects;
     protected $amounts;
 
@@ -56,7 +57,9 @@ class CrowdfundingViewUsers extends JViewLegacy
 
         $this->params     = $this->state->get('params');
 
-        $this->money      = $this->getMoneyFormatter($this->params);
+        $container              = Prism\Container::getContainer();
+        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
+        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
 
         // Get user IDs.
         $usersIds         = Prism\Utilities\ArrayHelper::getIds($this->items);

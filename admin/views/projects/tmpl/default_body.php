@@ -26,7 +26,10 @@ $website    = $uri->toString(array('scheme', 'host'));
         $disableClassName = 'inactive tip-top';
     }
 
-    $numberOfRewards = isset($this->rewards[$item->id]) ? $this->rewards[$item->id]['number'] : 0;
+    $numberOfRewards = array_key_exists($item->id, $this->rewards) ? $this->rewards[$item->id]['number'] : 0;
+
+    $moneyGoal   = new Prism\Money\Money($item->goal, $this->currency);
+    $moneyFunded = new Prism\Money\Money($item->funded, $this->currency);
     ?>
     <tr class="row<?php echo $i % 2; ?>" sortable-group-id="<?php echo $item->catid ?>">
         <td class="order nowrap center hidden-phone">
@@ -60,9 +63,12 @@ $website    = $uri->toString(array('scheme', 'host'));
                 <?php echo JHtml::_('crowdfundingbackend.type', $item->type); ?>
             </div>
         </td>
-        <td class="hidden-phone"><?php echo $this->money->setAmount($item->goal)->formatCurrency(); ?></td>
-        <td class="hidden-phone"><?php echo $this->money->setAmount($item->funded)->formatCurrency(); ?></td>
-        <td class="hidden-phone"><?php echo JHtml::_('crowdfunding.percent', $item->funded_percents); ?></td>
+        <td class="hidden-phone"><?php echo $this->moneyFormatter->formatCurrency($moneyGoal); ?></td>
+        <td class="hidden-phone">
+            <span title="<?php echo JHtml::_('crowdfunding.percent', $item->funded_percents); ?>" class="cursor-help">
+            <?php echo $this->moneyFormatter->formatCurrency($moneyFunded); ?>
+            </span>
+        </td>
         <td class="hidden-phone">
             <?php echo JHtml::_('crowdfunding.date', $item->funding_start, $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'))); ?>
         </td>

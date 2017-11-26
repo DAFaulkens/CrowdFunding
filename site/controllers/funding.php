@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -20,8 +22,6 @@ JLoader::register('CrowdfundingModelProject', JPATH_COMPONENT .DIRECTORY_SEPARAT
  */
 class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * Method to get a model object, loading it if required.
      *
@@ -66,8 +66,10 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
         $params = JComponentHelper::getParams($this->option);
         /** @var $params Joomla\Registry\Registry */
 
-        $money = $this->getMoneyFormatter($params);
-        $data['goal'] = $money->setAmount($data['goal'])->parse();
+        $container    = Prism\Container::getContainer();
+        $moneyParser  = MoneyHelper::getMoneyParser($container, $params);
+
+        $data['goal'] = $moneyParser->parse($data['goal']);
 
         $model = $this->getModel();
         /** @var $model CrowdfundingModelFunding */

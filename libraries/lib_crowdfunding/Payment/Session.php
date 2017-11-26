@@ -20,6 +20,8 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Payments
+ *
+ * @deprecated v2.6.6
  */
 class Session extends Prism\Database\Table
 {
@@ -91,7 +93,7 @@ class Session extends Prism\Database\Table
                 'a.id, a.user_id, a.project_id, a.reward_id, a.record_date, a.order_id, ' .
                 'a.unique_key, a.gateway, a.gateway_data, a.auser_id, a.session_id, a.intention_id'
             )
-            ->from($this->db->quoteName('#__crowdf_payment_sessions', 'a'));
+            ->from($this->db->quoteName('#__crowdf_paymentsessions', 'a'));
 
         if (!is_array($keys)) {
             $query->where('a.id = ' . (int)$keys);
@@ -149,7 +151,7 @@ class Session extends Prism\Database\Table
 
         $query = $this->db->getQuery(true);
         $query
-            ->insert($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->insert($this->db->quoteName('#__crowdf_paymentsessions'))
             ->set($this->db->quoteName('user_id') . '=' . $this->db->quote($this->user_id))
             ->set($this->db->quoteName('project_id') . '=' . $this->db->quote($this->project_id))
             ->set($this->db->quoteName('reward_id') . '=' . $this->db->quote($this->reward_id))
@@ -179,7 +181,7 @@ class Session extends Prism\Database\Table
         $query = $this->db->getQuery(true);
 
         $query
-            ->update($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->update($this->db->quoteName('#__crowdf_paymentsessions'))
             ->set($this->db->quoteName('user_id') . '=' . $this->db->quote($this->user_id))
             ->set($this->db->quoteName('project_id') . '=' . $this->db->quote($this->project_id))
             ->set($this->db->quoteName('reward_id') . '=' . $this->db->quote($this->reward_id))
@@ -230,7 +232,7 @@ class Session extends Prism\Database\Table
     {
         $query = $this->db->getQuery(true);
         $query
-            ->delete($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->delete($this->db->quoteName('#__crowdf_paymentsessions'))
             ->where($this->db->quoteName('id') . '=' . (int)$this->id);
 
         $this->db->setQuery($query);
@@ -681,7 +683,7 @@ class Session extends Prism\Database\Table
         $query = $this->db->getQuery(true);
 
         $query
-            ->update($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->update($this->db->quoteName('#__crowdf_paymentsessions'))
             ->set($this->db->quoteName('unique_key') . '=' . $this->db->quote($this->unique_key))
             ->where($this->db->quoteName('id') . '=' . $this->db->quote($this->id));
 
@@ -756,7 +758,7 @@ class Session extends Prism\Database\Table
         $query = $this->db->getQuery(true);
 
         $query
-            ->update($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->update($this->db->quoteName('#__crowdf_paymentsessions'))
             ->set($this->db->quoteName('order_id') . '=' . $this->db->quote($this->order_id))
             ->where($this->db->quoteName('id') . '=' . $this->db->quote($this->id));
 
@@ -795,7 +797,7 @@ class Session extends Prism\Database\Table
         $query = $this->db->getQuery(true);
 
         $query
-            ->update($this->db->quoteName('#__crowdf_payment_sessions'))
+            ->update($this->db->quoteName('#__crowdf_paymentsessions'))
             ->set($this->db->quoteName('gateway_data') . '=' . $this->db->quote($gatewayData))
             ->where($this->db->quoteName('id') . '=' . $this->db->quote($this->id));
 

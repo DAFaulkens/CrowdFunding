@@ -7,18 +7,18 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Joomla\DI\ContainerAwareInterface;
-use Joomla\DI\ContainerAwareTrait;
+use Crowdfunding\Container\MoneyHelper;
+use Joomla\Utilities\ArrayHelper;
+use Prism\Domain\BindException;
+use Prism\Money\Money;
 
 // no direct access
 defined('_JEXEC') or die;
 
-JObserverMapper::addObserverClassToClass('Crowdfunding\\Observer\\Transaction\\TransactionObserver', 'Crowdfunding\\Transaction\\TransactionManager', array('typeAlias' => 'com_crowdfunding.transaction'));
+JObserverMapper::addObserverClassToClass(Crowdfunding\Observer\Transaction\TransactionObserver::class, Crowdfunding\Transaction\TransactionManager::class, array('typeAlias' => 'com_crowdfunding.transaction'));
 
 class CrowdfundingModelTransaction extends JModelAdmin
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     protected $event_transaction_change_state;
 
     public function __construct($config = array())
@@ -74,6 +74,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
      * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
+     * @throws BindException
      *
      * @return  mixed   The data for the form.
      * @since   1.6
@@ -90,12 +91,12 @@ class CrowdfundingModelTransaction extends JModelAdmin
             $params         = JComponentHelper::getParams('com_crowdfunding');
             /** @var  $params Joomla\Registry\Registry */
 
-            $moneyFormatter = $this->getMoneyFormatter($params);
+            $container      = Prism\Container::getContainer();
+            $currency       = MoneyHelper::getCurrency($container, $params);
+            $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
 
             // If it is new record, set default values.
             if (!$data->id) {
-                $currency               = $moneyFormatter->getCurrency();
-
                 $data->txn_currency     = $currency->getCode();
 
                 $data->txn_id           = strtoupper(Prism\Utilities\StringHelper::generateRandomString(13, 'TXN'));
@@ -110,7 +111,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
                 $data->update_project   = 1;
             }
 
-            $data->txn_amount = $moneyFormatter->setAmount($data->txn_amount)->format();
+            $data->txn_amount = $moneyFormatter->format(new Money($data->txn_amount, $currency));
         }
 
         return $data;
@@ -132,32 +133,33 @@ class CrowdfundingModelTransaction extends JModelAdmin
     {
         $context        = $this->option . '.' . $this->name;
 
-        $id             = Joomla\Utilities\ArrayHelper::getValue($data, 'id', 0, 'int');
-        $txnStatus      = Joomla\Utilities\ArrayHelper::getValue($data, 'txn_status');
-        $txnDate        = Joomla\Utilities\ArrayHelper::getValue($data, 'txn_date');
+        $id             = ArrayHelper::getValue($data, 'id', 0, 'int');
+        $txnStatus      = ArrayHelper::getValue($data, 'txn_status');
+        $txnDate        = ArrayHelper::getValue($data, 'txn_date');
 
         // Parse the amount.
         $params         = JComponentHelper::getParams($this->option);
         /** @var  $params Joomla\Registry\Registry */
 
-        $moneyFormatter = $this->getMoneyFormatter($params);
+        $container      = Prism\Container::getContainer();
+        $moneyParser    = MoneyHelper::getMoneyParser($container, $params);
 
-        $amount         = Joomla\Utilities\ArrayHelper::getValue($data, 'txn_amount');
-        $amount         = $moneyFormatter->setAmount($amount)->parse();
+        $amount         = ArrayHelper::getValue($data, 'txn_amount');
+        $amount         = $moneyParser->parse($amount);
 
         $cleanData = array(
             'txn_amount'       => $amount,
-            'txn_currency'     => Joomla\Utilities\ArrayHelper::getValue($data, 'txn_currency'),
+            'txn_currency'     => ArrayHelper::getValue($data, 'txn_currency'),
             'txn_status'       => $txnStatus,
             'txn_date'         => $txnDate,
-            'txn_id'           => Joomla\Utilities\ArrayHelper::getValue($data, 'txn_id'),
-            'parent_txn_id'    => Joomla\Utilities\ArrayHelper::getValue($data, 'parent_txn_id'),
-            'service_provider' => Joomla\Utilities\ArrayHelper::getValue($data, 'service_provider'),
-            'service_alias'    => Joomla\Utilities\ArrayHelper::getValue($data, 'service_alias'),
-            'investor_id'      => Joomla\Utilities\ArrayHelper::getValue($data, 'investor_id', 0, 'int'),
-            'receiver_id'      => Joomla\Utilities\ArrayHelper::getValue($data, 'receiver_id', 0, 'int'),
-            'project_id'       => Joomla\Utilities\ArrayHelper::getValue($data, 'project_id', 0, 'int'),
-            'reward_id'        => Joomla\Utilities\ArrayHelper::getValue($data, 'reward_id', 0, 'int')
+            'txn_id'           => ArrayHelper::getValue($data, 'txn_id'),
+            'parent_txn_id'    => ArrayHelper::getValue($data, 'parent_txn_id'),
+            'service_provider' => ArrayHelper::getValue($data, 'service_provider'),
+            'service_alias'    => ArrayHelper::getValue($data, 'service_alias'),
+            'investor_id'      => ArrayHelper::getValue($data, 'investor_id', 0, 'int'),
+            'receiver_id'      => ArrayHelper::getValue($data, 'receiver_id', 0, 'int'),
+            'project_id'       => ArrayHelper::getValue($data, 'project_id', 0, 'int'),
+            'reward_id'        => ArrayHelper::getValue($data, 'reward_id', 0, 'int')
         );
         
         $dateValidator = new Prism\Validator\Date($txnDate);

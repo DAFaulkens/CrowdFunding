@@ -11,10 +11,10 @@ namespace Crowdfunding\Container;
 
 use Joomla\DI\Container;
 use Joomla\Registry\Registry;
-use Crowdfunding\Currency;
+use Crowdfunding\Currency\Currency;
 use Crowdfunding\Project;
 use Crowdfunding\Reward;
-use Prism\Money\Money;
+use Prism\Money\MoneyFormatter;
 use Prism\Integration\Profile\ProfileInterface;
 use Identityproof\User as ProofUser;
 
@@ -26,10 +26,13 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Helpers
+ *
+ * @deprecated v2.6 used container helper for every namespace.
+ * @todo Do container helpers for every namespace.
  */
 class Helper
 {
-    use MoneyHelper, NumberHelper, ProjectHelper, ProfileHelper, ProofHelper, RewardHelper;
+    use MoneyHelperDeprecated, NumberHelper, ProjectHelper, ProfileHelper, ProofHelper, RewardHelper;
 
     /**
      * Return currency object.
@@ -68,7 +71,7 @@ class Helper
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
      *
-     * @return Money
+     * @return MoneyFormatter
      */
     public function fetchMoneyFormatter($container, $params)
     {

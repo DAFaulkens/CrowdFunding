@@ -45,7 +45,7 @@ foreach ($this->items as $item) {
 
                 <?php if ($this->displayAmounts) { ?>
                 <div class="pull-right cf-funder-amount">
-                    <?php echo $this->money->setAmount($item->txn_amount)->formatCurrency(); ?>
+                    <?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($item->txn_amount, $this->currency)); ?>
                 </div>
                 <?php } ?>
             </div>

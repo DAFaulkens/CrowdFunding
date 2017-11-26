@@ -12,6 +12,9 @@ defined('JPATH_PLATFORM') or die;
 jimport('Prism.init');
 jimport('Crowdfunding.init');
 
+use Crowdfunding\Container\MoneyHelper;
+use Prism\Money\Money;
+
 class JFormFieldCfAmount extends JFormField
 {
     /**
@@ -31,6 +34,7 @@ class JFormFieldCfAmount extends JFormField
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
+     * @throws \Prism\Domain\BindException
      */
     protected function getInput()
     {
@@ -55,16 +59,14 @@ class JFormFieldCfAmount extends JFormField
 
         // Get the currency and money formatter from the container.
         $container       = Prism\Container::getContainer();
-        $containerHelper = new Crowdfunding\Container\Helper();
-
-        $moneyFormatter = $containerHelper->fetchMoneyFormatter($container, $params);
-        $currency       = $moneyFormatter->getCurrency();
+        $currency        = MoneyHelper::getCurrency($container, $params);
 
         // Format amount.
         $formattedAmount = $this->value;
         $floatAmount     = (float)$this->value;
         if ($format and $floatAmount > 0) {
-            $formattedAmount = $moneyFormatter->setAmount($floatAmount)->format();
+            $moneyFormatter  = MoneyHelper::getMoneyFormatter($container, $params);
+            $formattedAmount = $moneyFormatter->format(new Money($floatAmount, $currency));
         }
 
         $html   = array();

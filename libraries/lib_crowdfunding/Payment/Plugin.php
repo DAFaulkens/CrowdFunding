@@ -9,16 +9,21 @@
 
 namespace Crowdfunding\Payment;
 
+use Prism;
+use Joomla\DI\Container;
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
-use Joomla\DI\Container;
-use Prism;
 use Prism\Payment\Result as PaymentResult;
 use Crowdfunding;
 use Emailtemplates;
+use Prism\Utilities\RouteHelper;
 
-use Crowdfunding\Payment\Session as PaymentSessionRemote;
+use Crowdfunding\Container\MoneyHelper;
 use Crowdfunding\Transaction\Transaction;
+use Crowdfunding\Payment\Session\Session as PaymentSession;
+use Crowdfunding\Payment\Session\Mapper as PaymentSessionMapper;
+use Crowdfunding\Payment\Session\Repository as PaymentSessionRepository;
+use Crowdfunding\Payment\Session\Gateway\JoomlaGateway as PaymentSessionGateway;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -171,6 +176,7 @@ class Plugin extends \JPlugin
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      * @throws \OutOfBoundsException
+     * @throws Prism\Domain\BindException
      *
      * @return void
      */
@@ -195,12 +201,12 @@ class Plugin extends \JPlugin
         $website   = $uri->toString(array('scheme', 'host'));
 
         $emailMode   = $this->params->get('email_mode', 'plain');
-        $isHtmlMode  = (bool)(strcmp('html', $emailMode) === 0);
+        $isHtmlMode  = (strcmp('html', $emailMode) === 0);
 
         // Get money formatter.
-        $moneyHelper = new Crowdfunding\Container\Helper;
-        $money       = $moneyHelper->fetchMoneyFormatter($this->container, $params);
-        /** @var Prism\Money\Money $money */
+        $moneyFormatter = MoneyHelper::getMoneyFormatter($this->container, $params);
+        $currency       = MoneyHelper::getCurrency($this->container, $params);
+        /** @var Prism\Money\Formatter\IntlDecimalFormatter $moneyFormatter */
 
         // Prepare data for parsing.
         $data = array(
@@ -208,7 +214,7 @@ class Plugin extends \JPlugin
             'site_url'       => \JUri::root(),
             'item_title'     => $project->getTitle(),
             'item_url'       => $website . \JRoute::_(\CrowdfundingHelperRoute::getDetailsRoute($project->getSlug(), $project->getCatSlug())),
-            'amount'         => $money->setAmount($transaction->getAmount())->formatCurrency(),
+            'amount'         => $moneyFormatter->formatCurrency(new Prism\Money\Money($transaction->getAmount(), $currency)),
             'transaction_id' => $transaction->getTransactionId(),
             'reward_title'   => '',
             'delivery_date'  => '',
@@ -426,48 +432,85 @@ class Plugin extends \JPlugin
      * This method returns payment session.
      *
      * @param array $options The keys used to load payment session data from database.
+     * @param bool $legacy
      *
      * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      *
-     * @return Crowdfunding\Payment\Session
+     * @return PaymentSession
+     * @deprecated v2.7 We will return the new Session object after v3.0
      */
-    public function getPaymentSession(array $options)
+    public function getPaymentSession(array $options, $legacy = true)
     {
+        // The legacy code will be removed in v3.0
+        if ($legacy) {
+            $id        = ArrayHelper::getValue($options, 'id', 0, 'int');
+            $sessionId = ArrayHelper::getValue($options, 'session_id', '');
+            $uniqueKey = ArrayHelper::getValue($options, 'unique_key', '');
+            $orderId   = ArrayHelper::getValue($options, 'order_id', '');
+
+            // Prepare keys for anonymous user.
+            if ($id > 0) {
+                $keys = $id;
+            } elseif ($sessionId !== '') {
+                $keys = array(
+                    'session_id'   => $sessionId
+                );
+            } elseif ($uniqueKey !== '' and $orderId !== '') { // Prepare keys to get record by unique key and order ID.
+                $keys = array(
+                    'unique_key' => $uniqueKey,
+                    'order_id' => $orderId
+                );
+            } elseif ($uniqueKey !== '') { // Prepare keys to get record by unique key.
+                $keys = array(
+                    'unique_key' => $uniqueKey
+                );
+            } elseif ($orderId !== '') { // Prepare keys to get record by order ID.
+                $keys = array(
+                    'order_id' => $orderId
+                );
+            } else {
+                throw new \UnexpectedValueException(\JText::_('LIB_CROWDFUNDING_INVALID_PAYMENT_SESSION_KEYS'));
+            }
+
+            $paymentSession = new Crowdfunding\Payment\Session(\JFactory::getDbo());
+            $paymentSession->load($keys);
+
+            return $paymentSession;
+        }
+
+        // The following code returns the new Session class.
         $id        = ArrayHelper::getValue($options, 'id', 0, 'int');
         $sessionId = ArrayHelper::getValue($options, 'session_id', '');
-        $uniqueKey = ArrayHelper::getValue($options, 'unique_key', '');
+        $token     = ArrayHelper::getValue($options, 'token', '');
         $orderId   = ArrayHelper::getValue($options, 'order_id', '');
+
+        $conditions = new Prism\Database\Request\Conditions();
 
         // Prepare keys for anonymous user.
         if ($id > 0) {
-            $keys = $id;
-        } elseif ($sessionId !== '') {
-            $keys = array(
-                'session_id'   => $sessionId
-            );
-        } elseif ($uniqueKey !== '' and $orderId !== '') { // Prepare keys to get record by unique key and order ID.
-            $keys = array(
-                'unique_key' => $uniqueKey,
-                'order_id' => $orderId
-            );
-        } elseif ($uniqueKey !== '') { // Prepare keys to get record by unique key.
-            $keys = array(
-                'unique_key' => $uniqueKey
-            );
-        } elseif ($orderId !== '') { // Prepare keys to get record by order ID.
-            $keys = array(
-                'order_id' => $orderId
-            );
+            $conditions->addCondition(new Prism\Database\Request\Condition(['column' => 'id', 'value' => $id]));
+        } elseif ($sessionId) {
+            $conditions->addCondition(new Prism\Database\Request\Condition(['column' => 'session_id', 'value' => $sessionId]));
+        } elseif ($token && $orderId) { // Prepare keys to get record by unique key and order ID.
+            $conditions
+                ->addCondition(new Prism\Database\Request\Condition(['column' => 'order_id', 'value' => $orderId]))
+                ->addSpecificCondition('token', new Prism\Database\Request\Condition(['column' => 'token', 'value' => $token, 'table' => 'b']));
+        } elseif ($token) { // Prepare keys to get record by unique key.
+            $conditions->addSpecificCondition('token', new Prism\Database\Request\Condition(['column' => 'token', 'value' => $token, 'table' => 'b']));
+        } elseif ($orderId) { // Prepare keys to get record by order ID.
+            $conditions->addCondition(new Prism\Database\Request\Condition(['column' => 'order_id', 'value' => $orderId]));
         } else {
-            throw new \UnexpectedValueException(\JText::_('LIB_CROWDFUNDING_INVALID_PAYMENT_SESSION_KEYS'));
+            throw new \InvalidArgumentException(\JText::_('LIB_CROWDFUNDING_INVALID_PAYMENT_SESSION_KEYS'));
         }
 
-        $paymentSession = new Crowdfunding\Payment\Session(\JFactory::getDbo());
-        $paymentSession->load($keys);
+        $databaseRequest = new Prism\Database\Request\Request;
+        $databaseRequest->setConditions($conditions);
 
-        return $paymentSession;
+        $repository = new PaymentSessionRepository(new PaymentSessionMapper(new PaymentSessionGateway(\JFactory::getDbo())));
+
+        return $repository->fetch($databaseRequest);
     }
 
     /**
@@ -594,7 +637,7 @@ class Plugin extends \JPlugin
             $feePercentAmount = Prism\Utilities\MathHelper::calculateValueFromPercent($feePercent, $txnAmount);
 
             if ($txnAmount > $feePercentAmount) {
-                $result += (float)$feePercentAmount;
+                $result += $feePercentAmount;
             }
         }
 
@@ -645,12 +688,13 @@ class Plugin extends \JPlugin
      * @param string $catslug
      *
      * @return string
+     * @throws \RuntimeException
      */
     protected function getReturnUrl($slug, $catslug)
     {
         $page = trim($this->params->get('return_url'));
         if (!$page) {
-            $page = \JRoute::_(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'share'), false);
+            $page   = RouteHelper::siteRoute(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'share'));
         }
 
         if (false === strpos($page, '://')) {
@@ -668,13 +712,13 @@ class Plugin extends \JPlugin
      * @param string $catslug
      *
      * @return string
+     * @throws \RuntimeException
      */
     protected function getCancelUrl($slug, $catslug)
     {
         $page = trim($this->params->get('cancel_url'));
         if (!$page) {
-            $uri  = \JUri::getInstance();
-            $page = $uri->toString(array('scheme', 'host')) . \JRoute::_(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'default'), false);
+            $page   = RouteHelper::siteRoute(\CrowdfundingHelperRoute::getBackingRoute($slug, $catslug, 'default'));
         }
 
         return $page;
@@ -688,7 +732,7 @@ class Plugin extends \JPlugin
      *
      * @return array
      */
-    protected function prepareExtraData($data, $note = '')
+    protected function prepareExtraData(array $data, $note = '')
     {
         $date        = new \JDate();
         $trackingKey = $date->toUnix();
@@ -703,8 +747,7 @@ class Plugin extends \JPlugin
             }
         }
 
-        // Set a note.
-        if ($note !== null and $note !== '') {
+        if ($note) {
             $extraData[$trackingKey]['NOTE'] = $note;
         }
 
@@ -723,7 +766,7 @@ class Plugin extends \JPlugin
         $value1 = strtolower($this->serviceAlias);
         $value2 = strtolower($gateway);
 
-        return (bool)(strcmp($value1, $value2) === 0);
+        return (strcmp($value1, $value2) === 0);
     }
 
     /**
@@ -753,10 +796,10 @@ class Plugin extends \JPlugin
     /**
      * Remove an intention records.
      *
-     * @param PaymentSessionRemote $paymentSession
+     * @param PaymentSession $paymentSession
      * @param Transaction $transaction
      */
-    protected function removeIntention(PaymentSessionRemote $paymentSession, Transaction $transaction)
+    protected function removeIntention(PaymentSession $paymentSession, Transaction $transaction)
     {
         // Remove intention record.
         $removeIntention  = (strcmp('completed', $transaction->getStatus()) === 0 or strcmp('pending', $transaction->getStatus()) === 0);
@@ -794,6 +837,7 @@ class Plugin extends \JPlugin
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      * @throws \OutOfBoundsException
+     * @throws Prism\Domain\BindException
      */
     public function onAfterPaymentNotify($context, $paymentResult, $params)
     {
@@ -856,11 +900,12 @@ class Plugin extends \JPlugin
         }
 
         $paymentSession = $paymentResult->paymentSession;
-        /** @var PaymentSessionRemote $paymentSession */
+        /** @var PaymentSession $paymentSession */
 
         // Remove payment session record from database.
-        if (($paymentSession instanceof PaymentSessionRemote) and $paymentSession->getId()) {
-            $paymentSession->delete();
+        if (($paymentSession instanceof PaymentSession) and $paymentSession->getId()) {
+            $repository = new PaymentSessionRepository(new PaymentSessionMapper(new PaymentSessionGateway(\JFactory::getDbo())));
+            $repository->delete($paymentSession);
         }
     }
 }

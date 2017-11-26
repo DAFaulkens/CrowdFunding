@@ -7,6 +7,9 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+use Prism\Money\Money;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -15,16 +18,17 @@ class CrowdfundingModelPayments extends JModelLegacy
     /**
      * @param int $projectId
      * @param Joomla\Registry\Registry $params
-     * @param stdClass $paymentSession
+     * @param stdClass $wizardSession
      *
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
      * @throws OutOfBoundsException
      * @throws RuntimeException
+     * @throws \Prism\Domain\BindException
      *
      * @return stdClass
      */
-    public function prepareItem($projectId, $params, $paymentSession)
+    public function prepareItem($projectId, $params, $wizardSession)
     {
         $container        = Prism\Container::getContainer();
         $containerHelper  = new Crowdfunding\Container\Helper();
@@ -39,11 +43,10 @@ class CrowdfundingModelPayments extends JModelLegacy
             throw new UnexpectedValueException(JText::_('COM_CROWDFUNDING_ERROR_COMPLETED_PROJECT'));
         }
 
-        // Get currency
-        $money      = $containerHelper->fetchMoneyFormatter($container, $params);
-        $currency   = $money->getCurrency();
+        $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
+        $currency       = MoneyHelper::getCurrency($container, $params);
 
-        $item = new stdClass();
+        $item = new stdClass;
 
         $item->id             = $project->getId();
         $item->title          = $project->getTitle();
@@ -52,13 +55,13 @@ class CrowdfundingModelPayments extends JModelLegacy
         $item->starting_date  = $project->getFundingStart();
         $item->ending_date    = $project->getFundingEnd();
         $item->user_id        = $project->getUserId();
-        $item->rewardId       = $paymentSession->rewardId;
+        $item->rewardId       = $wizardSession->rewardId;
 
-        $item->amount         = $paymentSession->amount;
+        $item->amount         = $wizardSession->amount;
         $item->currencyCode   = $currency->getCode();
 
-        $item->amountFormated = $money->setAmount($item->amount)->format();
-        $item->amountCurrency = $money->setAmount($item->amount)->formatCurrency();
+        $item->amountFormated = $moneyFormatter->format(new Money($item->amount, $currency));
+        $item->amountCurrency = $moneyFormatter->formatCurrency(new Money($item->amount, $currency));
 
         return $item;
     }

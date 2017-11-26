@@ -43,11 +43,13 @@ $lang = JFactory::getLanguage();
 $lang->load('lib_crowdfunding', CROWDFUNDING_PATH_COMPONENT_SITE);
 
 // Register class aliases.
-JLoader::registerAlias('CrowdfundingCategories', Crowdfunding\Category\Categories::class);
+JLoader::registerAlias('CrowdfundingCategories', Crowdfunding\Category\Joomla\Categories::class);
 JLoader::registerAlias('Crowdfunding\\Transaction', Crowdfunding\Transaction\Transaction::class);
 JLoader::registerAlias('Crowdfunding\\Transactions', Crowdfunding\Transaction\Transactions::class);
 JLoader::registerAlias('Crowdfunding\\Country', Crowdfunding\Country\Country::class);
 JLoader::registerAlias('Crowdfunding\\Countries', Crowdfunding\Country\Countries::class);
+JLoader::registerAlias('Crowdfunding\\Currency', Crowdfunding\Currency\Currency::class);
+JLoader::registerAlias('Crowdfunding\\Currencies', Crowdfunding\Currency\Currencies::class);
 
 JLog::addLogger(
     array(

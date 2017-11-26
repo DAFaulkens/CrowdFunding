@@ -20,8 +20,6 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerNotifier extends JControllerLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var Prism\Log\Log
      */
@@ -76,13 +74,8 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $paymentService = $filter->clean(strtolower(trim($this->input->getCmd('payment_service'))), 'ALNUM');
         $this->context  = $paymentService !== '' ? 'com_crowdfunding.notify.' . $paymentService : 'com_crowdfunding.notify';
 
-        // Prepare params
+        // Prepare component parameters.
         $this->params   = JComponentHelper::getParams('com_crowdfunding');
-
-        // Prepare container and some of the most used objects.
-        $this->container = Prism\Container::getContainer();
-        $this->prepareCurrency($this->container, $this->params);
-        $this->prepareMoneyFormatter($this->container, $this->params);
     }
 
     /**
@@ -115,11 +108,6 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $paymentResult      = null;
         $responseToService  = null;
 
-        $triggerEvents  = array(
-            'AfterPaymentNotify' => false,
-            'AfterPayment' => false
-        );
-
         // Save data
         try {
             // Events
@@ -133,7 +121,6 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
                 foreach ($results as $result) {
                     if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
                         $paymentResult      = $result;
-                        $triggerEvents      = (array)$result->triggerEvents;
                         $responseToService  = $result->response ?: null;
                         break;
                     }
@@ -147,12 +134,12 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             }
 
             // Trigger the event onAfterPaymentNotify
-            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
+            if ($paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT_NOTIFY)) {
                 $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
             }
 
             // Trigger the event onAfterPayment
-            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
+            if ($paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT)) {
                 $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
             }
 
@@ -190,7 +177,7 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             // Send response to the browser
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'))
                 ->failure();
 
             echo $response;
@@ -203,13 +190,9 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $paymentResult  = null;
         $redirectUrl    = null;
         $message        = null;
+
         $project        = null;
         /** @var Crowdfunding\Project $project */
-
-        $triggerEvents  = array(
-            'AfterPaymentNotify' => false,
-            'AfterPayment' => false
-        );
 
         // Trigger the event
         try {
@@ -227,7 +210,6 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
                         $project            = $result->project ?: null;
                         $message            = $result->message ?: null;
                         $redirectUrl        = $result->redirectUrl ?: null;
-                        $triggerEvents      = (array)$result->triggerEvents;
                         break;
                     }
                 }
@@ -239,7 +221,7 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
                 // Send response to the browser
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_TRANSACTION_NOT_PROCESSED_SUCCESSFULLY'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_TRANSACTION_NOT_PROCESSED_SUCCESSFULLY'))
                     ->failure();
 
                 echo $response;
@@ -247,12 +229,12 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             }
 
             // Trigger the event onAfterPaymentNotify
-            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
+            if ($paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT_NOTIFY)) {
                 $dispatcher->trigger('onAfterPaymentNotify', array($this->context, &$paymentResult, &$this->params));
             }
 
             // Trigger the event onAfterPayment
-            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
+            if ($paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT)) {
                 $dispatcher->trigger('onAfterPayment', array($this->context, &$paymentResult, &$this->params));
             }
 
@@ -267,7 +249,7 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
             $response
                 ->failure()
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
 
             // Send notification about the error to the administrator.
             $model->sendMailToAdministrator();
@@ -290,7 +272,7 @@ class CrowdfundingControllerNotifier extends JControllerLegacy
         $response
             ->success()
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText($message)
+            ->setContent($message)
             ->setRedirectUrl($redirectUrl);
 
         echo $response;

@@ -17,8 +17,11 @@ $params   = $displayData->params;
 $socialProfiles = $displayData->socialProfiles;
 /** @var Prism\Integration\Profiles\ProfilesInterface $socialProfiles */
 
-$money   = $displayData->money;
-/** @var Prism\Money\Money $money */
+$moneyFormatter   = $displayData->moneyFormatter;
+/** @var Prism\Money\Formatter $moneyFormatter */
+
+$currency   = $displayData->currency;
+/** @var Prism\Money\Currency $currency */
 
 $numberInRow        = (int)$params->get('items_row', 3);
 $titleLength        = $params->get('discover_title_length', 0);
@@ -31,7 +34,7 @@ $span               = ($numberInRow > 0) ? round(12 / $numberInRow) : 4
         $showAuthor      = (bool)$item->params->get('show_author', $params->get('show_author'));
         $projectStateCSS = JHtml::_('crowdfunding.styles', $item, $params);
 
-        $raised = $money->setAmount($item->funded)->formatCurrency();
+        $raised      = $moneyFormatter->formatCurrency(new Prism\Money\Money($item->funded, $currency));
 
         // Prepare the value that I am going to display
         $fundedPercents = JHtml::_('crowdfunding.funded', $item->funded_percents);

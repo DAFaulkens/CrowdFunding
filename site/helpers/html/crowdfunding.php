@@ -8,6 +8,10 @@
  */
 
 use Joomla\Utilities\ArrayHelper;
+use Prism\Money\Money;
+use Prism\Money\Currency;
+use Prism\Money\Parser\IntlDecimalParser;
+use Prism\Money\Formatter\IntlDecimalFormatter;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -74,16 +78,16 @@ abstract class JHtmlCrowdfunding
         $titleFalse = ArrayHelper::getValue($options, 'title_false');
 
         if (!$hint) {
-            $html = '<span class="{LABEL}"><span class="{ICON}" aria-hidden="true"></span></span>';
+            $html = '<button class="btn btn-xs {LABEL}"><span class="{ICON}" aria-hidden="true"></span></button>';
         } else {
-            $title = $value ? ' title="'.$titleTrue.'"' : ' title="'.$titleFalse.'"';
-            $html  = '<span class="{LABEL}"><span class="{ICON} hasTooltip cursor-pointer" aria-hidden="true"'. $title .'></span></span>';
+            $title = $value ? 'data-content="'.$titleTrue.'"' : 'data-content="'.$titleFalse.'"';
+            $html  = '<button class="btn btn-xs {LABEL} hasPopover cursor-pointer" '. $title .'><span class="{ICON}" aria-hidden="true"></span></button>';
         }
 
         if ($value === Prism\Constants::PUBLISHED) {
-            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconTrue, 'label label-success'), $html);
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconTrue, 'btn-success'), $html);
         } else {// Unpublished
-            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconFalse, 'label label-danger'), $html);
+            $html = str_replace(array('{ICON}', '{LABEL}'), array($iconFalse, 'btn-danger'), $html);
         }
 
         return $html;
@@ -125,17 +129,16 @@ abstract class JHtmlCrowdfunding
      * Display an input field for amount.
      *
      * @param float  $value
-     * @param Prism\Money\Money $moneyFormatter
      * @param array  $options
+     * @param IntlDecimalFormatter $moneyFormatter
+     * @param Currency $currency
      *
      * @throws \InvalidArgumentException
      *
      * @return string
      */
-    public static function inputAmount($value, Prism\Money\Money $moneyFormatter, $options)
+    public static function inputAmount($value, $options, $moneyFormatter, $currency)
     {
-        $currency     = $moneyFormatter->getCurrency();
-
         $symbol       = $currency->getSymbol();
         $currencyCode = $currency->getCode();
 
@@ -145,16 +148,16 @@ abstract class JHtmlCrowdfunding
             $html .= '<div class="input-group-addon">' . $symbol . '</div>';
         }
 
-        $name = Joomla\Utilities\ArrayHelper::getValue($options, 'name');
+        $name = ArrayHelper::getValue($options, 'name');
 
         $id = '';
-        if (Joomla\Utilities\ArrayHelper::getValue($options, 'id')) {
-            $id = 'id="' . Joomla\Utilities\ArrayHelper::getValue($options, 'id') . '"';
+        if (ArrayHelper::getValue($options, 'id')) {
+            $id = 'id="' . ArrayHelper::getValue($options, 'id') . '"';
         }
 
         $class = 'class="form-control ';
-        if (Joomla\Utilities\ArrayHelper::getValue($options, 'class')) {
-            $class .= Joomla\Utilities\ArrayHelper::getValue($options, 'class');
+        if (ArrayHelper::getValue($options, 'class')) {
+            $class .= ArrayHelper::getValue($options, 'class');
         }
         $class .= '"';
 
@@ -162,7 +165,7 @@ abstract class JHtmlCrowdfunding
             $value = 0.00;
         }
 
-        $html .= '<input type="text" name="' . $name . '" value="' . $moneyFormatter->setAmount($value)->format(). '" ' . $id . ' ' . $class . ' />';
+        $html .= '<input type="text" name="' . $name . '" value="' . $moneyFormatter->format(new Money($value, $currency)). '" ' . $id . ' ' . $class . ' />';
 
         if ($currencyCode) {
             $html .= '<div class="input-group-addon">' . $currencyCode . '</div>';
@@ -258,24 +261,26 @@ abstract class JHtmlCrowdfunding
     /**
      * Display information about minimum and maximum allowed amount that could be made.
      *
-     * @param float    $minimumAmount
-     * @param float $maximumAmount
-     * @param Prism\Money\Money $moneyFormatter
+     * @param string $minimumAmount
+     * @param string $maximumAmount
+     * @param IntlDecimalFormatter $moneyFormatter
+     * @param IntlDecimalParser $moneyParser
+     * @param Currency $currency
      *
      * @return string
      */
-    public static function minMaxAllowedAmount($minimumAmount, $maximumAmount, $moneyFormatter)
+    public static function minMaxAllowedAmount($minimumAmount, $maximumAmount, $moneyFormatter, $moneyParser, $currency)
     {
         $output        = '';
-        $minimumAmount = $moneyFormatter->setAmount($minimumAmount)->parse();
-        $maximumAmount = $moneyFormatter->setAmount($maximumAmount)->parse();
+        $minimumAmount = $moneyParser->parse($minimumAmount);
+        $maximumAmount = $moneyParser->parse($maximumAmount);
 
         if ($minimumAmount > 0 and $maximumAmount > 0) {
-            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_MAXIMUM_AMOUNT_S_S', $moneyFormatter->setAmount($minimumAmount)->formatCurrency(), $moneyFormatter->setAmount($maximumAmount)->formatCurrency());
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_MAXIMUM_AMOUNT_S_S', $moneyFormatter->formatCurrency(new Money($minimumAmount, $currency)), $moneyFormatter->formatCurrency(new Money($maximumAmount, $currency)));
         } elseif ($minimumAmount > 0 and $maximumAmount <= 0) {
-            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_AMOUNT_S', $moneyFormatter->setAmount($minimumAmount)->formatCurrency());
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_AMOUNT_S', $moneyFormatter->formatCurrency(new Money($minimumAmount, $currency)));
         } elseif ($minimumAmount <= 0 and $maximumAmount > 0) {
-            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MAXIMUM_AMOUNT_S', $moneyFormatter->setAmount($maximumAmount)->formatCurrency());
+            $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MAXIMUM_AMOUNT_S', $moneyFormatter->formatCurrency(new Money($maximumAmount, $currency)));
         }
 
         return '<div class="font-xsmall">'.$output.'</div>';
@@ -370,6 +375,7 @@ abstract class JHtmlCrowdfunding
      * @param float $funded
      *
      * @return int
+     * @deprecated v2.6.6 Use Crowdfunding\Utilities\MathHelper::calculatePercent
      */
     public static function percents($goal, $funded)
     {
@@ -458,7 +464,7 @@ abstract class JHtmlCrowdfunding
         $html = array();
 
         if ($options['reward_id']) {
-            $class  = (array_key_exists('class', $options)) ? $options['class'] : '';
+            $class  = array_key_exists('class', $options) ? $options['class'] : '';
 
             $html[] = '<select name="reward_state" class="js-reward-state '.$class.' inline-element" id="reward_state_"'.$options['reward_id'].' data-id="'.$options['transaction_id'].'">';
             if (!$options['reward_state']) {
@@ -484,13 +490,13 @@ abstract class JHtmlCrowdfunding
         $categoryState = (int)$categoryState;
 
         if ($categoryState <= 0) {
-            $html[] = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-            $html[] = '<button type="button" class="hasTooltip" title="' . htmlspecialchars(JText::_('COM_CROWDFUNDING_SELECT_OTHER_CATEGORY_TOOLTIP'), ENT_QUOTES, 'UTF-8') . '">';
+            $html[] = htmlspecialchars($title, ENT_QUOTES);
+            $html[] = '<button type="button" class="hasTooltip" title="' . htmlentities(JText::_('COM_CROWDFUNDING_SELECT_OTHER_CATEGORY_TOOLTIP'), ENT_QUOTES, 'UTF-8') . '">';
             $html[] = '<span class="fa fa-info-circle"></span>';
             $html[] = '</button>';
         } else {
             $html[] = '<a href="' . JRoute::_(CrowdfundingHelperRoute::getDetailsRoute($slug, $catSlug)) . '">';
-            $html[] = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+            $html[] = htmlspecialchars($title, ENT_QUOTES);
             $html[] = '</a>';
         }
 
@@ -550,6 +556,43 @@ abstract class JHtmlCrowdfunding
         return $output;
     }
 
+    /**
+     * @param string       $endDate
+     * @param int       $days
+     * @param string $format
+     *
+     * @throws \InvalidArgumentException
+     *
+     * @return string
+     */
+    public static function duration2($endDate, $days, $format = 'd F Y')
+    {
+        $output = '';
+
+        $endDateValidator = new Prism\Validator\Date($endDate);
+
+        // Validate date.
+        $isValid = $endDateValidator->isValid();
+
+        if ((int)$days > 0) {
+            $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_DAYS', (int)$days);
+
+            // Display end date
+            if ($isValid) {
+                $output .= '<div class="info-mini block-inline">&nbsp;(';
+                $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
+                $output .= ')</div>';
+            }
+
+        } elseif ($isValid) {
+            $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
+        } else {
+            $output .= '--';
+        }
+
+        return $output;
+    }
+
     public static function postedby($name, $date, $link = null)
     {
         if (!$link) {
@@ -559,9 +602,8 @@ abstract class JHtmlCrowdfunding
         }
 
         $date = JHtml::_('date', $date, JText::_('DATE_FORMAT_LC3'));
-        $html = JText::sprintf('COM_CROWDFUNDING_POSTED_BY', $profile, $date);
 
-        return $html;
+        return JText::sprintf('COM_CROWDFUNDING_POSTED_BY', $profile, $date);
     }
 
     public static function name($name)
@@ -603,7 +645,7 @@ abstract class JHtmlCrowdfunding
         } else {
             $target = '';
             if (!empty($options['target'])) {
-                $target = 'target="' . Joomla\Utilities\ArrayHelper::getValue($options, 'target') . '"';
+                $target = 'target="' . ArrayHelper::getValue($options, 'target') . '"';
             }
 
             $output = '<a href="' . $link . '" ' . $target . '>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</a>';
@@ -714,11 +756,11 @@ abstract class JHtmlCrowdfunding
     public static function profileLocation($name, $countryCode)
     {
         $html = array();
-        if (JString::strlen($name) > 0) {
+        if ($name) {
             $html[] = '<div class="cf-location">';
             $html[] = htmlentities($name, ENT_QUOTES, 'UTF-8');
 
-            if (JString::strlen($countryCode) > 0) {
+            if ($countryCode) {
                 $html[] = ', ' . htmlentities($countryCode, ENT_QUOTES, 'UTF-8');
             }
 
@@ -767,16 +809,17 @@ abstract class JHtmlCrowdfunding
     /**
      * @param $minAmount
      * @param $maxAmount
-     * @param Prism\Money\Money $money
+     * @param IntlDecimalFormatter $moneyFormatter
+     * @param Currency $currency
      *
      * @return string
      */
-    public static function infoMinMaxAmount($minAmount, $maxAmount, $money)
+    public static function infoMinMaxAmount($minAmount, $maxAmount, $moneyFormatter, $currency)
     {
         if ($minAmount > 0 and !$maxAmount) {
-            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_AMOUNT', $money->setAmount($minAmount)->formatCurrency());
+            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_AMOUNT', $moneyFormatter->formatCurrency(new Money($minAmount, $currency)));
         } elseif ($minAmount > 0 and $maxAmount > 0) {
-            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_MAXIMUM_AMOUNT', $money->setAmount($minAmount)->formatCurrency(), $money->setAmount($maxAmount)->formatCurrency());
+            return JText::sprintf('COM_CROWDFUNDING_MINIMUM_MAXIMUM_AMOUNT', $moneyFormatter->formatCurrency(new Money($minAmount, $currency)), $moneyFormatter->formatCurrency(new Money($maxAmount, $currency)));
         }
 
         return '';

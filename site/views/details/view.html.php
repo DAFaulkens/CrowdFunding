@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewDetails extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -47,7 +47,8 @@ class CrowdfundingViewDetails extends JViewLegacy
     protected $defaultAvatar;
     protected $onCommentAfterDisplay;
     protected $commentsEnabled;
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
     protected $displayAmounts;
 
     protected $option;
@@ -89,14 +90,16 @@ class CrowdfundingViewDetails extends JViewLegacy
             return;
         }
 
-        $this->container   = Prism\Container::getContainer();
-        $this->prepareMoneyFormatter($this->container, $this->params);
+        $this->container      = Prism\Container::getContainer();
+
+        $this->currency       = MoneyHelper::getCurrency($this->container, $this->params);
+        $this->moneyFormatter = MoneyHelper::getMoneyFormatter($this->container, $this->params);
 
         // Get the path to the images.
-        $this->imageFolder = $this->params->get('images_directory', 'images/crowdfunding');
+        $this->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
 
-        $this->defaultAvatar = JUri::base() . $this->params->get('integration_avatars_default');
-        $this->avatarsSize   = $this->params->get('integration_avatars_size', 'small');
+        $this->defaultAvatar  = JUri::base() . $this->params->get('integration_avatars_default');
+        $this->avatarsSize    = $this->params->get('integration_avatars_size', 'small');
 
         // Prepare the link that points to project page.
         $host             = JUri::getInstance()->toString(array('scheme', 'host'));

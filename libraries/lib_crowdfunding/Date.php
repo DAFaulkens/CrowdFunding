@@ -9,9 +9,8 @@
 
 namespace Crowdfunding;
 
-use Prism;
-
-defined('JPATH_PLATFORM') or die;
+use Prism\Validator\Date as DateValidator;
+use Prism\Date as PrismDate;
 
 /**
  * This is a class that provides functionality for managing dates.
@@ -19,7 +18,7 @@ defined('JPATH_PLATFORM') or die;
  * @package      Crowdfunding
  * @subpackage   Dates
  */
-class Date extends Prism\Date
+class Date extends PrismDate
 {
     /**
      * Calculate days left.
@@ -45,7 +44,7 @@ class Date extends Prism\Date
         $fundingDays = (int)abs($fundingDays);
 
         if ($fundingDays > 0) {
-            $validatorDate = new Prism\Validator\Date($fundingStart);
+            $validatorDate = new DateValidator($fundingStart);
 
             // Validate starting date.
             // If there is not starting date, return number of day.
@@ -55,9 +54,8 @@ class Date extends Prism\Date
 
             $endingDate = new \DateTime($fundingStart);
             $endingDate->modify('+' . (int)$fundingDays . ' days');
-
         } else {
-            $validatorDate = new Prism\Validator\Date($fundingEnd);
+            $validatorDate = new DateValidator($fundingEnd);
 
             // Validate end date.
             // If there is not valid end date, create one.

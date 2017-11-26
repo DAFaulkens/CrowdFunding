@@ -68,7 +68,18 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_logs` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `#__crowdf_payment_sessions` (
+CREATE TABLE IF NOT EXISTS `#__crowdf_paymentsessiongateways` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Payment session primary key',
+  `alias` varchar(32) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Payment service name (alias)',
+  `data` varchar(2048) COLLATE utf8_unicode_ci NOT NULL DEFAULT '{}' COMMENT 'Contains a specific data for the gateways',
+  `token` varchar(64) COLLATE utf8_unicode_ci NOT NULL DEFAULT '' COMMENT 'It is a unique key (token) from the gateway',
+  `order_id` varchar(32) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`,`alias`),
+  UNIQUE KEY `idx_crowdf_pstoken` (`token`),
+  KEY `idx_crowdf_pspk` (`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__crowdf_paymentsessions` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` int(10) UNSIGNED NOT NULL,
   `project_id` int(10) UNSIGNED NOT NULL,
@@ -124,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `#__crowdf_projects` (
 CREATE TABLE IF NOT EXISTS `#__crowdf_regions` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(191) COLLATE utf8_unicode_ci NOT NULL,
-  `country_code` char(2) COLLATE utf8_unicode_ci NOT NULL,
+  `country_code` char(2) COLLATE utf8_unicode_ci 	 NOT NULL,
   `admincode_id` varchar(128) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_cfregions_acid` (`admincode_id`),

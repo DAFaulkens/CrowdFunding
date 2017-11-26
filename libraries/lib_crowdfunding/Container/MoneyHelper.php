@@ -9,13 +9,14 @@
 
 namespace Crowdfunding\Container;
 
+use Prism\Money\Parser;
 use Joomla\DI\Container;
+use Prism\Money\Formatter;
 use Joomla\Registry\Registry;
-use Crowdfunding\Currency;
-use Crowdfunding\Constants;
-use Prism\Money\Money;
-use Prism\Utilities\StringHelper;
-use Prism\Utilities\LocaleHelper;
+use Prism\Domain\BindException;
+use Crowdfunding\Currency\Currency;
+use Crowdfunding\Currency\Gateway\JoomlaGateway;
+use Crowdfunding\Container\Helper\Money as ContainerHelperMoney;
 
 defined('JPATH_PLATFORM') or die;
 
@@ -24,39 +25,14 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Helpers
+ *
+ * @deprecated v2.6
  */
-trait MoneyHelper
+abstract class MoneyHelper
 {
     /**
-     * Prepare and return currency object.
-     *
-     * <code>
-     * $this->prepareCurrency($container, $params);
-     * </code>
-     *
-     * @param Container $container
-     * @param Registry $params
-     *
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \OutOfBoundsException
-     */
-    protected function prepareCurrency($container, $params)
-    {
-        $currencyId   = $params->get('project_currency');
-        $currencyHash = StringHelper::generateMd5Hash(Constants::CONTAINER_CURRENCY, $currencyId);
-
-        // Get the currency from the container.
-        if (!$container->exists($currencyHash)) {
-            $currency = new Currency(\JFactory::getDbo());
-            $currency->load($currencyId);
-
-            $container->set($currencyHash, $currency);
-        }
-    }
-
-    /**
-     * Return currency object.
+     * Return currency object from a container.
+     * NOTE: Only used in Joomla.
      *
      * <code>
      * $this->prepareCurrency($container, $params);
@@ -69,66 +45,21 @@ trait MoneyHelper
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
+     * @throws BindException
      *
      * @return Currency
      */
-    protected function getCurrency($container, $params)
+    public static function getCurrency($container, $params)
     {
-        $currencyId   = $params->get('project_currency');
-        $currencyHash = StringHelper::generateMd5Hash(Constants::CONTAINER_CURRENCY, $currencyId);
+        $gateway      = new JoomlaGateway(\JFactory::getDbo());
+        $moneyHelper  = new ContainerHelperMoney($container);
 
-        // Get the currency from the container.
-        if (!$container->exists($currencyHash)) {
-            $this->prepareCurrency($container, $params);
-            $currency = $container->get($currencyHash);
-        } else {
-            $currency = $container->get($currencyHash);
-        }
-
-        return $currency;
-    }
-
-    /**
-     * Prepare money formatter.
-     *
-     * <code>
-     * $this->prepareMoneyFormatter($container, $params);
-     * </code>
-     *
-     * @param Container $container
-     * @param Registry $params
-     *
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \OutOfBoundsException
-     */
-    protected function prepareMoneyFormatter($container, $params)
-    {
-        $currencyId = $params->get('project_currency');
-        $moneyHash  = StringHelper::generateMd5Hash(Constants::CONTAINER_FORMATTER_MONEY, $currencyId);
-
-        if (!$container->exists($moneyHash)) {
-            // Get the currency from the container.
-            $currency = $this->getCurrency($container, $params);
-
-            // Prepare decimal pattern.
-            $fractionDigits = (int)$params->get('fraction_digits', 2);
-            $pattern        = '#,##0';
-            if ($fractionDigits > 0) {
-                $pattern .= '.' . str_repeat('0', $fractionDigits);
-            }
-
-            $formatter = LocaleHelper::getNumberFormatter($pattern);
-
-            $money = new Money($formatter);
-            $money->setCurrency($currency);
-
-            $container->set($moneyHash, $money);
-        }
+        return $moneyHelper->getCurrency($params->get('project_currency'), $gateway);
     }
 
     /**
      * Return money formatter.
+     * NOTE: Only used in Joomla.
      *
      * <code>
      * $this->prepareMoneyFormatter($container, $params);
@@ -141,21 +72,48 @@ trait MoneyHelper
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      * @throws \OutOfBoundsException
+     * @throws BindException
      *
-     * @return Money
+     * @return Formatter
      */
-    protected function getMoneyFormatter($container, $params)
+    public static function getMoneyFormatter($container, $params)
     {
-        $currencyId = $params->get('project_currency');
-        $moneyHash  = StringHelper::generateMd5Hash(Constants::CONTAINER_FORMATTER_MONEY, $currencyId);
+        $language         = \JFactory::getLanguage();
+        $locale           = $language->getTag();
 
-        if (!$container->exists($moneyHash)) {
-            $this->prepareMoneyFormatter($container, $params);
-            $money = $container->get($moneyHash);
-        } else {
-            $money = $container->get($moneyHash);
-        }
+        $fractionDigits   = (int)$params->get('fraction_digits', 2);
 
-        return $money;
+        $moneyService     = new ContainerHelperMoney($container);
+        return $moneyService->getFormatter($locale, $fractionDigits);
+    }
+
+    /**
+     * Return money parser.
+     * NOTE: Only used in Joomla.
+     *
+     * <code>
+     * $this->prepareMoneyFormatter($container, $params);
+     * $money = $this->getMoneyFormatter($container, $params);
+     * </code>
+     *
+     * @param Container $container
+     * @param Registry $params
+     *
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
+     * @throws \OutOfBoundsException
+     * @throws BindException
+     *
+     * @return Parser
+     */
+    public static function getMoneyParser($container, $params)
+    {
+        $language         = \JFactory::getLanguage();
+        $locale           = $language->getTag();
+
+        $fractionDigits   = (int)$params->get('fraction_digits', 2);
+
+        $moneyService     = new ContainerHelperMoney($container);
+        return $moneyService->getParser($locale, $fractionDigits);
     }
 }

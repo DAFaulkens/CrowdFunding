@@ -262,8 +262,7 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
             if ($table->get('funding_days')) {
                 $fundingStartDate = new Crowdfunding\Date($table->get('funding_start'));
                 $endDate          = $fundingStartDate->calculateEndDate($table->get('funding_days'));
-
-                $table->set('funding_end', $endDate->toSql());
+                $table->set('funding_end', $endDate->format(Prism\Constants::DATE_FORMAT_SQL_DATETIME));
             }
         }
     }

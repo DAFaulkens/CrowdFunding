@@ -19,13 +19,13 @@ defined('_JEXEC') or die;
 <div class="control-group">
     <div class="control-label">
         <label for="jform_funding_duration_type" id="jform_funding_duration_type-lbl">
-            <?php echo JText::_("COM_CROWDFUNDING_FIELD_FUNDING_DURATION"); ?>
+            <?php echo JText::_('COM_CROWDFUNDING_FIELD_FUNDING_DURATION'); ?>
         </label>
     </div>
     <div class="controls">
         <?php
-        if (empty($this->fundingDuration) or (strcmp("days", $this->fundingDuration) == 0)) { ?>
-            <input type="radio" value="days" name="jform[funding_duration_type]" id="js-funding-duration-days" <?php echo $this->checkedDays; ?>>
+        if (empty($this->fundingDuration) or strcmp('days', $this->fundingDuration) === 0) { ?>
+            <input type="radio" value="days" name="jform[funding_duration_type]" id="js-funding-duration-days" <?php echo $this->checkedDays; ?> />
             <?php echo $this->form->getLabel('funding_days'); ?>
             <div class="clearfix"></div>
             <?php echo $this->form->getInput('funding_days'); ?>
@@ -35,9 +35,9 @@ defined('_JEXEC') or die;
         <br/><br/><br/>
 
         <?php
-        if (empty($this->fundingDuration) or (strcmp("date", $this->fundingDuration) == 0)) { ?>
+        if (empty($this->fundingDuration) or strcmp('date', $this->fundingDuration) === 0) { ?>
             <div class="clearfix"></div>
-            <input type="radio" value="date" name="jform[funding_duration_type]" id="js-funding-duration-date" <?php echo $this->checkedDate; ?>>
+            <input type="radio" value="date" name="jform[funding_duration_type]" id="js-funding-duration-date" <?php echo $this->checkedDate; ?> />
             <?php echo $this->form->getLabel('funding_end'); ?>
             <div class="clearfix"></div>
             <?php echo $this->form->getInput('funding_end'); ?>

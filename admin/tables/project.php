@@ -85,7 +85,7 @@ class CrowdfundingTableProject extends JTable
             } else {
                 $fundingStartDate  = new Crowdfunding\Date($this->funding_start);
                 $fundingEndDate    = $fundingStartDate->calculateEndDate($this->funding_days);
-                $this->funding_end = $fundingEndDate->toSql();
+                $this->funding_end = $fundingEndDate->format(Prism\Constants::DATE_FORMAT_SQL_DATETIME);
             }
         }
 

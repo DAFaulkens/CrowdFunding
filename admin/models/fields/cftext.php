@@ -12,7 +12,7 @@ defined('JPATH_PLATFORM') or die;
 jimport('Prism.init');
 jimport('Crowdfunding.init');
 
-class JFormFieldCfText extends JFormFieldText
+class JFormFieldCftext extends JFormFieldText
 {
     /**
      * The form field type.
@@ -40,7 +40,20 @@ class JFormFieldCfText extends JFormFieldText
     protected function getLayoutPaths()
     {
         return array(
-            JPath::clean(PRISM_PATH_LIBRARY.'/layouts')
+            JPath::clean(PRISM_PATH_LIBRARY.'/ui/layouts'),
+            JPath::clean(JPATH_ROOT.'/layouts'),
         );
+    }
+
+    /**
+     * Method to get the field input markup.
+     *
+     * @return  string  The field input markup.
+     *
+     * @since   11.1
+     */
+    protected function getInput()
+    {
+        return $this->getRenderer($this->layout)->render($this->getLayoutData());
     }
 }

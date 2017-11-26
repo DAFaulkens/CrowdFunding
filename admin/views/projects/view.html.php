@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewProjects extends JViewLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -32,7 +32,8 @@ class CrowdfundingViewProjects extends JViewLegacy
     protected $items;
     protected $pagination;
 
-    protected $money;
+    protected $moneyFormatter;
+    protected $currency;
     protected $rewards;
 
     protected $option;
@@ -58,14 +59,16 @@ class CrowdfundingViewProjects extends JViewLegacy
 
         $this->params     = $this->state->get('params');
 
-        $this->money      = $this->money = $this->getMoneyFormatter($this->params);
+        $container              = Prism\Container::getContainer();
+        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
+        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
 
         // Get projects IDs
         $projectsIds = Prism\Utilities\ArrayHelper::getIds($this->items);
 
         // Get number of rewards.
-        $projects = new Crowdfunding\Projects(JFactory::getDbo());
-        $this->rewards = $projects->getRewardsNumber($projectsIds);
+        $projects       = new Crowdfunding\Projects(JFactory::getDbo());
+        $this->rewards  = $projects->getRewardsNumber($projectsIds);
 
         // Prepare sorting data
         $this->prepareSorting();
@@ -154,12 +157,9 @@ class CrowdfundingViewProjects extends JViewLegacy
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_PROJECTS_MANAGER'));
 
-        // Scripts
         JHtml::_('bootstrap.tooltip');
         JHtml::_('behavior.multiselect');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
     }
 }

@@ -57,7 +57,7 @@ defined('_JEXEC') or die;
                         </div>
                         <?php } ?>
         		    </td>
-            		<td class="text-center"><?php echo $this->money->setAmount($item->txn_amount)->formatCurrency(); ?></td>
+            		<td class="text-center"><?php echo $this->moneyFormatter->formatCurrency(new Prism\Money\Money($item->txn_amount, $this->currency)); ?></td>
             		<td class="text-center hidden-phone"><?php echo JHtml::_('crowdfunding.name', $item->investor); ?></td>
             		<td class="text-center hidden-phone"><?php echo $this->escape($item->receiver); ?></td>
             		<td class="text-center hidden-phone"><?php echo JHtml::_('date', $item->txn_date, JText::_('DATE_FORMAT_LC2')); ?></td>

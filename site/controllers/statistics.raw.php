@@ -11,6 +11,7 @@ use League\Fractal;
 use Joomla\Registry\Registry;
 use Crowdfunding\Data\Serializer;
 use Crowdfunding\Data\Transformer;
+use Crowdfunding\Container\MoneyHelper;
 
 // No direct access
 defined('_JEXEC') or die;
@@ -24,8 +25,6 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerStatistics extends JControllerLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     public function getDailyFunds()
     {
         JSession::checkToken('get') or jexit(JText::_('JINVALID_TOKEN'));
@@ -42,7 +41,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
         if (!$itemId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
                 ->failure();
 
             echo $response;
@@ -55,7 +54,9 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
             $params = \JComponentHelper::getParams('com_crowdfunding');
             /** @var  $params Registry */
 
-            $money   = $this->getMoneyFormatter($params);
+            $container      = Prism\Container::getContainer();
+            $currency       = MoneyHelper::getCurrency($container, $params);
+            $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
 
             $project = new Crowdfunding\Statistics\Project(JFactory::getDbo(), $itemId);
             $data    = $project->getFullPeriodAmounts();
@@ -64,7 +65,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
             $manager->setSerializer(new Serializer\Chart\DailyFunds());
 
             // Run all transformers
-            $resource = new Fractal\Resource\Collection($data, new Transformer\Chart\DailyFunds($money));
+            $resource = new Fractal\Resource\Collection($data, new Transformer\Chart\DailyFunds($moneyFormatter, $currency));
             $data     = $manager->createData($resource)->toArray();
 
         } catch (Exception $e) {
@@ -72,7 +73,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
 
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -103,7 +104,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
         if (!$itemId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
                 ->failure();
 
             echo $response;
@@ -116,7 +117,9 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
             $params = \JComponentHelper::getParams('com_crowdfunding');
             /** @var  $params Registry */
 
-            $money   = $this->getMoneyFormatter($params);
+            $container      = Prism\Container::getContainer();
+            $currency       = MoneyHelper::getCurrency($container, $params);
+            $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
 
             $project = new Crowdfunding\Statistics\Project(JFactory::getDbo(), $itemId);
             $data    = $project->getFundedAmount();
@@ -125,7 +128,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
             $manager->setSerializer(new Serializer\Chart\ProjectFunds());
 
             // Run all transformers
-            $resource = new Fractal\Resource\Item($data, new Transformer\Chart\ProjectFunds($money));
+            $resource = new Fractal\Resource\Item($data, new Transformer\Chart\ProjectFunds($moneyFormatter, $currency));
             $data = $manager->createData($resource)->toArray();
 
         } catch (Exception $e) {
@@ -133,7 +136,7 @@ class CrowdfundingControllerStatistics extends JControllerLegacy
 
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;

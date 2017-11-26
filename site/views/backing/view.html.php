@@ -8,14 +8,14 @@
  */
 
 use Joomla\String\StringHelper;
+use Joomla\Data\DataObject;
+use Crowdfunding\Container\MoneyHelper;
 
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewBacking extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -34,14 +34,19 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected $item;
 
     /**
-     * @var Crowdfunding\Currency
+     * @var Prism\Money\Currency
      */
     protected $currency;
 
     /**
-     * @var Prism\Money\Money
+     * @var Prism\Money\Formatter\IntlDecimalFormatter
      */
-    protected $money;
+    protected $moneyFormatter;
+
+    /**
+     * @var Prism\Money\Parser\IntlDecimalParser
+     */
+    protected $moneyParser;
 
     protected $imageFolder;
     protected $layout;
@@ -57,8 +62,8 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected $paymentAmount;
     protected $option;
     protected $container;
-    protected $paymentSessionContext;
-    protected $paymentSessionLocal;
+    protected $wizardSessionContext;
+    protected $wizardSession;
     protected $event;
 
     protected $nextStepTask;
@@ -102,20 +107,19 @@ class CrowdfundingViewBacking extends JViewLegacy
             return;
         }
 
-        $this->container   = Prism\Container::getContainer();
-        $this->prepareCurrency($this->container, $this->params);
-        $this->prepareMoneyFormatter($this->container, $this->params);
+        $this->container      = Prism\Container::getContainer();
+
+        // Prepare money formatter.
+        $this->currency       = MoneyHelper::getCurrency($this->container, $this->params);
+        $this->moneyFormatter = MoneyHelper::getMoneyFormatter($this->container, $this->params);
+        $this->moneyParser    = MoneyHelper::getMoneyParser($this->container, $this->params);
 
         // Create an object that will contain the data during the payment process.
-        $this->paymentSessionContext = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$this->item->id;
-        $this->paymentSessionLocal   = $this->app->getUserState($this->paymentSessionContext);
+        $this->wizardSessionContext = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$this->item->id;
+        $this->wizardSession        = $this->app->getUserState($this->wizardSessionContext);
 
         // Prepare media folder
         $this->imageFolder = CrowdfundingHelper::getImagesFolder();
-
-        // Prepare money formatter.
-        $this->money    = $this->getMoneyFormatter($this->container, $this->params);
-        $this->currency = $this->money->getCurrency();
 
         // Set a link that points to project page
         $filter    = JFilterInput::getInstance();
@@ -126,9 +130,6 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->item->link_image = $host . '/' . $this->imageFolder . '/' . $this->item->image;
 
         $this->user = JFactory::getUser();
-        // Get wizard type
-//        $this->wizardType = $this->params->get('backing_wizard_type', 'three_steps');
-//        $this->fourSteps  = (strcmp('four_steps', $this->wizardType) === 0);
 
         JPluginHelper::importPlugin('crowdfundingpayment');
         $this->dispatcher = JEventDispatcher::getInstance();
@@ -137,9 +138,9 @@ class CrowdfundingViewBacking extends JViewLegacy
         $layout = $this->getLayout();
 
         // Create payment session
-        if (!$this->paymentSessionLocal or empty($this->paymentSessionLocal->step1) or strcmp('default', $layout) === 0) {
-            $this->paymentSessionLocal = $this->createPaymentSession();
-            $this->app->setUserState($this->paymentSessionContext, $this->paymentSessionLocal);
+        if (!$this->wizardSession or empty($this->wizardSession->step1) or strcmp('default', $layout) === 0) {
+            $this->wizardSession = $this->createWizardSession();
+            $this->app->setUserState($this->wizardSessionContext, $this->wizardSession);
         }
 
         $this->prepareWizardSteps();
@@ -173,10 +174,10 @@ class CrowdfundingViewBacking extends JViewLegacy
         }
 
         // Prepare the data of the layout
-        $this->layoutData = new JData(array(
+        $this->layoutData = new DataObject(array(
             'layout'          => $this->layout,
             'item'            => $this->item,
-            'paymentSession'  => $this->paymentSessionLocal,
+            'paymentSession'  => $this->wizardSession,
             'rewards_enabled' => $this->rewardsEnabled,
             'wizard_steps'    => $this->wizardSteps
         ));
@@ -185,7 +186,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->prepareDocument();
 
         // Store the new values of the payment process to the user session.
-        $this->app->setUserState($this->paymentSessionContext, $this->paymentSessionLocal);
+        $this->app->setUserState($this->wizardSessionContext, $this->wizardSession);
 
         parent::display($tpl);
     }
@@ -197,7 +198,7 @@ class CrowdfundingViewBacking extends JViewLegacy
      */
     protected function prepareStep()
     {
-        $nextStepParams = new JData([
+        $nextStepParams = new DataObject([
             'task'    => $this->nextStepTask,
             'layout'  => $this->nextStepLayout,
             'link'    => $this->nextStepLink,
@@ -216,22 +217,22 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected function prepareRewards()
     {
         // Create payment session ID.
-        $this->paymentSessionLocal->session_id = (string)Prism\Utilities\StringHelper::generateRandomString(32);
+        $this->wizardSession->session_id = (string)Prism\Utilities\StringHelper::generateRandomString(32);
 
         // Get selected reward ID
         $this->rewardId = (int)$this->state->get('reward_id');
 
         // If it has been selected another reward, set the old one to 0.
-        if ($this->rewardId !== (int)$this->paymentSessionLocal->rewardId) {
-            $this->paymentSessionLocal->rewardId = 0;
-            $this->paymentSessionLocal->step1    = false;
+        if ($this->rewardId !== (int)$this->wizardSession->rewardId) {
+            $this->wizardSession->rewardId = 0;
+            $this->wizardSession->step1    = false;
         }
 
         // Get amount from session
-        $this->rewardAmount = $this->paymentSessionLocal->amount ?: 0.00;
+        $this->rewardAmount = $this->wizardSession->amount ?: 0.00;
 
         // Get rewards
-        $this->rewards = new  Crowdfunding\Rewards(JFactory::getDbo());
+        $this->rewards = new Crowdfunding\Rewards(JFactory::getDbo());
         $this->rewards->load(array('project_id' => $this->item->id, 'state' => Prism\Constants::PUBLISHED));
 
         // Compare amount with the amount of reward, that is selected.
@@ -242,7 +243,7 @@ class CrowdfundingViewBacking extends JViewLegacy
 
             if ($reward !== null and ($this->rewardAmount < $reward->getAmount())) {
                 $this->rewardAmount     = $reward->getAmount();
-                $this->paymentSessionLocal->step1  = false;
+                $this->wizardSession->step1  = false;
             }
         }
     }
@@ -250,15 +251,15 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected function preparePayment()
     {
         // If missing the flag "step1", redirect to first step.
-        if (!$this->paymentSessionLocal->step1) {
+        if (!$this->wizardSession->step1) {
             $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_INVALID_AMOUNT'));
-            return $this->createPaymentSession();
+            return $this->createWizardSession();
         }
 
         // Authorise the user
         if (!$this->user->authorise('crowdfunding.donate', 'com_crowdfunding')) {
             $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_NO_SIGNED_PAYMENT'));
-            return $this->createPaymentSession();
+            return $this->createWizardSession();
         }
 
         // Check for both user states. The user must have only one state - registered user or anonymous user.
@@ -277,7 +278,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         // Validate reward
         $this->reward = null;
         $keys         = array(
-            'id'         => $this->paymentSessionLocal->rewardId,
+            'id'         => $this->wizardSession->rewardId,
             'project_id' => $this->item->id
         );
 
@@ -289,7 +290,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         }
 
         // Set the amount that will be displayed in the view.
-        $this->paymentAmount = $this->paymentSessionLocal->amount;
+        $this->paymentAmount = $this->wizardSession->amount;
 
         // Validate the amount.
         if (!$this->paymentAmount) {
@@ -305,12 +306,13 @@ class CrowdfundingViewBacking extends JViewLegacy
         $item->slug           = $this->item->slug;
         $item->catslug        = $this->item->catslug;
         $item->fundingType    = $this->item->funding_type;
-        $item->rewardId       = $this->paymentSessionLocal->rewardId;
-        $item->amount         = $this->paymentSessionLocal->amount;
+        $item->rewardId       = $this->wizardSession->rewardId;
+        $item->amount         = $this->wizardSession->amount;
         $item->currencyCode   = $this->currency->getCode();
 
-        $item->amountFormated = $this->money->setAmount($item->amount)->format();
-        $item->amountCurrency = $this->money->setAmount($item->amount)->formatCurrency();
+        $moneyAmount          = new Prism\Money\Money($item->amount, $this->currency);
+        $item->amountFormated = $this->moneyFormatter->format($moneyAmount);
+        $item->amountCurrency = $this->moneyFormatter->formatCurrency($moneyAmount);
 
         $this->item->event    = new stdClass();
 
@@ -330,14 +332,14 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected function prepareShare()
     {
         // Get amount from session that will be displayed in the view.
-        $this->paymentAmount = $this->paymentSessionLocal->amount;
+        $this->paymentAmount = $this->wizardSession->amount;
 
         // Get reward
         $this->reward = null;
-        if ((int)$this->paymentSessionLocal->rewardId > 0) {
+        if ((int)$this->wizardSession->rewardId > 0) {
             $this->reward = new Crowdfunding\Reward(JFactory::getDbo());
             $this->reward->load(array(
-                'id'         => (int)$this->paymentSessionLocal->rewardId,
+                'id'         => (int)$this->wizardSession->rewardId,
                 'project_id' => (int)$this->item->id
             ));
         }
@@ -355,8 +357,8 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->app->setUserState('auser_id', '');
 
         // Initialize the payment session creating new one.
-        $this->paymentSessionLocal = $this->createPaymentSession();
-        $this->app->setUserState($this->paymentSessionContext, $this->paymentSessionLocal);
+        $this->wizardSession = $this->createWizardSession();
+        $this->app->setUserState($this->wizardSessionContext, $this->wizardSession);
     }
 
     protected function prepareWizardSteps()
@@ -461,7 +463,7 @@ class CrowdfundingViewBacking extends JViewLegacy
             $this->disabledButton = 'disabled="disabled"';
 
             // Store the new values of the payment process to the user session.
-            $this->paymentSessionLocal->step1 = false;
+            $this->wizardSession->step1 = false;
         }
     }
 
@@ -548,8 +550,8 @@ class CrowdfundingViewBacking extends JViewLegacy
     protected function returnToStep1($message = '')
     {
         // Reset the flag for step 1
-        $this->paymentSessionLocal->step1 = false;
-        $this->app->setUserState($this->paymentSessionContext, $this->paymentSessionLocal);
+        $this->wizardSession->step1 = false;
+        $this->app->setUserState($this->wizardSessionContext, $this->wizardSession);
 
         if ($message !== '') {
             $this->app->enqueueMessage($message, 'warning');
@@ -557,16 +559,16 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug), false));
     }
 
-    protected function createPaymentSession()
+    protected function createWizardSession()
     {
-        $paymentSession             = new JData();
-        $paymentSession->step1      = false;
-        $paymentSession->step2      = false;
-        $paymentSession->amount     = 0.00;
-        $paymentSession->rewardId   = 0;
-        $paymentSession->session_id = '';
-        $paymentSession->terms      = 0;
+        $wizardSession             = new DataObject;
+        $wizardSession->step1      = false;
+        $wizardSession->step2      = false;
+        $wizardSession->amount     = 0.00;
+        $wizardSession->rewardId   = 0;
+        $wizardSession->session_id = '';
+        $wizardSession->terms      = 0;
 
-        return $paymentSession;
+        return $wizardSession;
     }
 }

@@ -12,7 +12,6 @@ defined('_JEXEC') or die;
 
 class CrowdfundingViewReward extends JViewLegacy
 {
-
     /**
      * @var JDocumentHtml
      */
@@ -90,7 +89,7 @@ class CrowdfundingViewReward extends JViewLegacy
 
         // Prepare reward delivery date.
         $dateValidator = new Prism\Validator\Date($this->reward->getDeliveryDate());
-        $this->deliveryDate = ($dateValidator->isValid()) ? JHtml::_('date', $this->reward->getDeliveryDate(), JText::_('DATE_FORMAT_LC3')) : '--';
+        $this->deliveryDate = $dateValidator->isValid() ? JHtml::_('date', $this->reward->getDeliveryDate(), JText::_('DATE_FORMAT_LC3')) : '--';
 
         // Get images folder.
         $this->imagesFolder = CrowdfundingHelper::getImagesFolderUri($this->userId);

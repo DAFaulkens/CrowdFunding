@@ -419,7 +419,7 @@ div.reward:hover  {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
     display: block;
     line-height: 20px;
-    padding: 0px;
+    padding: 0;
     transition: all 0.2s ease-in-out 0s;
 }
 
@@ -629,6 +629,43 @@ div.reward:hover  {
 	font-weight: bold;
 }
 
+.block-inline {
+	display: inline-block;
+}
+
 .remodal .form-group {
 	text-align: left !important;
+}
+
+.cfprojects .project-details {
+	margin-bottom: 30px;
+	border: thin solid #d5d0cb;
+}
+
+.cfprojects .media-middle,
+.cfprojects .media-body {
+	padding: 5px;
+}
+
+.cfprojects .project-details:nth-child(even) {
+	background-color: #fafafa;
+}
+
+.cfprojects .media-tools {
+	display: table-cell;
+	padding: 5px 5px 0 0;
+}
+
+.project-details .media-footer {
+	z-index: 1;
+	padding: 10px 0 10px 5px;
+	border-top: thin solid #cbcbcb;
+}
+
+.project-details .mf-color1 {
+	background-color: #fafaec;
+}
+
+.project-details .mf-color2 {
+	background-color: #f6f1e3;
 }

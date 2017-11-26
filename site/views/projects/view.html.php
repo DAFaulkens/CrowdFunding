@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewProjects extends JViewLegacy
 {
-    use Crowdfunding\Container\MoneyHelper;
-
     /**
      * @var JDocumentHtml
      */
@@ -31,12 +31,12 @@ class CrowdfundingViewProjects extends JViewLegacy
 
     protected $items;
 
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
+
     protected $dateFormat;
 
-    protected $listOrder;
-    protected $listDirn;
-    protected $saveOrder;
+    protected $layoutData;
 
     protected $option;
 
@@ -56,26 +56,40 @@ class CrowdfundingViewProjects extends JViewLegacy
         if (!$userId) {
             $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'), 'notice');
             $this->app->redirect(JRoute::_('index.php?option=com_users&view=login', false));
+
             return;
         }
 
-        // Initialise variables
-        $this->items  = $this->get('Items');
         $this->state  = $this->get('State');
-
         $this->params = $this->state->get('params');
 
-        if (is_array($this->items) and count($this->items) > 0) {
-            $container   = Prism\Container::getContainer();
-            $this->money = $this->getMoneyFormatter($container, $this->params);
+        $mapper     = new \Crowdfunding\Project\Mapper(new \Crowdfunding\Project\Gateway\JoomlaGateway(JFactory::getDbo()));
+        $repository = new \Crowdfunding\Project\Repository($mapper);
+
+        $databaseRequest = new \Prism\Database\Request\Request();
+        $databaseRequest
+            ->addConditions(['user_id' => $userId])
+            ->addOrderCondition(new \Prism\Database\Request\Order(['column' => 'funding_end', 'direction' => 'DESC']));
+
+        $this->items = $repository->fetchCollection($databaseRequest);
+
+        // Fetch projects.
+        $this->layoutData                 = new stdClass();
+        $this->layoutData->dateFormat     = $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'));
+        $this->layoutData->item           = null;
+        $this->layoutData->currency       = null;
+        $this->layoutData->moneyFormatter = null;
+        $this->layoutData->mediaFolder    = $this->params->get('images_directory', 'images/crowdfunding');
+        $this->layoutData->imageWidth     = $this->params->get('image_small_width', 100);
+        $this->layoutData->imageHeight    = $this->params->get('image_small_height', 100);
+
+        // Create money formatter.
+        if (count($this->items) > 0) {
+            $container = Prism\Container::getContainer();
+
+            $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
+            $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
         }
-
-        // Prepare filters
-        $this->listOrder  = $this->escape($this->state->get('list.ordering'));
-        $this->listDirn   = $this->escape($this->state->get('list.direction'));
-        $this->saveOrder  = (bool)(strcmp($this->listOrder, 'a.ordering') !== 0);
-
-        $this->dateFormat = $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3'));
 
         $this->prepareDocument();
 

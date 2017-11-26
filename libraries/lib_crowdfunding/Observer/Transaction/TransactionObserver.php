@@ -1,7 +1,7 @@
 <?php
 /**
- * @package      Crowdfunding
- * @subpackage   Observers
+ * @package      Crowdfunding\Observer
+ * @subpackage   Transaction
  * @author       Todor Iliev
  * @copyright    Copyright (C) 2017 Todor Iliev <todor@itprism.com>. All rights reserved.
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
@@ -9,26 +9,25 @@
 
 namespace Crowdfunding\Observer\Transaction;
 
-use Joomla\Utilities\ArrayHelper;
-use Crowdfunding\Transaction\Transaction;
-use Crowdfunding\Container\Helper;
-use Crowdfunding\Reward;
+use Crowdfunding\Project\Command\UpdateFunds;
+use Crowdfunding\Project\Command\Gateway\Joomla\UpdateFunds as UpdateFundsGateway;
+use Crowdfunding\Reward\Command\UpdateDistributed;
 use Prism\Constants;
 use Prism\Container;
-
-defined('JPATH_PLATFORM') or die;
+use Crowdfunding\Reward\Reward;
+use Joomla\Utilities\ArrayHelper;
+use Crowdfunding\Transaction\Transaction;
+use Crowdfunding\Container\Helper\Reward as RewardHelper;
+use Crowdfunding\Container\Helper\Project as ProjectHelper;
+use Crowdfunding\Reward\Gateway\JoomlaGateway as RewardGateway;
+use Crowdfunding\Project\Gateway\JoomlaGateway as ProjectGateway;
+use Crowdfunding\Reward\Command\Gateway\Joomla\UpdateDistributed as UpdateDistributedGateway;
 
 /**
- * Abstract class defining methods that can be
- * implemented by an Observer class of a JTable class (which is an Observable).
- * Attaches $this Observer to the $table in the constructor.
- * The classes extending this class should not be instantiated directly, as they
- * are automatically instantiated by the JObserverMapper
+ * Transaction observer.
  *
- * @package      Crowdfunding
- * @subpackage   Observers
- * @link         http://docs.joomla.org/JTableObserver
- * @since        3.1.2
+ * @package      Crowdfunding\Observer
+ * @subpackage   Transaction
  */
 class TransactionObserver extends Observer
 {
@@ -102,52 +101,67 @@ class TransactionObserver extends Observer
         $oldStatus     = ArrayHelper::getValue($options, 'old_status');
         $newStatus     = ArrayHelper::getValue($options, 'new_status');
 
-        $oldStatusBit  = ($oldStatus and array_key_exists($oldStatus, $statuses)) ? $statuses[$oldStatus] : null;
-        $newStatusBit  = ($newStatus and array_key_exists($newStatus, $statuses)) ? $statuses[$newStatus] : null;
+        $oldStatusBit  = ($oldStatus && array_key_exists($oldStatus, $statuses)) ? $statuses[$oldStatus] : null;
+        $newStatusBit  = ($newStatus && array_key_exists($newStatus, $statuses)) ? $statuses[$newStatus] : null;
 
         // Check if it is new record.
         $isNew = false;
-        if ($oldStatusBit === null and $newStatusBit !== null) {
+        if ($oldStatusBit === null && $newStatusBit !== null) {
             $isNew = true;
         }
 
         $container        = Container::getContainer();
-        $containerHelper  = new Helper();
+
+        $rewardHelper     = new RewardHelper($container);
+        $rewardGateway    = new RewardGateway(\JFactory::getDbo());
+
+        $projectHelper    = new ProjectHelper($container);
+        $projectGateway   = new ProjectGateway(\JFactory::getDbo());
 
         // Add funds when create new transaction record, and it is completed and pending.
-        if ($isNew and $transaction->getProjectId() > 0 and ($transaction->isCompleted() or $transaction->isPending())) {
-            $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+        if ($isNew && $transaction->getProjectId() > 0 && ($transaction->isCompleted() || $transaction->isPending())) {
+            $project = $projectHelper->getProject($transaction->getProjectId(), $projectGateway);
 
             $project->addFunds($transaction->getAmount());
-            $project->storeFunds();
+
+            // Update the amount in database.
+            $updateFundsCommand = new UpdateFunds($project);
+            $updateFundsCommand->setGateway(new UpdateFundsGateway(\JFactory::getDbo()));
+            $updateFundsCommand->handle();
 
             if ($transaction->getRewardId()) {
-                $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                $reward = $rewardHelper->getReward($transaction->getRewardId(), $rewardGateway, $transaction->getProjectId());
                 $this->increaseDistributedReward($transaction, $reward);
             }
-
         } else {
             // If someone change the status from completed/pending to another one, remove funds.
-            if (($completedOrPending & $oldStatusBit) and ($canceledOrRefundedOrFailed & $newStatusBit)) {
-                $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+            if (($completedOrPending & $oldStatusBit) && ($canceledOrRefundedOrFailed & $newStatusBit)) {
+                $project = $projectHelper->getProject($transaction->getProjectId(), $projectGateway);
 
                 $project->removeFunds($transaction->getAmount());
-                $project->storeFunds();
+
+                // Update the amount in database.
+                $updateFundsCommand = new UpdateFunds($project);
+                $updateFundsCommand->setGateway(new UpdateFundsGateway(\JFactory::getDbo()));
+                $updateFundsCommand->handle();
 
                 if ($transaction->getRewardId()) {
-                    $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                    $reward = $rewardHelper->getReward($transaction->getRewardId(), $rewardGateway, $transaction->getProjectId());
                     $this->decreaseDistributedReward($transaction, $reward);
                 }
-
             } // If someone change the status to completed/pending from canceled, refunded or failed, add funds.
-            elseif (($canceledOrRefundedOrFailed & $oldStatusBit) and ($completedOrPending & $newStatusBit)) {
-                $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+            elseif (($canceledOrRefundedOrFailed & $oldStatusBit) && ($completedOrPending & $newStatusBit)) {
+                $project = $projectHelper->getProject($transaction->getProjectId(), $projectGateway);
 
                 $project->addFunds($transaction->getAmount());
-                $project->storeFunds();
+
+                // Update the amount in database.
+                $updateFundsCommand = new UpdateFunds($project);
+                $updateFundsCommand->setGateway(new UpdateFundsGateway(\JFactory::getDbo()));
+                $updateFundsCommand->handle();
 
                 if ($transaction->getRewardId()) {
-                    $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                    $reward = $rewardHelper->getReward($transaction->getRewardId(), $rewardGateway, $transaction->getProjectId());
                     $this->increaseDistributedReward($transaction, $reward);
                 }
             }
@@ -194,29 +208,41 @@ class TransactionObserver extends Observer
 
         // Check if it is new record.
         $container        = Container::getContainer();
-        $containerHelper  = new Helper();
+
+        $rewardHelper     = new RewardHelper($container);
+        $rewardGateway    = new RewardGateway(\JFactory::getDbo());
+
+        $projectHelper    = new ProjectHelper($container);
+        $projectGateway   = new ProjectGateway(\JFactory::getDbo());
 
         // If someone change the status from completed/pending to another one, remove funds.
-        if (($completedOrPending & $oldStatusBit) and ($canceledOrRefundedOrFailed & $newStatusBit)) {
-            $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+        if (($completedOrPending & $oldStatusBit) && ($canceledOrRefundedOrFailed & $newStatusBit)) {
+            $project = $projectHelper->getProject($transaction->getProjectId(), $projectGateway);
 
             $project->removeFunds($transaction->getAmount());
-            $project->storeFunds();
+
+            // Update the amount in database.
+            $updateFundsCommand = new UpdateFunds($project);
+            $updateFundsCommand->setGateway(new UpdateFundsGateway(\JFactory::getDbo()));
+            $updateFundsCommand->handle();
 
             if ($transaction->getRewardId()) {
-                $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                $reward = $rewardHelper->getReward($transaction->getRewardId(), $rewardGateway, $transaction->getProjectId());
                 $this->decreaseDistributedReward($transaction, $reward);
             }
-
         } // If someone change the status to completed/pending from canceled, refunded or failed, add funds.
-        elseif (($canceledOrRefundedOrFailed & $oldStatusBit) and ($completedOrPending & $newStatusBit)) {
-            $project = $containerHelper->fetchProject($container, $transaction->getProjectId());
+        elseif (($canceledOrRefundedOrFailed & $oldStatusBit) && ($completedOrPending & $newStatusBit)) {
+            $project = $projectHelper->getProject($transaction->getProjectId(), $projectGateway);
 
             $project->addFunds($transaction->getAmount());
-            $project->storeFunds();
+
+            // Update the amount in database.
+            $updateFundsCommand = new UpdateFunds($project);
+            $updateFundsCommand->setGateway(new UpdateFundsGateway(\JFactory::getDbo()));
+            $updateFundsCommand->handle();
 
             if ($transaction->getRewardId()) {
-                $reward = $containerHelper->fetchReward($container, $transaction->getRewardId(), $transaction->getProjectId());
+                $reward = $rewardHelper->getReward($transaction->getRewardId(), $rewardGateway, $transaction->getProjectId());
                 $this->increaseDistributedReward($transaction, $reward);
             }
         }
@@ -234,10 +260,10 @@ class TransactionObserver extends Observer
      *
      * @return void
      */
-    protected function increaseDistributedReward(Transaction $transaction, $reward)
+    protected function increaseDistributedReward(Transaction $transaction, Reward $reward = null)
     {
         // Check for valid reward.
-        if ($reward === null or !$reward->getId()) {
+        if ($reward === null || !$reward->getId()) {
             return;
         }
 
@@ -248,13 +274,16 @@ class TransactionObserver extends Observer
         }
 
         // Check for available rewards.
-        if ($reward->isLimited() and !$reward->hasAvailable()) {
+        if ($reward->isLimited() && !$reward->hasAvailable()) {
             return;
         }
 
         // Increase the number of distributed rewards.
         $reward->increaseDistributed();
-        $reward->updateDistributed();
+
+        $updateDistributedCommand = new UpdateDistributed($reward);
+        $updateDistributedCommand->setGateway(new UpdateDistributedGateway(\JFactory::getDbo()));
+        $updateDistributedCommand->handle();
     }
 
     /**
@@ -269,10 +298,10 @@ class TransactionObserver extends Observer
      *
      * @return void
      */
-    protected function decreaseDistributedReward(Transaction $transaction, $reward)
+    protected function decreaseDistributedReward(Transaction $transaction, Reward $reward = null)
     {
         // Check for valid reward.
-        if ($reward === null or !$reward->getId()) {
+        if ($reward === null || !$reward->getId()) {
             return;
         }
 
@@ -284,6 +313,9 @@ class TransactionObserver extends Observer
 
         // Decrease the number of distributed rewards.
         $reward->decreaseDistributed();
-        $reward->updateDistributed();
+
+        $updateDistributedCommand = new UpdateDistributed($reward);
+        $updateDistributedCommand->setGateway(new UpdateDistributedGateway(\JFactory::getDbo()));
+        $updateDistributedCommand->handle();
     }
 }

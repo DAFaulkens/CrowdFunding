@@ -30,8 +30,8 @@ defined('_JEXEC') or die;
                 <div class="panel-heading"><?php echo JText::_('COM_CROWDFUNDING_ENTER_AN_AMOUNT');?></div>
                 <div class="panel-body">
                     <form method="post" action="<?php echo JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->slug, $this->item->catslug));?>" class="mt-0" id="form-pledge" autocomplete="off">
-    				<?php echo JHtml::_('crowdfunding.inputAmount', $this->rewardAmount, $this->money, array('name'=>'amount', 'id'=>'js-current-amount')); ?>
-					<?php echo JHtml::_('crowdfunding.minMaxAllowedAmount', $this->params->get('backing_minimum_amount'), $this->params->get('backing_maximum_amount'), $this->money); ?>
+    				<?php echo JHtml::_('crowdfunding.inputAmount', $this->rewardAmount, array('name'=>'amount', 'id'=>'js-current-amount'), $this->moneyFormatter, $this->currency); ?>
+					<?php echo JHtml::_('crowdfunding.minMaxAllowedAmount', $this->params->get('backing_minimum_amount'), $this->params->get('backing_maximum_amount'), $this->moneyFormatter, $this->moneyParser, $this->currency); ?>
     				<?php if($this->params->get('backing_terms', 0)) {
     				    $termsUrl = $this->params->get('backing_terms_url', '');
     				?>
@@ -75,7 +75,7 @@ defined('_JEXEC') or die;
             			<span class="ramount">
             			<input type="radio" name="reward" value="<?php echo $reward['amount'];?>" data-id="<?php echo $reward['id'];?>" class="js-reward-amount-radio" <?php echo ((int)$this->rewardId !== (int)$reward['id']) ? '' : 'checked="checked"'?>/>
             			<?php 
-            			$amount = $this->money->setAmount($reward['amount'])->formatCurrency();
+            			$amount = $this->moneyFormatter->formatCurrency(new Prism\Money\Money($reward['amount'], $this->currency));
             			echo JText::sprintf('COM_CROWDFUNDING_INVEST_MORE', $amount ); ?>
             			</span>
             			<span class="rtitle"><?php echo $this->escape($reward['title']); ?></span>

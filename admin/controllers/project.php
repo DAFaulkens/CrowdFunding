@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // No direct access
 defined('_JEXEC') or die;
 
@@ -19,8 +21,6 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * Method to get a model object, loading it if required.
      *
@@ -53,10 +53,12 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
         /** @var $params Joomla\Registry\Registry */
 
         // Prepare amounts.
-        $moneyFormatter = $this->getMoneyFormatter($params);
+        $container   = Prism\Container::getContainer();
 
-        $data['goal']   = $moneyFormatter->setAmount($data['goal'])->parse();
-        $data['funded'] = $moneyFormatter->setAmount($data['funded'])->parse();
+        $moneyParser = MoneyHelper::getMoneyParser($container, $params);
+
+        $data['goal']   = $moneyParser->parse($data['goal']);
+        $data['funded'] = $moneyParser->parse($data['funded']);
 
         $model = $this->getModel();
         /** @var $model CrowdfundingModelProject */

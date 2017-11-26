@@ -687,7 +687,7 @@ class Transaction extends Database\Table
      * @param string $id
      * @return self
      */
-    public function setParentId($id)
+    public function setParentTxnId($id)
     {
         $this->parent_txn_id = $id;
 
@@ -996,6 +996,158 @@ class Transaction extends Database\Table
 
         $this->db->setQuery($query);
         $this->db->execute();
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxnDate()
+    {
+        return $this->txn_date;
+    }
+
+    /**
+     * @param string $txnDate
+     */
+    public function setTxnDate($txnDate)
+    {
+        $this->txn_date = $txnDate;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxnAmount()
+    {
+        return $this->txn_amount;
+    }
+
+    /**
+     * @param string $txnAmount
+     */
+    public function setTxnAmount($txnAmount)
+    {
+        $this->txn_amount = $txnAmount;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxnCurrency()
+    {
+        return $this->txn_currency;
+    }
+
+    /**
+     * @param string $txnCurrency
+     */
+    public function setTxnCurrency($txnCurrency)
+    {
+        $this->txn_currency = $txnCurrency;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxnStatus()
+    {
+        return $this->txn_status;
+    }
+
+    /**
+     * @param string $txnStatus
+     */
+    public function setTxnStatus($txnStatus)
+    {
+        $this->txn_status = $txnStatus;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTxnId()
+    {
+        return $this->txn_id;
+    }
+
+    /**
+     * @param string $txnId
+     */
+    public function setTxnId($txnId)
+    {
+        $this->txn_id = $txnId;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getServiceProvider()
+    {
+        return $this->service_provider;
+    }
+
+    /**
+     * @param string $serviceProvider
+     */
+    public function setServiceProvider($serviceProvider)
+    {
+        $this->service_provider = $serviceProvider;
+
+        return $this;
+    }
+
+    /**
+     * @param int $projectId
+     *
+     * @return self
+     */
+    public function setProjectId($projectId)
+    {
+        $this->project_id = $projectId;
+
+        return $this;
+    }
+
+    /**
+     * @param string $parentId
+     *
+     * @deprecated v2.6.6
+     */
+    public function setParentId($parentId)
+    {
+        $this->setParentTxnId($parentId);
+
+        return $this;
+    }
+
+    /**
+     * @param string $investorId
+     */
+    public function setInvestorId($investorId)
+    {
+        $this->investor_id = $investorId;
+
+        return $this;
+    }
+
+    /**
+     * @param string $serviceAlias
+     */
+    public function setServiceAlias($serviceAlias)
+    {
+        $this->service_alias = $serviceAlias;
 
         return $this;
     }

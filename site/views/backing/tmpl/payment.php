@@ -33,7 +33,7 @@ defined('_JEXEC') or die;
                 <div class="panel-body">
                     <p>
                         <?php
-                        $amount = $this->money->setAmount($this->paymentAmount)->formatCurrency();
+                        $amount = $this->moneyFormatter->formatCurrency(new Prism\Money\Money($this->paymentAmount, $this->currency));
                         echo JText::sprintf('COM_CROWDFUNDING_AMOUNT_S', $amount); ?>
                     </p>
 
@@ -44,7 +44,7 @@ defined('_JEXEC') or die;
                         <?php
                         $endDate = JHtml::_('date', $this->item->funding_end, $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3')));
                         if ($this->item->funding_type === 'FIXED') {
-                            $goal = $this->money->setAmount($this->item->goal)->formatCurrency();
+                            $goal = $this->moneyFormatter->formatCurrency(new Prism\Money\Money($this->item->goal, $this->currency));
                             echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE_INFO_FIXED', $goal, $endDate);
                         } else {
                             echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE_INFO_FLEXIBLE', $endDate);
@@ -60,7 +60,7 @@ defined('_JEXEC') or die;
                     <h2><?php echo JText::_('COM_CROWDFUNDING_SELECTED_REWARD'); ?></h2>
                 </div>
                 <div class="panel-body">
-                    <?php if (!$this->paymentSessionLocal->rewardId) { ?>
+                    <?php if (!$this->wizardSession->rewardId) { ?>
                         <p><?php echo JText::_('COM_CROWDFUNDING_NO_SELECTED_REWARD'); ?></p>
                     <?php } else { ?>
                         <h3><?php echo $this->escape($this->reward->getTitle()); ?></h3>

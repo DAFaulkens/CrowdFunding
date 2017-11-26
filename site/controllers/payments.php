@@ -108,7 +108,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Check for disabled payment functionality
         if ($params->get('debug_payment_disabled', 0)) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
         }
 
         // Get payment gateway name.
@@ -187,7 +187,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
         // Get the task.
         $task    = strtolower($this->input->getCmd('task'));
         if (!$task) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_INVALID_TASK'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_TASK'));
         }
 
         // Check for request forgeries.
@@ -201,7 +201,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Check for disabled payment functionality
         if ($params->get('debug_payment_disabled', 0)) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
         }
 
         // Get payment gateway name.
@@ -221,7 +221,6 @@ class CrowdfundingControllerPayments extends JControllerLegacy
         $paymentResult  = null;
         $redirectUrl    = null;
         $message        = null;
-        $triggerEvents  = array();
 
         $model       = $this->getModel();
 
@@ -240,25 +239,24 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $results = $dispatcher->trigger('onPayments'. ucwords($task), array($context, &$item, &$params));
 
             // Get the result, that comes from the plugin.
-            if (is_array($results) and count($results) > 0) {
+            if (is_array($results) && count($results) > 0) {
                 foreach ($results as $result) {
-                    if (is_object($result) and ($result instanceof PaymentResult)) {
+                    if (is_object($result) && ($result instanceof PaymentResult)) {
                         $paymentResult = $result;
                         $redirectUrl   = $result->redirectUrl ?: null;
-                        $message       = $result->message ?: null;
-                        $triggerEvents = (array)$result->triggerEvents;
+                        $message       = $result->message     ?: null;
                         break;
                     }
                 }
             }
 
             // Trigger the event onAfterPaymentNotify
-            if (array_key_exists('AfterPaymentNotify', $triggerEvents) and (bool)$triggerEvents['AfterPaymentNotify']) {
+            if ($paymentResult !== null && $paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT_NOTIFY)) {
                 $dispatcher->trigger('onAfterPaymentNotify', array($context, &$paymentResult, &$params));
             }
 
             // Trigger the event onAfterPayment
-            if (array_key_exists('AfterPayment', $triggerEvents) and (bool)$triggerEvents['AfterPayment']) {
+            if ($paymentResult !== null && $paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT)) {
                 $dispatcher->trigger('onAfterPayment', array($context, &$paymentResult, &$params));
             }
 

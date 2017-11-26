@@ -34,7 +34,7 @@ defined('_JEXEC') or die;
                 </div>
                 <div class="panel-body">
                     <p><?php
-                    $amount = $this->money->setAmount($this->paymentAmount)->formatCurrency();
+                    $amount = $this->moneyFormatter->formatCurrency(new Prism\Money\Money($this->paymentAmount, $this->currency));
                     echo JText::sprintf('COM_CROWDFUNDING_AMOUNT_S', $amount); ?></p>
                     <p><?php echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE', $this->item->funding_type);?></p>
                     <p class="alert alert-info p-5">
@@ -42,7 +42,7 @@ defined('_JEXEC') or die;
                     <?php
                     $endDate = JHtml::_('date', $this->item->funding_end, $this->params->get('date_format_views', JText::_('DATE_FORMAT_LC3')));
                     if ($this->item->funding_type === 'FIXED') {
-                        $goal    = $this->money->setAmount($this->item->goal)->formatCurrency();
+                        $goal    = $this->moneyFormatter->formatCurrency(new Prism\Money\Money($this->item->goal, $this->currency));
                         echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE_INFO_FIXED', $goal, $endDate);
                     } else {
                         echo JText::sprintf('COM_CROWDFUNDING_FUNDING_TYPE_INFO_FLEXIBLE', $endDate);

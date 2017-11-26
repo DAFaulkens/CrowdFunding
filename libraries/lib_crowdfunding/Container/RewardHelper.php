@@ -21,6 +21,8 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Helpers
+ *
+ * @deprecated v2.6
  */
 trait RewardHelper
 {

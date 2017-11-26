@@ -19,6 +19,8 @@ defined('JPATH_PLATFORM') or die;
  *
  * @package      Crowdfunding
  * @subpackage   Rewards
+ *
+ * @deprecated v2.7 Use Crowdfunding\Reward\Rewards
  */
 class Rewards extends Database\Collection
 {

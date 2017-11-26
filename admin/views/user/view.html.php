@@ -7,13 +7,13 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Crowdfunding\Container\MoneyHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewUser extends JViewLegacy
 {
-    use Crowdfunding\Helper\MoneyHelper;
-
     /**
      * @var JApplicationAdministrator
      */
@@ -36,7 +36,8 @@ class CrowdfundingViewUser extends JViewLegacy
 
     protected $item;
 
-    protected $money;
+    protected $currency;
+    protected $moneyFormatter;
     protected $projects;
     protected $investedAmount;
     protected $investedTransactions;
@@ -52,9 +53,8 @@ class CrowdfundingViewUser extends JViewLegacy
     
     public function display($tpl = null)
     {
-        $this->option = JFactory::getApplication()->input->get('option');
-
         $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
 
         // Get user ID
         $userId = $this->app->input->getInt('id');
@@ -66,7 +66,9 @@ class CrowdfundingViewUser extends JViewLegacy
 
         $this->params = JComponentHelper::getParams($this->option);
 
-        $this->money  = $this->getMoneyFormatter($this->params);
+        $container              = Prism\Container::getContainer();
+        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
+        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
 
         // Get number of rewards.
         $statistics = new Crowdfunding\Statistics\User(JFactory::getDbo(), $this->item->id);

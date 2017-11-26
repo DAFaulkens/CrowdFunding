@@ -87,7 +87,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
                     'txn_status' => 'pending'
                 );
 
-                $items = new Crowdfunding\Transactions(JFactory::getDbo());
+                $items = new Crowdfunding\Transaction\Transactions(JFactory::getDbo());
                 $items->load($options);
 
                 if (count($items) === 0) {
@@ -163,7 +163,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
                     'txn_status' => 'pending'
                 );
 
-                $items = new Crowdfunding\Transactions(JFactory::getDbo());
+                $items = new Crowdfunding\Transaction\Transactions(JFactory::getDbo());
                 $items->load($options);
 
                 if (count($items) === 0) {
@@ -197,13 +197,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             return;
 
         } catch (Exception $e) {
-            // Store log data in the database
-            $this->log->add(
-                JText::_($this->text_prefix . '_ERROR_SYSTEM'),
-                'CONTROLLER_PAYMENTS_DOCAPTURE_ERROR',
-                $e->getMessage()
-            );
-
+            $this->log->add(JText::_($this->text_prefix . '_ERROR_SYSTEM'), 'CONTROLLER_PAYMENTS_DOCAPTURE_ERROR', $e->getMessage());
             throw new Exception(JText::_($this->text_prefix . '_ERROR_SYSTEM'));
         }
 

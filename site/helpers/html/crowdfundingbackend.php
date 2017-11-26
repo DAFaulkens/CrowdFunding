@@ -8,6 +8,10 @@
  */
 
 use Joomla\Registry\Registry;
+use Crowdfunding\Currency\Currencies;
+
+use Prism\Money\Money;
+use Prism\Money\Formatter\IntlDecimalFormatter;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -232,33 +236,39 @@ abstract class JHtmlCrowdfundingBackend
      * Generates information about transaction amount.
      *
      * @param stdClass $item
-     * @param Prism\Money\Money $money
-     * @param Crowdfunding\Currencies $currencies
+     * @param IntlDecimalFormatter $moneyFormatter
+     * @param Currencies $currencies
      *
      * @throws \UnexpectedValueException
      *
      * @return string
      */
-    public static function transactionAmount($item, Prism\Money\Money $money, Crowdfunding\Currencies $currencies)
+    public static function transactionAmount($item, $moneyFormatter, $currencies)
     {
         $item->txn_amount = (float)$item->txn_amount;
         $item->fee        = (float)$item->fee;
 
-        $currency         = $currencies->getCurrency($item->txn_currency);
+        // Find a currency object by its code.
+        $currency = null;
+        foreach ($currencies as $currency_) {
+            if (strcmp($item->txn_currency, $currency_->getCode()) === 0) {
+                $currency = $currency_;
+                break;
+            }
+        }
 
         if ($currency !== null) {
-            $money->setCurrency($currency);
-            $output = $money->setAmount($item->txn_amount)->formatCurrency();
+            $output = $moneyFormatter->formatCurrency(new Money($item->txn_amount, $currency));
         } else {
             $output = $item->txn_amount;
         }
 
         if ($item->fee > 0.00) {
-            $fee = ($currency !== null) ? $money->setAmount($item->fee)->formatCurrency() : $item->fee;
+            $fee = ($currency !== null) ? $moneyFormatter->formatCurrency(new Money($item->fee, $currency)) : $item->fee;
 
             // Prepare project owner amount.
             $projectOwnerAmount = round($item->txn_amount - $item->fee, 2);
-            $projectOwnerAmount = ($currency !== null) ? $money->setAmount($projectOwnerAmount)->formatCurrency() : $projectOwnerAmount;
+            $projectOwnerAmount = ($currency !== null) ? $moneyFormatter->formatCurrency(new Money($projectOwnerAmount, $currency)) : $projectOwnerAmount;
 
             $title = JText::sprintf('COM_CROWDFUNDING_TRANSACTION_AMOUNT_FEE', $projectOwnerAmount, $fee);
 
@@ -277,10 +287,10 @@ abstract class JHtmlCrowdfundingBackend
         if (!empty($name)) {
             if (!empty($userId)) {
                 $output[] = '<a href="' . JRoute::_('index.php?option=com_crowdfunding&view=users&filter_search=id:' . (int)$userId) . '">';
-                $output[] = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                $output[] = htmlspecialchars($name, ENT_QUOTES);
                 $output[] = '</a>';
             } else {
-                $output[] = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                $output[] = htmlspecialchars($name, ENT_QUOTES);
             }
         } else {
             $output[] = JText::_('COM_CROWDFUNDING_ANONYMOUS');

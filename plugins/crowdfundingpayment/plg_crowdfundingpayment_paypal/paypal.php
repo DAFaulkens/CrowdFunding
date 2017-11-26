@@ -7,13 +7,22 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Transaction\Transaction;
-use Crowdfunding\Transaction\TransactionManager;
-use Crowdfunding\Payment;
-use Joomla\Utilities\ArrayHelper;
-use Joomla\Registry\Registry;
-use Prism\Payment\Result as PaymentResult;
-use Prism\Payment\PayPal;
+use \Crowdfunding\Payment;
+use \Crowdfunding\Transaction\Transaction;
+use \Crowdfunding\Transaction\TransactionManager;
+use \Joomla\Utilities\ArrayHelper;
+use \Joomla\Registry\Registry;
+use \PayPal\IPN\PPIPNMessage;
+use \PayPal\Core\PPConstants;
+use \Prism\Payment\Result as PaymentResult;
+use \Crowdfunding\Currency\Gateway\JoomlaGateway as CurrencyGateway;
+
+use \Crowdfunding\Project\Project;
+use \Crowdfunding\Project\Gateway\JoomlaGateway as ProjectGateway;
+use \Crowdfunding\Reward\Reward;
+use \Crowdfunding\Reward\Gateway\JoomlaGateway as RewardGateway;
+use \Crowdfunding\Payment\Transaction as PaymentTransaction;
+use \Crowdfunding\Payment\Session\Session as PaymentSession;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -23,7 +32,11 @@ jimport('Crowdfunding.init');
 jimport('Crowdfundingfinance.init');
 jimport('Emailtemplates.init');
 
-JObserverMapper::addObserverClassToClass(Crowdfunding\Observer\Transaction\TransactionObserver::class, Crowdfunding\Transaction\TransactionManager::class, array('typeAlias' => 'com_crowdfunding.payment'));
+JObserverMapper::addObserverClassToClass(
+    Crowdfunding\Observer\Transaction\TransactionObserver::class,
+    Crowdfunding\Transaction\TransactionManager::class,
+    array('typeAlias' => 'com_crowdfunding.payment')
+);
 
 /**
  * Crowdfunding PayPal payment plugin.
@@ -69,21 +82,15 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
             return null;
         }
 
-        if ($this->app->isAdmin()) {
+        if ($this->app->isClient('administrator')) {
             return null;
         }
 
-        $doc = JFactory::getDocument();
-        /**  @var $doc JDocumentHtml */
-
         // Check document type
-        $docType = $doc->getType();
+        $docType = JFactory::getDocument()->getType();
         if (strcmp('html', $docType) !== 0) {
             return null;
         }
-
-        // This is a URI path to the plugin folder
-        $pluginURI = 'plugins/crowdfundingpayment/paypal';
 
         $notifyUrl = $this->getCallbackUrl();
         $returnUrl = $this->getReturnUrl($item->slug, $item->catslug);
@@ -96,7 +103,7 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
 
         $html   = array();
         $html[] = '<div class="well">';
-        $html[] = '<h4><img src="' . $pluginURI . '/images/paypal_icon.png" width="36" height="32" alt="PayPal" />' . JText::_($this->textPrefix . '_TITLE') . '</h4>';
+        $html[] = '<h4><img src="plugins/crowdfundingpayment/paypal/images/paypal_icon.png" width="36" height="32" alt="PayPal" />' . JText::_($this->textPrefix . '_TITLE') . '</h4>';
 
         // Prepare payment receiver.
         $paymentReceiverInput  = $this->preparePaymentReceiver($item->id);
@@ -110,9 +117,9 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
 
         // Start the form.
         if ($this->params->get('paypal_sandbox', 1)) {
-            $html[] = '<form action="' . trim($this->params->get('paypal_sandbox_url')) . '" method="post">';
+            $html[] = '<form action="' . trim(PPConstants::IPN_SANDBOX_ENDPOINT) . '" method="post">';
         } else {
-            $html[] = '<form action="' . trim($this->params->get('paypal_url')) . '" method="post">';
+            $html[] = '<form action="' . trim(PPConstants::IPN_LIVE_ENDPOINT) . '" method="post">';
         }
 
         $html[] = $paymentReceiverInput;
@@ -131,21 +138,20 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         $html[] = '<input type="hidden" name="item_name" value="' . $title . '" />';
 
         // Get payment session
-        $paymentSessionContext    = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT . $item->id;
-        $paymentSessionLocal      = $this->app->getUserState($paymentSessionContext);
+        $wizardSessionContext   = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT . $item->id;
+        $wizardSession          = $this->app->getUserState($wizardSessionContext);
 
-        $paymentSessionRemote = $this->getPaymentSession(array(
-            'session_id'    => $paymentSessionLocal->session_id
-        ));
+        $paymentSession = $this->getPaymentSession(array(
+            'session_id' => $wizardSession->session_id
+        ), Prism\Constants::NOT_LEGACY);
 
         // Prepare custom data
         $custom = array(
-            'payment_session_id' => $paymentSessionRemote->getId(),
+            'payment_session_id' => $paymentSession->getId(),
             'gateway'            => $this->serviceAlias
         );
 
-        $custom = base64_encode(json_encode($custom));
-        $html[] = '<input type="hidden" name="custom" value="' . $custom . '" />';
+        $html[] = '<input type="hidden" name="custom" value="' . base64_encode(json_encode($custom)) . '" />';
 
         // Set a link to logo
         $imageUrl = trim($this->params->get('paypal_image_url'));
@@ -164,7 +170,7 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         $html[] = '<img alt="" border="0" width="1" height="1" src="https://www.paypal.com/en_US/i/scr/pixel.gif" >';
         $html[] = '</form>';
 
-        // Display a sticky note if the extension works in sandbox mode.
+        // Display a sticky note if extension works in sandbox mode.
         if ($this->params->get('paypal_sandbox', 1)) {
             $html[] = '<div class="alert alert-info p-10-5"><span class="fa fa-info-circle"></span> ' . JText::_($this->textPrefix . '_WORKS_SANDBOX') . '</div>';
         }
@@ -193,15 +199,12 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
             return null;
         }
 
-        if ($this->app->isAdmin()) {
+        if ($this->app->isClient('administrator')) {
             return null;
         }
 
-        $doc = JFactory::getDocument();
-        /**  @var $doc JDocumentHtml */
-
         // Check document type
-        $docType = $doc->getType();
+        $docType = JFactory::getDocument()->getType();
         if (strcmp('raw', $docType) !== 0) {
             return null;
         }
@@ -210,11 +213,12 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         $requestMethod = $this->app->input->getMethod();
         if (strcmp('POST', $requestMethod) !== 0) {
             $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_REQUEST_METHOD'), $this->debugType, JText::sprintf($this->textPrefix . '_ERROR_INVALID_TRANSACTION_REQUEST_METHOD', $requestMethod));
-
             return null;
         }
 
-        $postData  = PayPal\Ipn::getRawPostData();
+        $postData   = file_get_contents('php://input');
+        $ipnMessage = new PPIPNMessage($postData, $this->getIpnConfig());
+        $postData   = $ipnMessage->getRawData();
 
         // DEBUG DATA
         JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_RESPONSE'), $this->debugType, $postData) : null;
@@ -229,193 +233,193 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         // Verify gateway. Is it PayPal?
         $gateway = ArrayHelper::getValue($custom, 'gateway');
         if (!$this->isValidPaymentGateway($gateway)) {
-            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_PAYMENT_GATEWAY'), $this->debugType, array('custom' => $custom, '_POST' => $_POST));
+            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_PAYMENT_GATEWAY'), $this->debugType, array('custom' => $custom, '_POST' => $postData));
             return null;
         }
-
-        // Get PayPal URL
-        if ($this->params->get('paypal_sandbox', Prism\Constants::OK)) {
-            $url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
-        } else {
-            $url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
-        }
-
-        $paypalIpn       = new PayPal\Ipn($url, $postData);
-        $paypalIpn->verify((bool)$this->params->get('paypal_load_certificate', 0));
-
-        // DEBUG DATA
-        JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_VERIFY_OBJECT'), $this->debugType, $paypalIpn) : null;
 
         // Prepare the array that have to be returned by this method.
         $paymentResult = new PaymentResult();
 
-        if ($paypalIpn->isVerified()) {
-            $containerHelper  = new Crowdfunding\Container\Helper();
-            $currency         = $containerHelper->fetchCurrency($this->container, $params);
+        try {
+            if ($ipnMessage->validate()) {
+                $containerHelper = new Crowdfunding\Container\Helper\Money($this->container);
+                $currency        = $containerHelper->getCurrency($params->get('project_currency'), new CurrencyGateway(\JFactory::getDbo()));
 
-            // Get payment session data
-            $paymentSessionId       = ArrayHelper::getValue($custom, 'payment_session_id', 0, 'int');
-            $paymentSessionRemote   = $this->getPaymentSession(array('id' => $paymentSessionId));
+                // Get payment session data
+                $paymentSessionId = ArrayHelper::getValue($custom, 'payment_session_id', 0, 'int');
+                $paymentSession   = $this->getPaymentSession(['id' => $paymentSessionId], \Prism\Constants::NOT_LEGACY);
 
-            // Check for valid payment session.
-            if (!$paymentSessionRemote->getId()) {
-                $this->log->add(JText::_($this->textPrefix . '_ERROR_PAYMENT_SESSION'), $this->errorType, $paymentSessionRemote->getProperties());
-                return null;
+                // Check for valid payment session.
+                if (!$paymentSession->getId()) {
+                    $this->log->add(JText::_($this->textPrefix . '_ERROR_PAYMENT_SESSION'), $this->errorType, $paymentSession->getProperties());
+                    return null;
+                }
+
+                // DEBUG DATA
+                JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_PAYMENT_SESSION'), $this->debugType, $paymentSession->getProperties()) : null;
+
+                $containerHelper = new Crowdfunding\Container\Helper\Project($this->container);
+                $project         = $containerHelper->getProject($paymentSession->getProjectId(), new ProjectGateway(JFactory::getDbo()));
+                if ($project === null || !$project->getId()) {
+                    $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_PROJECT'), $this->errorType, $project);
+                    return null;
+                }
+
+                // Prepare transaction data.
+                $transactionData = $this->prepareTransactionData($postData, $project, $paymentSession);
+
+
+                $isValidData  = $this->validateData($transactionData, $postData, $currency->getCode());
+                if (!$isValidData) {
+                    $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_DATA'), $this->debugType, $transactionData->getProperties());
+                    return null;
+                }
+
+                // DEBUG DATA
+                JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_VALID_DATA'), $this->debugType, $transactionData) : null;
+
+                // Get reward object.
+                $reward = null;
+                if ($transactionData->getRewardId()) {
+                    $containerHelper = new Crowdfunding\Container\Helper\Reward($this->container);
+                    $reward          = $containerHelper->getReward($transactionData->getRewardId(), new RewardGateway(JFactory::getDbo()), $transactionData->getProjectId());
+                }
+
+                // Save transaction data.
+                $transaction = $this->storeTransaction($transactionData);
+                if ($transaction === null) {
+                    return null;
+                }
+
+                // Generate object of data, based on the transaction properties.
+                $paymentResult->transaction = $transaction;
+
+                // Generate object of data based on the project properties.
+                $paymentResult->project     = $project;
+
+                // Generate object of data based on the reward properties.
+                if ($reward instanceof Reward) {
+                    $paymentResult->reward  = $reward;
+                }
+
+                // Generate data object, based on the payment session properties.
+                $paymentResult->paymentSession = $paymentSession;
+
+                // Removing intention.
+                $this->removeIntention($paymentSession, $transaction);
             }
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_PAYMENT_SESSION'), $this->debugType, $paymentSessionRemote->getProperties()) : null;
-
-            // Validate transaction data
-            $validData = $this->validateData($_POST, $currency->getCode(), $paymentSessionRemote);
-            if ($validData === null) {
-                return null;
-            }
-
-            // DEBUG DATA
-            JDEBUG ? $this->log->add(JText::_($this->textPrefix . '_DEBUG_VALID_DATA'), $this->debugType, $validData) : null;
-
-            // Set the receiver ID.
-            $project = $containerHelper->fetchProject($this->container, $validData['project_id']);
-            $validData['receiver_id'] = $project->getUserId();
-
-            // Get reward object.
-            $reward = null;
-            if ($validData['reward_id']) {
-                $reward = $containerHelper->fetchReward($this->container, $validData['reward_id'], $project->getId());
-            }
-
-            // Save transaction data.
-            // If it is not completed, return empty results.
-            // If it is complete, continue with process transaction data
-            $transaction = $this->storeTransaction($validData);
-            if ($transaction === null) {
-                return null;
-            }
-
-            // Generate object of data, based on the transaction properties.
-            $paymentResult->transaction = $transaction;
-
-            // Generate object of data based on the project properties.
-            $paymentResult->project = $project;
-
-            // Generate object of data based on the reward properties.
-            if ($reward !== null and ($reward instanceof Crowdfunding\Reward)) {
-                $paymentResult->reward = $reward;
-            }
-
-            // Generate data object, based on the payment session properties.
-            $paymentResult->paymentSession = $paymentSessionRemote;
-
-            // Removing intention.
-            $this->removeIntention($paymentSessionRemote, $transaction);
-        } else {
-            // Log error
-            $this->log->add(
-                JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_DATA'),
-                $this->debugType,
-                array('ERROR MESSAGE' => $paypalIpn->getError(), 'paypalVerify' => $paypalIpn, '_POST' => $_POST)
-            );
+        } catch (Exception $e) {
+            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_DATA'), $this->debugType, array('error message' => $e->getMessage(), '_POST' => $postData));
         }
 
         return $paymentResult;
     }
 
     /**
-     * Validate PayPal transaction.
+     * Prepare transaction data that comes from PayPal.
      *
-     * @param array  $data
-     * @param string $currencyCode
-     * @param Crowdfunding\Payment\Session  $paymentSessionRemote
+     * @param array          $data
+     * @param Project        $project
+     * @param PaymentSession $paymentSession
      *
-     * @throws \RuntimeException
      * @throws \InvalidArgumentException
-     * @return array
+     * @return PaymentTransaction
      */
-    protected function validateData($data, $currencyCode, $paymentSessionRemote)
+    protected function prepareTransactionData(array $data, Project $project, PaymentSession $paymentSession)
     {
-        $txnDate = ArrayHelper::getValue($data, 'payment_date');
-        $dateValidator = new Prism\Validator\Date($txnDate);
-
-        if (!$dateValidator->isValid()) {
-            $date = new JDate();
-        } else {
-            $date = new JDate($txnDate);
-        }
+        $txnDate        = ArrayHelper::getValue($data, 'payment_date');
+        $dateValidator  = new Prism\Validator\Date($txnDate);
+        $date           = $dateValidator->isValid() ? new JDate($txnDate) : new JDate();
 
         // Prepare transaction data
-        $transactionData = array(
-            'investor_id'      => $paymentSessionRemote->getUserId(),
-            'project_id'       => $paymentSessionRemote->getProjectId(),
-            'reward_id'        => $paymentSessionRemote->isAnonymous() ? 0 : $paymentSessionRemote->getRewardId(),
-            'service_provider' => $this->serviceProvider,
-            'service_alias'    => $this->serviceAlias,
-            'txn_id'           => ArrayHelper::getValue($data, 'txn_id', null, 'string'),
-            'txn_amount'       => ArrayHelper::getValue($data, 'mc_gross', null, 'float'),
-            'txn_currency'     => ArrayHelper::getValue($data, 'mc_currency', null, 'string'),
-            'txn_status'       => strtolower(ArrayHelper::getValue($data, 'payment_status', '', 'string')),
-            'txn_date'         => $date->toSql(),
-            'extra_data'       => $this->prepareExtraData($data)
+        $transactionData = new PaymentTransaction(
+            [
+                'investor_id'      => (int)$paymentSession->getUserId(),
+                'receiver_id'      => (int)$project->getUserId(),
+                'project_id'       => (int)$paymentSession->getProjectId(),
+                'reward_id'        => (int)$paymentSession->getRewardId(),
+                'service_provider' => $this->serviceProvider,
+                'service_alias'    => $this->serviceAlias,
+                'txn_id'           => ArrayHelper::getValue($data, 'txn_id', null, 'string'),
+                'txn_amount'       => ArrayHelper::getValue($data, 'mc_gross', null, 'float'),
+                'txn_currency'     => ArrayHelper::getValue($data, 'mc_currency', null, 'string'),
+                'txn_status'       => strtolower(ArrayHelper::getValue($data, 'payment_status', '', 'string')),
+                'txn_date'         => $date->toSql(),
+                'extra_data'       => $this->prepareExtraData($data)
+            ]
         );
-
-        // Check Project ID and Transaction ID
-        if (!$transactionData['project_id'] or !$transactionData['txn_id']) {
-            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_DATA'), $this->errorType, $transactionData);
-            return null;
-        }
-
-        // Check if project record exists in database.
-        $projectRecord = new Crowdfunding\Validator\Project\Record(JFactory::getDbo(), $transactionData['project_id']);
-        if (!$projectRecord->isValid()) {
-            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_PROJECT'), $this->errorType, $transactionData);
-            return null;
-        }
-
-        // Check if reward record exists in database.
-        if ($transactionData['reward_id'] > 0) {
-            $rewardRecord = new Crowdfunding\Validator\Reward\Record(JFactory::getDbo(), $transactionData['reward_id'], array('state' => Prism\Constants::PUBLISHED));
-            if (!$rewardRecord->isValid()) {
-                $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_REWARD'), $this->errorType, $transactionData);
-                return null;
-            }
-        }
-
-        // Check currency
-        if (strcmp($transactionData['txn_currency'], $currencyCode) !== 0) {
-            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_CURRENCY'), $this->errorType, array('TRANSACTION DATA' => $transactionData, 'CURRENCY' => $currencyCode));
-            return null;
-        }
-
-        // Check payment receiver.
-        $allowedReceivers = array(
-            strtolower(ArrayHelper::getValue($data, 'business')),
-            strtolower(ArrayHelper::getValue($data, 'receiver_email')),
-            strtolower(ArrayHelper::getValue($data, 'receiver_id'))
-        );
-
-        // Get payment receiver.
-        $paymentReceiver  = $this->getPaymentReceiver($transactionData['project_id']);
-        if (!in_array($paymentReceiver, $allowedReceivers, true)) {
-            $this->log->add(
-                JText::_($this->textPrefix . '_ERROR_INVALID_RECEIVER'),
-                $this->errorType,
-                array(
-                    'TRANSACTION DATA' => $transactionData,
-                    'RECEIVER' => $paymentReceiver,
-                    'ALLOWED RECEIVERS' => $allowedReceivers
-                )
-            );
-
-            return null;
-        }
 
         return $transactionData;
     }
 
     /**
+     * Validate transaction data.
+     *
+     * @param PaymentTransaction  $transactionData
+     * @param array $postData
+     * @param string $currencyCode
+     *
+     * @return bool
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
+     */
+    protected function validateData(PaymentTransaction $transactionData, array $postData, $currencyCode)
+    {
+        if (!$transactionData->getProjectId()) {
+            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_PROJECT_ID'), $this->debugType, $transactionData);
+            return Prism\Constants::INVALID;
+        }
+
+        if (!$transactionData->getTxnId()) {
+            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_ID'), $this->debugType, $transactionData);
+            return Prism\Constants::INVALID;
+        }
+
+        // Check if reward record exists in database.
+        if ($transactionData->getRewardId() > 0) {
+            $rewardRecord = new Crowdfunding\Validator\Reward\Record(JFactory::getDbo(), $transactionData->getRewardId(), ['state' => Prism\Constants::PUBLISHED]);
+            if (!$rewardRecord->isValid()) {
+                $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_REWARD'), $this->errorType, $transactionData);
+                return Prism\Constants::INVALID;
+            }
+        }
+
+        // Check currency
+        if (strcmp($transactionData->getTxnCurrency(), $currencyCode) !== 0) {
+            $this->log->add(JText::_($this->textPrefix . '_ERROR_INVALID_TRANSACTION_CURRENCY'), $this->errorType, array('TRANSACTION DATA' => $transactionData, 'CURRENCY' => $currencyCode));
+            return Prism\Constants::INVALID;
+        }
+
+        // Check payment receiver.
+        $allowedReceivers = array(
+            strtolower(ArrayHelper::getValue($postData, 'business')),
+            strtolower(ArrayHelper::getValue($postData, 'receiver_email')),
+            strtolower(ArrayHelper::getValue($postData, 'receiver_id'))
+        );
+
+        // Get payment receiver.
+        $paymentReceiver  = $this->getPaymentReceiver($transactionData->getProjectId());
+        if (!in_array($paymentReceiver, $allowedReceivers, true)) {
+            $this->log->add(
+                JText::_($this->textPrefix . '_ERROR_INVALID_RECEIVER'),
+                $this->errorType,
+                array(
+                    'TRANSACTION DATA'  => $transactionData,
+                    'RECEIVER'          => $paymentReceiver,
+                    'ALLOWED RECEIVERS' => $allowedReceivers
+                )
+            );
+
+            return Prism\Constants::INVALID;
+        }
+
+        return Prism\Constants::VALID;
+    }
+
+    /**
      * Save transaction data.
      *
-     * @param array     $transactionData
+     * @param PaymentTransaction $transactionData
      *
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
@@ -423,11 +427,11 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
      *
      * @return null|Transaction
      */
-    protected function storeTransaction($transactionData)
+    protected function storeTransaction(PaymentTransaction $transactionData)
     {
         // Get transaction object by transaction ID
         $keys  = array(
-            'txn_id' => ArrayHelper::getValue($transactionData, 'txn_id')
+            'txn_id' => $transactionData->getTxnId()
         );
         $transaction = new Transaction(JFactory::getDbo());
         $transaction->load($keys);
@@ -437,30 +441,33 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
 
         // Check for existed transaction
         // If the current status if completed, stop the payment process.
-        if ($transaction->getId() and $transaction->isCompleted()) {
+        if ($transaction->getId() && $transaction->isCompleted()) {
             return null;
         }
 
         // Add extra data.
-        if (array_key_exists('extra_data', $transactionData)) {
-            if (!empty($transactionData['extra_data'])) {
-                $transaction->addExtraData($transactionData['extra_data']);
-            }
-
-            unset($transactionData['extra_data']);
+        if ($transactionData->getExtraData()) {
+            $transaction->addExtraData($transactionData->getExtraData());
         }
 
         // IMPORTANT: It must be placed before ->bind();
         $options = array(
             'old_status' => $transaction->getStatus(),
-            'new_status' => $transactionData['txn_status']
+            'new_status' => $transactionData->getTxnStatus()
         );
 
-        // Create the new transaction record if there is not record.
-        // If there is new record, store new data with new status.
-        // Example: It has been 'pending' and now is 'completed'.
-        // Example2: It has been 'pending' and now is 'failed'.
-        $transaction->bind($transactionData);
+        $transaction
+            ->setReceiverId($transactionData->getReceiverId())
+            ->setInvestorId($transactionData->getInvestorId())
+            ->setProjectId($transactionData->getProjectId())
+            ->setRewardId($transactionData->getRewardId())
+            ->setServiceProvider($transactionData->getServiceProvider())
+            ->setServiceAlias($transactionData->getServiceAlias())
+            ->setTxnId($transactionData->getTxnId())
+            ->setTxnAmount($transactionData->getTxnAmount())
+            ->setTxnCurrency($transactionData->getTxnCurrency())
+            ->setTxnStatus($transactionData->getTxnStatus())
+            ->setTxnDate($transactionData->getTxnDate());
 
         // Start database transaction.
         $db = JFactory::getDbo();
@@ -475,7 +482,6 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
             $db->transactionCommit();
         } catch (Exception $e) {
             $db->transactionRollback();
-
             $this->log->add(JText::_($this->textPrefix . '_ERROR_TRANSACTION_PROCESS'), $this->errorType, $e->getMessage());
             return null;
         }
@@ -574,20 +580,38 @@ class plgCrowdfundingPaymentPayPal extends Payment\Plugin
         if (strcmp('project_owner', $this->params->get('paypal_payment_receiver', 'site_owner')) === 0) {
             if (!JComponentHelper::isEnabled('com_crowdfundingfinance')) {
                 return '';
-            } else {
-                if ($this->payout === null) {
-                    $this->payout = new Crowdfundingfinance\Payout(JFactory::getDbo());
-                    $this->payout->load(['project_id' => $itemId], ['secret_key' => $this->app->get('secret')]);
-                }
-
-                if (!$this->payout->getPaypalEmail()) {
-                    return '';
-                }
-
-                $result = trim($this->payout->getPaypalEmail());
             }
+
+            if ($this->payout === null) {
+                $this->payout = new Crowdfundingfinance\Payout(JFactory::getDbo());
+                $this->payout->load(['project_id' => $itemId], ['secret_key' => $this->app->get('secret')]);
+            }
+
+            if (!$this->payout->getPaypalEmail()) {
+                return '';
+            }
+
+            $result = trim($this->payout->getPaypalEmail());
         }
 
         return $result;
+    }
+
+    /**
+     * Prepare the config for IPN message checker.
+     *
+     * @return array
+     */
+    protected function getIpnConfig()
+    {
+        $config = [];
+
+        if ($this->params->get('paypal_sandbox', Prism\Constants::ENABLED)) {
+            $config['mode'] = 'sandbox';
+        } else {
+            $config['mode'] = 'live';
+        }
+
+        return $config;
     }
 }

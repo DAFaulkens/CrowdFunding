@@ -10,6 +10,8 @@
 namespace Crowdfunding\Data\Transformer\Chart;
 
 use League\Fractal\TransformerAbstract;
+use Prism\Money\Currency;
+use Prism\Money\Formatter;
 use Prism\Money\Money;
 
 defined('JPATH_PLATFORM') or die;
@@ -22,16 +24,18 @@ defined('JPATH_PLATFORM') or die;
  */
 class DailyFunds extends TransformerAbstract
 {
-    protected $money;
+    protected $formatter;
+    protected $currency;
 
-    public function __construct(Money $money)
+    public function __construct(Formatter $formatter, Currency $currency)
     {
-        $this->money  = $money;
+        $this->formatter  = $formatter;
+        $this->currency   = $currency;
     }
 
     public function transform(array $data)
     {
-        $data['formatted_amount'] = $this->money->setAmount($data['amount'])->formatCurrency();
+        $data['formatted_amount'] = $this->formatter->formatCurrency(new Money($data['amount'], $this->currency));
 
         return $data;
     }

@@ -7,18 +7,22 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-namespace Crowdfunding;
+namespace Crowdfunding\Currency;
 
 use Prism\Database;
 use Joomla\Utilities\ArrayHelper;
+use Prism\Domain\Collection;
 
 defined('JPATH_PLATFORM') or die;
 
 /**
- * This class provides functionality that manage currencies.
+ * This class provides functionality that manage currencies as a collection.
  *
  * @package      Crowdfunding
  * @subpackage   Currencies
+ *
+ * @todo change it to extend Prism\Domain\Collection.
+ * @todo write unit tests when change it.
  */
 class Currencies extends Database\Collection
 {
@@ -40,6 +44,8 @@ class Currencies extends Database\Collection
      * </code>
      *
      * @param array $options
+     *
+     * @deprecated v2.6.6 Use Crowdfunding\Currency\Repository.
      */
     public function load(array $options = array())
     {
@@ -95,6 +101,8 @@ class Currencies extends Database\Collection
      * @throws \UnexpectedValueException
      *
      * @return Currency|null
+     *
+     * @deprecated v2.6.6 Use Crowdfunding\Currency\Repository::fetchById or fetchCollection.
      */
     public function getCurrency($id)
     {
@@ -132,6 +140,8 @@ class Currencies extends Database\Collection
      * </code>
      *
      * @return array
+     *
+     * @deprecated v2.6.6 Use Crowdfunding\Currency\Repository::fetchCollection.
      */
     public function getCurrencies()
     {

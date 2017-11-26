@@ -25,7 +25,7 @@ echo $layout->render($this->layoutData);
                 <div class="col-md-2"><?php echo $this->form->getLabel('goal'); ?></div>
                 <div class="col-md-10">
                     <?php echo $this->form->getInput('goal'); ?>
-                    <span class="help-block"><?php echo JHtml::_('crowdfunding.infoMinMaxAmount', $this->minAmount, $this->maxAmount, $this->money); ?></span>
+                    <span class="help-block"><?php echo JHtml::_('crowdfunding.infoMinMaxAmount', $this->minAmount, $this->maxAmount, $this->moneyFormatter, $this->currency); ?></span>
                 </div>
             </div>
 
