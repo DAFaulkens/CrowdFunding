@@ -164,7 +164,7 @@ class CrowdfundingViewCategories extends JViewLegacy
         );
 
         $helperBus = new Prism\Helper\HelperBus($items);
-        $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper());
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper(new \Crowdfunding\Category\Helper\Gateway\Joomla\ProjectCounter(JFactory::getDbo())));
         $helperBus->handle($options);
     }
 }

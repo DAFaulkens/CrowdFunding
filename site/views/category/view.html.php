@@ -8,6 +8,7 @@
  */
 
 use Crowdfunding\Container\MoneyHelper;
+use \Crowdfunding\Category\Helper\Gateway\Joomla\ProjectCounter;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -67,12 +68,12 @@ class CrowdfundingViewCategory extends JViewLegacy
 
         // Get current category
         $categoryId     = $this->app->input->getInt('id');
-        $categories     = Crowdfunding\Category\Categories::getInstance('crowdfunding');
+        $categories     = CrowdfundingCategories::getInstance('crowdfunding');
         $this->item     = $categories->get($categoryId);
 
         // Check access view.
         $user = JFactory::getUser();
-        if (!$this->item or !$this->canView($this->app, $user)) {
+        if (!$this->item || !$this->canView($this->app, $user)) {
             $this->app->enqueueMessage(JText::_('JERROR_ALERTNOAUTHOR'), 'error');
             $this->app->setHeader('status', 403, true);
             return;
@@ -197,7 +198,7 @@ class CrowdfundingViewCategory extends JViewLegacy
         );
 
         $helperBus = new Prism\Helper\HelperBus($this->categories);
-        $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper());
+        $helperBus->addCommand(new Crowdfunding\Helper\PrepareCategoriesHelper(new ProjectCounter(JFactory::getDbo())));
         $helperBus->handle($options);
     }
 

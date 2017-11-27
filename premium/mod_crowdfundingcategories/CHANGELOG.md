@@ -1,6 +1,9 @@
 Module - Crowdfunding Categories Changelog
 ===========================================
 
+###v2.4
+* It was made compatible with Prism Library v1.21.
+
 ###v2.3
 * Improved.
 

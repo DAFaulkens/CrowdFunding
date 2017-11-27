@@ -9,14 +9,12 @@
 
 namespace Crowdfunding\Helper;
 
-use Prism\Helper\HelperInterface;
-use Prism\Constants;
 use Prism\Utilities;
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
-use Crowdfunding;
-
-defined('JPATH_PLATFORM') or die;
+use Prism\Helper\HelperInterface;
+use Crowdfunding\Category\Helper\Gateway\ProjectCounterGateway;
+use Crowdfunding\Category\Helper\ProjectCounter;
 
 /**
  * This class provides functionality to prepare the category items.
@@ -26,6 +24,16 @@ defined('JPATH_PLATFORM') or die;
  */
 final class PrepareCategoriesHelper implements HelperInterface
 {
+    /**
+     * @var ProjectCounterGateway
+     */
+    private $gateway;
+
+    public function __construct(ProjectCounterGateway $gateway)
+    {
+        $this->gateway = $gateway;
+    }
+
     /**
      * Prepare category items.
      *
@@ -42,11 +50,12 @@ final class PrepareCategoriesHelper implements HelperInterface
         if (array_key_exists('count_projects', $options) and (bool)$options['count_projects']) {
             $ids         = Utilities\ArrayHelper::getIds($data);
 
-            $categories  = new Crowdfunding\Category\Categories();
-            $categories->setDb(\JFactory::getDbo());
+            if (count($ids) > 0) {
+                $projectCounter = new ProjectCounter($this->gateway);
 
-            $projectState  = ArrayHelper::getValue($options, 'project_state', array(), 'array');
-            $projectNumber = $categories->getProjectsNumber($ids, $projectState);
+                $projectState  = ArrayHelper::getValue($options, 'project_state', array(), 'array');
+                $projectNumber = $projectCounter->count($ids, $projectState);
+            }
         }
 
         foreach ($data as $key => $item) {

@@ -1,6 +1,9 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.7.1
+* Fixed category views.
+
 ###v2.7
 * Improved Project Manager on front-end.
 * Improved payment process.
