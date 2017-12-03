@@ -12,7 +12,7 @@ defined('JPATH_PLATFORM') or die;
 jimport('Prism.init');
 jimport('Crowdfunding.init');
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Container\Helper\Money as MoneyHelper;
 use Prism\Money\Money;
 
 class JFormFieldCfAmount extends JFormField
@@ -59,14 +59,21 @@ class JFormFieldCfAmount extends JFormField
 
         // Get the currency and money formatter from the container.
         $container       = Prism\Container::getContainer();
-        $currency        = MoneyHelper::getCurrency($container, $params);
+
+        $moneyHelper      = new MoneyHelper($container);
+
+        $gateway          = new Crowdfunding\Currency\Gateway\JoomlaGateway(JFactory::getDbo());
+        $currency         = $moneyHelper->getCurrency($params->get('project_currency'), $gateway);
 
         // Format amount.
         $formattedAmount = $this->value;
         $floatAmount     = (float)$this->value;
-        if ($format and $floatAmount > 0) {
-            $moneyFormatter  = MoneyHelper::getMoneyFormatter($container, $params);
-            $formattedAmount = $moneyFormatter->format(new Money($floatAmount, $currency));
+        if ($format && $floatAmount > 0) {
+            $language         = \JFactory::getLanguage();
+            $locale           = $language->getTag();
+
+            $moneyFormatter   = $moneyHelper->getFormatter($locale, (int)$params->get('fraction_digits', 2));
+            $formattedAmount  = $moneyFormatter->format(new Money($floatAmount, $currency));
         }
 
         $html   = array();
@@ -83,9 +90,7 @@ class JFormFieldCfAmount extends JFormField
             $html[] = '<div class="input-group-addon">' . $currency->getCode() . '</div>';
 
             $html[] = '</div>';
-
         } else { // Bootstrap 2
-
             if ($currency->getSymbol()) { // Prepended
                 $html[] = '<div class="input-prepend input-append"><span class="add-on">' . $currency->getSymbol() . '</span>';
             } else { // Append

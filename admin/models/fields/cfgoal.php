@@ -12,7 +12,7 @@ defined('JPATH_PLATFORM') or die;
 jimport('Prism.init');
 jimport('Crowdfunding.init');
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Container\Helper\Money as MoneyHelper;
 use Prism\Money\Money;
 
 class JFormFieldCfGoal extends JFormField
@@ -55,11 +55,16 @@ class JFormFieldCfGoal extends JFormField
         // Get the currency and money formatter from the container.
         $container        = Prism\Container::getContainer();
 
-        $moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $params);
-        $currency         = MoneyHelper::getCurrency($container, $params);
+        $language         = \JFactory::getLanguage();
+        $locale           = $language->getTag();
+        
+        $gateway          = new Crowdfunding\Currency\Gateway\JoomlaGateway(JFactory::getDbo());
+
+        $moneyHelper      = new MoneyHelper($container);
+        $moneyFormatter   = $moneyHelper->getFormatter($locale, (int)$params->get('fraction_digits', 2));
+        $currency         = $moneyHelper->getCurrency($params->get('project_currency'), $gateway);
 
         $html = array();
-
         if ($cssLayout === 'Bootstrap 3') {
             $html[] = '<div class="input-group">';
 
@@ -73,9 +78,7 @@ class JFormFieldCfGoal extends JFormField
             $html[] = '<div class="input-group-addon">' . $currency->getCode() . '</div>';
 
             $html[] = '</div>';
-
         } else { // Bootstrap 2
-
             if ($currency->getSymbol()) { // Prepended
                 $html[] = '<div class="input-prepend input-append"><span class="add-on">' . $currency->getSymbol() . '</span>';
             } else { // Append

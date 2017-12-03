@@ -72,6 +72,10 @@ class Money
         $currencyHash  = StringHelper::generateMd5Hash(self::CONTAINER_CURRENCY, $currencyId);
 
         if (!$this->container->exists($currencyHash)) {
+            if (!$currencyId) {
+                return new Currency();
+            }
+
             $repository = new Repository(new Mapper($gateway));
             $currency   = $repository->fetchById($currencyId);
 

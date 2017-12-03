@@ -1,6 +1,9 @@
 Crowdfunding Platform Changelog
 ==========================
 
+###v2.7.2
+* Fixed fatal error when there is no currency selected.
+
 ###v2.7.1
 * Fixed category views.
 
