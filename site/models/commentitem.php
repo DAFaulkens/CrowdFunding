@@ -21,7 +21,7 @@ class CrowdfundingModelCommentItem extends JModelItem
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableComment|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Comment', $prefix = 'CrowdfundingTable', $config = array())
@@ -33,6 +33,7 @@ class CrowdfundingModelCommentItem extends JModelItem
      * Method to auto-populate the model state.
      * Note. Calling getState in this method will result in recursion.
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -54,9 +55,10 @@ class CrowdfundingModelCommentItem extends JModelItem
     /**
      * Method to get an object.
      *
-     * @param    integer  $id  The id of the object to get.
+     * @param    integer $id The id of the object to get.
      *
      * @return    stdClass|null    Object on success, false on failure.
+     * @throws \Exception
      */
     public function getItem($id = 0)
     {

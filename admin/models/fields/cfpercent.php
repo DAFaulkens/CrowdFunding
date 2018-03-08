@@ -49,17 +49,16 @@ class JFormFieldCfPercent extends JFormField
             $html[] = '<div class="input-group">';
 
             $html [] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' .
-                htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '"' . $class . $size . $disabled . $readonly . $onchange . $maxLength . '/>';
+                htmlspecialchars($this->value) . '"' . $class . $size . $disabled . $readonly . $onchange . $maxLength . '/>';
 
             // Appended
             $html[] = '<div class="input-group-addon">%</div>';
             $html[] = '</div>';
-
         } else { // Bootstrap 2
             $html[] = '<div class="input-append">';
             
             $html[] = '<input type="text" name="' . $this->name . '" id="' . $this->id . '"' . ' value="' .
-                htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '"' . $class . $size . $disabled . $readonly . $onchange . $maxLength . '/>';
+                htmlspecialchars($this->value) . '"' . $class . $size . $disabled . $readonly . $onchange . $maxLength . '/>';
 
             // Appended
             $html[] = '<span class="add-on">%</span>';

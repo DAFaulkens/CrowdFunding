@@ -50,7 +50,7 @@ class CrowdfundingModelRewards extends JModelLegacy
 
     public function validate($data)
     {
-        if (!is_array($data) or count($data) === 0) {
+        if (!is_array($data) || count($data) === 0) {
             throw new InvalidArgumentException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARDS'));
         }
 

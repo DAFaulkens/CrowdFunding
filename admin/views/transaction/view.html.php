@@ -13,6 +13,11 @@ defined('_JEXEC') or die;
 class CrowdfundingViewTransaction extends JViewLegacy
 {
     /**
+     * @var JApplicationAdministrator
+     */
+    public $app;
+
+    /**
      * @var JDocumentHtml
      */
     public $document;
@@ -38,7 +43,8 @@ class CrowdfundingViewTransaction extends JViewLegacy
 
     public function display($tpl = null)
     {
-        $this->option = JFactory::getApplication()->input->get('option');
+        $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
 
         $this->layoutsBasePath = JPath::clean(JPATH_COMPONENT_ADMINISTRATOR .DIRECTORY_SEPARATOR. 'layouts');
         
@@ -53,21 +59,15 @@ class CrowdfundingViewTransaction extends JViewLegacy
             $this->extraData = json_decode($this->item->extra_data, true);
         }
 
-        // Prepare actions, behaviors, scripts and document.
         $this->addToolbar();
         $this->setDocument();
 
         parent::display($tpl);
     }
 
-    /**
-     * Add the page title and toolbar.
-     *
-     * @since   1.6
-     */
     protected function addToolbar()
     {
-        JFactory::getApplication()->input->set('hidemainmenu', true);
+        $this->app->input->set('hidemainmenu', true);
 
         $this->documentTitle = JText::_('COM_CROWDFUNDING_EDIT_TRANSACTION');
 
@@ -76,22 +76,15 @@ class CrowdfundingViewTransaction extends JViewLegacy
         JToolbarHelper::apply('transaction.apply');
         JToolbarHelper::save('transaction.save');
 
-        JToolbarHelper::cancel('transaction.cancel', 'JTOOLBAR_CANCEL');
+        JToolbarHelper::cancel('transaction.cancel');
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Add behaviors
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
 
         $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');

@@ -7,8 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
-use \Crowdfunding\Category\Helper\Gateway\Joomla\ProjectCounter;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
+use Crowdfunding\Category\Helper\Gateway\Joomla\ProjectCounter;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -94,8 +94,6 @@ class CrowdfundingViewCategory extends JViewLegacy
 
         $this->prepareItems($this->items);
 
-        $container         = Prism\Container::getContainer();
-
         // Prepare social integration.
         $showAuthor                = CrowdfundingHelper::isShowAuthor($this->items, $this->params);
         if ($showAuthor) {
@@ -106,8 +104,8 @@ class CrowdfundingViewCategory extends JViewLegacy
         $this->layoutData                 = new stdClass;
         $this->layoutData->items          = $this->items;
         $this->layoutData->params         = $this->params;
-        $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
-        $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->layoutData->currency       = JoomlaFacade::getCurrency();
+        $this->layoutData->moneyFormatter = JoomlaFacade::getMoneyFormatter();
         $this->layoutData->socialProfiles = $this->socialProfiles;
         $this->layoutData->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
 
@@ -192,7 +190,7 @@ class CrowdfundingViewCategory extends JViewLegacy
         $options   = array(
             'count_projects' => $this->displayProjectsNumber,
             'project_state'  => array(
-                'state' => Prism\Constants::PUBLISHED,
+                'state'    => Prism\Constants::PUBLISHED,
                 'approved' => Prism\Constants::APPROVED
             )
         );

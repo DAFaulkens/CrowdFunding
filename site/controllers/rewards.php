@@ -25,13 +25,12 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return   CrowdfundingModelRewards    The model.
+     * @return   CrowdfundingModelRewards|bool    The model.
      * @since    1.5
      */
     public function getModel($name = 'Rewards', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function save()
@@ -45,7 +44,6 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
                 'force_direction' => 'index.php?option=com_users&view=login'
             );
             $this->displayNotice(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'), $redirectOptions);
-
             return;
         }
 
@@ -66,14 +64,14 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
             return;
         }
 
-        $data_        = $this->input->post->get('rewards', array(), 'array');
+        $data_        = (array)$this->input->post->get('rewards', array(), 'array');
         $actionSubmit = $this->input->post->getCmd('btn_submit', 'save');
 
         // Reorder items.
         $data = array();
         foreach ($data_ as $item) {
             $ordering = array_key_exists('ordering', $item) ? (int)abs($item['ordering']) : 0;
-            if (!$ordering or $ordering > 30) {
+            if (!$ordering || $ordering > 30) {
                 continue;
             }
 
@@ -103,7 +101,7 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
 
         // Validate project owner.
         $validator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $projectId, $userId);
-        if (!$projectId or !$validator->isValid()) {
+        if (!$projectId || !$validator->isValid()) {
             $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), $redirectOptions);
             return;
         }
@@ -113,13 +111,11 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
 
         try {
             $validData     = $model->validate($data);
-
             $rewardsIds    = $model->save($validData, $projectId);
-
             $imagesAllowed = $params->get('rewards_images', 0);
 
             // Upload images.
-            if ($imagesAllowed and count($images) > 0 and count($rewardsIds) > 0) {
+            if ($imagesAllowed && count($images) > 0 && count($rewardsIds) > 0) {
                 // Get the folder where the images will be stored
                 $imagesFolder = CrowdfundingHelper::getImagesFolder($userId, JPATH_ROOT);
 
@@ -138,7 +134,6 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
                     $model->storeImages($images, $imagesFolder);
                 }
             }
-
         } catch (InvalidArgumentException $e) {
             $this->displayWarning($e->getMessage(), $redirectOptions);
             return;
@@ -147,7 +142,7 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
             return;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         // Redirect to next page
@@ -179,10 +174,10 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
             'force_direction' => JRoute::_($redirect, false)
         );
 
-        $txnId = $this->input->get->getInt('txn_id');
+        $txnId = $this->input->get->getUint('txn_id');
         $state = $this->input->get->getInt('state');
 
-        $state = (!$state) ? 0 : 1;
+        $state = (!$state) ? Prism\Constants::UNPUBLISHED : Prism\Constants::PUBLISHED;
 
         if (!$txnId) {
             $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_INVALID_TRANSACTION'), $redirectOptions);
@@ -194,8 +189,7 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
             'receiver_id' => $userId
         );
 
-        /** @var $transaction Crowdfunding\Transaction */
-        $transaction = new Crowdfunding\Transaction(JFactory::getDbo());
+        $transaction = new Crowdfunding\Transaction\Transaction(JFactory::getDbo());
         $transaction->load($keys);
 
         if (!$transaction->getId()) {
@@ -205,10 +199,9 @@ class CrowdfundingControllerRewards extends Prism\Controller\Admin
 
         try {
             $transaction->updateRewardState($state);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         if (!$state) {

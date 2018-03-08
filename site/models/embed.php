@@ -28,6 +28,7 @@ class CrowdfundingModelEmbed extends JModelItem
      * Note. Calling getState in this method will result in recursion.
      *
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -46,9 +47,10 @@ class CrowdfundingModelEmbed extends JModelItem
     /**
      * Method to get an object.
      *
-     * @param    integer  $id The id of the object to get.
+     * @param    integer $id The id of the object to get.
      *
      * @return    mixed    Object on success, false on failure.
+     * @throws \RuntimeException
      */
     public function getItem($id = 0)
     {
@@ -83,8 +85,7 @@ class CrowdfundingModelEmbed extends JModelItem
             $result = $db->loadObject();
 
             // Attempt to load the row.
-            if ($result !== null and is_object($result)) {
-
+            if ($result !== null && is_object($result)) {
                 // Calculate funded percentage.
                 $result->funded_percents = Prism\Utilities\MathHelper::calculatePercentage($result->funded, $result->goal, 0);
 

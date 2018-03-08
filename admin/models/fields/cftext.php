@@ -36,6 +36,7 @@ class JFormFieldCftext extends JFormFieldText
      * @return  array
      *
      * @since   3.5
+     * @throws \UnexpectedValueException
      */
     protected function getLayoutPaths()
     {

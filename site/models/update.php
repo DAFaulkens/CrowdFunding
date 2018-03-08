@@ -21,7 +21,7 @@ class CrowdfundingModelUpdate extends JModelForm
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array $config  Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableUpdate|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Update', $prefix = 'CrowdfundingTable', $config = array())
@@ -33,6 +33,7 @@ class CrowdfundingModelUpdate extends JModelForm
      * Method to auto-populate the model state.
      * Note. Calling getState in this method will result in recursion.
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -62,7 +63,7 @@ class CrowdfundingModelUpdate extends JModelForm
      * @param    array   $data     An optional array of data for the form to interogate.
      * @param    boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return    JForm    A JForm object on success, false on failure
+     * @return    JForm|bool    A JForm object on success, false on failure
      * @since    1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -81,6 +82,7 @@ class CrowdfundingModelUpdate extends JModelForm
      *
      * @return    mixed    The data for the form.
      * @since    1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -105,7 +107,7 @@ class CrowdfundingModelUpdate extends JModelForm
      * @param   integer $userId The user Id
      *
      * @throws Exception
-     * @return object
+     * @return stdClass
      *
      * @since   11.1
      */
@@ -118,8 +120,7 @@ class CrowdfundingModelUpdate extends JModelForm
         // Initialise variables.
         $table = $this->getTable();
 
-        if ($pk > 0 and $userId > 0) {
-
+        if ($pk > 0 && $userId > 0) {
             $keys = array(
                 'id'      => $pk,
                 'user_id' => $userId
@@ -130,7 +131,7 @@ class CrowdfundingModelUpdate extends JModelForm
 
             // Check for a table object error.
             if ($return === false) {
-                throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+                throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
             }
         }
 
@@ -144,10 +145,13 @@ class CrowdfundingModelUpdate extends JModelForm
     /**
      * Method to save the form data.
      *
-     * @param    array   $data     The form data.
+     * @param    array $data The form data.
      *
      * @return    null|int
      * @since    1.6
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function save($data)
     {

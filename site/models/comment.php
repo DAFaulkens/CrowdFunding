@@ -33,6 +33,7 @@ class CrowdfundingModelComment extends JModelForm
      * Method to auto-populate the model state.
      * Note. Calling getState in this method will result in recursion.
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -51,7 +52,6 @@ class CrowdfundingModelComment extends JModelForm
         // Load the parameters.
         $value = $app->getParams($this->option);
         $this->setState('params', $value);
-
     }
 
     /**
@@ -63,7 +63,7 @@ class CrowdfundingModelComment extends JModelForm
      * @param    array   $data     An optional array of data for the form to interogate.
      * @param    boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return    JForm    A JForm object on success, false on failure
+     * @return    JForm|bool    A JForm object on success, false on failure
      * @since    1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -82,6 +82,7 @@ class CrowdfundingModelComment extends JModelForm
      *
      * @return    mixed    The data for the form.
      * @since    1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -106,7 +107,7 @@ class CrowdfundingModelComment extends JModelForm
      * @param   integer $userId The user Id
      *
      * @throws Exception
-     * @return object
+     * @return stdClass
      *
      * @since   11.1
      */
@@ -119,8 +120,7 @@ class CrowdfundingModelComment extends JModelForm
         // Initialise variables.
         $table = $this->getTable();
 
-        if ($pk > 0 and $userId > 0) {
-
+        if ($pk > 0 && $userId > 0) {
             $keys = array(
                 'id'      => $pk,
                 'user_id' => $userId
@@ -131,9 +131,8 @@ class CrowdfundingModelComment extends JModelForm
 
             // Check for a table object error.
             if ($return === false) {
-                throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+                throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
             }
-
         }
 
         // Convert to the JObject before adding other data.
@@ -146,10 +145,13 @@ class CrowdfundingModelComment extends JModelForm
     /**
      * Method to save the form data.
      *
-     * @param    array    $data    The form data.
+     * @param    array $data The form data.
      *
      * @return   mixed    The record id on success, null on failure.
      * @since    1.6
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function save($data)
     {
@@ -171,11 +173,10 @@ class CrowdfundingModelComment extends JModelForm
         $row->set('comment', $comment);
 
         if (!$row->get('user_id')) {
-
             $params    = JComponentHelper::getParams($this->option);
             /** @var  $params Joomla\Registry\Registry */
 
-            $published = (!$params->get('comments_adding_state', 0)) ? 0 : 1;
+            $published = (!$params->get('comments_adding_state', 0)) ? Prism\Constants::UNPUBLISHED : Prism\Constants::PUBLISHED;
 
             $row->set('record_date', null);
             $row->set('project_id', $projectId);

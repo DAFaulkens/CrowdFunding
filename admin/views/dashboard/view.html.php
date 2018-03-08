@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -93,11 +93,8 @@ class CrowdfundingViewDashboard extends JViewLegacy
         $this->latestCreated = new Crowdfunding\Statistics\Projects\Latest(JFactory::getDbo());
         $this->latestCreated->load($options);
 
-        $container    = Prism\Container::getContainer();
-        /** @var  $container Joomla\DI\Container */
-
-        $this->currency        = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter  = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency        = JoomlaFacade::getCurrency();
+        $this->moneyFormatter  = JoomlaFacade::getMoneyFormatter();
 
         $this->numberFormatter = $this->getNumberFormatter(0);
 
@@ -132,7 +129,7 @@ class CrowdfundingViewDashboard extends JViewLegacy
         JToolbarHelper::divider();
 
         // Help button
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
         $bar->appendButton('Link', 'help', JText::_('JHELP'), JText::_('COM_CROWDFUNDING_HELP_URL'));
     }
 

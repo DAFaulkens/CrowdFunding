@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -48,8 +48,6 @@ class CrowdfundingViewDiscover extends JViewLegacy
 
     public function display($tpl = null)
     {
-        $container         = Prism\Container::getContainer();
-
         $this->app         = JFactory::getApplication();
         $this->option      = $this->app->input->getCmd('option');
 
@@ -71,8 +69,8 @@ class CrowdfundingViewDiscover extends JViewLegacy
         $this->layoutData                 = new stdClass;
         $this->layoutData->items          = $this->items;
         $this->layoutData->params         = $this->params;
-        $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
-        $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->layoutData->currency       = JoomlaFacade::getCurrency();
+        $this->layoutData->moneyFormatter = JoomlaFacade::getMoneyFormatter();
         $this->layoutData->socialProfiles = $this->socialProfiles;
         $this->layoutData->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
 

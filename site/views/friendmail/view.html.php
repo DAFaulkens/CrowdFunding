@@ -78,10 +78,6 @@ class CrowdfundingViewFriendmail extends JViewLegacy
         parent::display($tpl);
     }
 
-
-    /**
-     * Prepare the document
-     */
     protected function prepareDocument()
     {
         // Escape strings for HTML output
@@ -110,7 +106,7 @@ class CrowdfundingViewFriendmail extends JViewLegacy
         // Breadcrumb
         $pathway           = $this->app->getPathway();
         $currentBreadcrumb = JHtmlString::truncate($this->item->title, 16);
-        $pathway->addItem($currentBreadcrumb, '');
+        $pathway->addItem($currentBreadcrumb);
 
         // Add scripts
         JHtml::_('jquery.framework');

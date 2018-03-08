@@ -87,6 +87,7 @@ class CrowdfundingModelRewards extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -123,8 +124,8 @@ class CrowdfundingModelRewards extends JModelList
         }
 
         // Filter by search in title
-        $search = $this->getState('filter.search');
-        if (JString::strlen($search) > 0) {
+        $search = (string)$this->getState('filter.search');
+        if ($search !== '') {
             if (stripos($search, 'id:') === 0) {
                 $query->where('a.id = ' . (int)substr($search, 3));
             } elseif (stripos($search, 'pid:') === 0) {

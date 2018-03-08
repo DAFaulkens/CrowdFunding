@@ -38,6 +38,7 @@ class CrowdfundingControllerLog extends JControllerLegacy
 
     /**
      * Remove a log file.
+     * @throws \Exception
      */
     public function remove()
     {
@@ -60,18 +61,17 @@ class CrowdfundingControllerLog extends JControllerLegacy
             if (!$model->deleteFile($fileSource)) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_ERROR_LOG_FILE_CANNOT_BE_REMOVED'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_ERROR_LOG_FILE_CANNOT_BE_REMOVED'))
                     ->failure();
 
                 echo $response;
                 JFactory::getApplication()->close();
             }
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -80,7 +80,7 @@ class CrowdfundingControllerLog extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_LOG_FILE_REMOVED'))
+            ->setContent(JText::_('COM_CROWDFUNDING_LOG_FILE_REMOVED'))
             ->success();
 
         echo $response;
@@ -106,7 +106,7 @@ class CrowdfundingControllerLog extends JControllerLegacy
 
             $doc = JFactory::getDocument();
 
-            if (strcmp('error_log', $fileName) == 0) {
+            if (strcmp('error_log', $fileName) === 0) {
                 JResponse::setHeader('Content-Type', 'text/plain', true);
                 $doc->setMimeEncoding('text/plain');
             } else {
@@ -121,10 +121,9 @@ class CrowdfundingControllerLog extends JControllerLegacy
             JResponse::setHeader('Expires', '0', true);
             JResponse::setHeader('Content-Disposition', 'attachment; filename=' . $fileName, true);
             JResponse::setHeader('Content-Length', $fileSize, true);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         echo file_get_contents($fileSource);

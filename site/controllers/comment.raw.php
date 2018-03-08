@@ -25,52 +25,50 @@ class CrowdfundingControllerComment extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelCommentItem    The model.
+     * @return    CrowdfundingModelCommentItem|bool    The model.
      * @since    1.5
      */
     public function getModel($name = 'CommentItem', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     /**
-     * Method to load data via AJAX
+     * Method to load data via AJAX.
+     *
+     * @throws \Exception
      */
     public function getData()
     {
         // Get the input
         $app    = JFactory::getApplication();
-        $itemId = $app->input->get('id', 0, 'int');
-        $userId = JFactory::getUser()->id;
+        $itemId = $app->input->getUint('id', 0);
+        $userId = (int)JFactory::getUser()->get('id');
 
         $response = new Prism\Response\Json();
 
-        // Get the model
         $model = $this->getModel();
-        /** @var $model CrowdfundingModelCommentItem * */
+        /** @var $model CrowdfundingModelCommentItem **/
 
         $item = null;
 
         try {
             $item = $model->getItem($itemId);
 
-            if (($item !== null) and ((int)$item->user_id !== (int)$userId)) {
+            if (($item !== null) && ($userId !== (int)$item->user_id)) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_INVALID_PROJECT'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_INVALID_PROJECT'))
                     ->failure();
 
                 echo $response;
                 $app->close();
             }
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -101,9 +99,8 @@ class CrowdfundingControllerComment extends JControllerLegacy
      */
     public function remove()
     {
-        // Get the input
         $app    = JFactory::getApplication();
-        $itemId = $app->input->post->get('id', 0, 'int');
+        $itemId = $app->input->post->getInt('id', 0);
         $userId = JFactory::getUser()->get('id');
 
         $response = new Prism\Response\Json();
@@ -115,10 +112,10 @@ class CrowdfundingControllerComment extends JControllerLegacy
         try {
             $item = $model->getItem($itemId);
 
-            if (($item !== null) and ((int)$item->user_id !== (int)$userId)) {
+            if (($item !== null) && ((int)$item->user_id !== (int)$userId)) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_COMMENT_CANNOT_REMOVED'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_COMMENT_CANNOT_REMOVED'))
                     ->failure();
 
                 echo $response;
@@ -126,12 +123,11 @@ class CrowdfundingControllerComment extends JControllerLegacy
             }
 
             $model->remove($itemId, $userId);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -140,7 +136,7 @@ class CrowdfundingControllerComment extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_COMMENT_REMOVED_SUCCESSFULLY'))
+            ->setContent(JText::_('COM_CROWDFUNDING_COMMENT_REMOVED_SUCCESSFULLY'))
             ->success();
 
         echo $response;

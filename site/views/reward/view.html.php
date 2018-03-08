@@ -27,6 +27,11 @@ class CrowdfundingViewReward extends JViewLegacy
      */
     protected $params;
 
+    /**
+     * @var JApplicationSite
+     */
+    protected $app;
+
     protected $items;
     protected $pagination;
 
@@ -47,22 +52,20 @@ class CrowdfundingViewReward extends JViewLegacy
     
     public function display($tpl = null)
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
-        $this->option = JFactory::getApplication()->input->get('option');
+        $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
         
         // Get user ID.
         $this->userId = JFactory::getUser()->get('id');
 
         // Get reward ID.
-        $rewardId = $app->input->getInt('id');
+        $rewardId = $this->app->input->getInt('id');
 
         // Validate reward owner
         $validator = new Crowdfunding\Validator\Reward\Owner(JFactory::getDbo(), $rewardId, $this->userId);
         if (!$validator->isValid()) {
-            $app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'), 'notice');
-            $app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
+            $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'), 'notice');
+            $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute()));
             return;
         }
 
@@ -105,9 +108,6 @@ class CrowdfundingViewReward extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare document
-     */
     protected function prepareDocument()
     {
         //Escape strings for HTML output
@@ -143,12 +143,9 @@ class CrowdfundingViewReward extends JViewLegacy
 
     private function preparePageHeading()
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
         // Because the application sets a default page title,
         // we need to get it from the menu item itself
-        $menus = $app->getMenu();
+        $menus = $this->app->getMenu();
         $menu  = $menus->getActive();
 
         // Prepare page heading
@@ -161,19 +158,16 @@ class CrowdfundingViewReward extends JViewLegacy
 
     private function preparePageTitle()
     {
-        $app = JFactory::getApplication();
-        /** @var $app JApplicationSite */
-
         // Prepare page title
         $title = JText::_('COM_CROWDFUNDING_REWARD_DEFAULT_PAGE_TITLE');
 
         // Add title before or after Site Name
         if (!$title) {
-            $title = $app->get('sitename');
-        } elseif ((int)$app->get('sitename_pagetitles', 0) === 1) {
-            $title = JText::sprintf('JPAGETITLE', $app->get('sitename'), $title);
-        } elseif ((int)$app->get('sitename_pagetitles', 0) === 2) {
-            $title = JText::sprintf('JPAGETITLE', $title, $app->get('sitename'));
+            $title = $this->app->get('sitename');
+        } elseif ((int)$this->app->get('sitename_pagetitles', 0) === 1) {
+            $title = JText::sprintf('JPAGETITLE', $this->app->get('sitename'), $title);
+        } elseif ((int)$this->app->get('sitename_pagetitles', 0) === 2) {
+            $title = JText::sprintf('JPAGETITLE', $title, $this->app->get('sitename'));
         }
 
         $this->document->setTitle($title);

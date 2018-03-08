@@ -8,7 +8,7 @@
  */
 
 use Prism\Money\Money;
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -106,14 +106,6 @@ class CrowdfundingViewProject extends JViewLegacy
      */
     protected $app;
 
-    /**
-     * Display the view.
-     *
-     * @param mixed $tpl
-     *
-     * @throws \Exception
-     * @return string
-     */
     public function display($tpl = null)
     {
         $this->app    = JFactory::getApplication();
@@ -154,7 +146,7 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->itemId  = $this->app->input->getUint('id');
 
         $this->item    = $this->model->getItem($this->itemId, $this->userId);
-        if ($this->item !== null and $this->item->id > 0) { // Check if it is a new record.
+        if ($this->item !== null && $this->item->id > 0) { // Check if it is a new record.
             $this->authorised = $this->item->params->get('access-edit');
         } else {
             $this->authorised = $user->authorise('core.create', 'com_crowdfunding');
@@ -246,13 +238,12 @@ class CrowdfundingViewProject extends JViewLegacy
             $type = new Crowdfunding\Type(JFactory::getDbo());
             $type->load($this->item->type_id);
 
-            if ($type->getId() and !$type->isRewardsEnabled()) {
+            if ($type->getId() && !$type->isRewardsEnabled()) {
                 $this->rewardsEnabledViaType = false;
                 $this->disabledButton = 'disabled="disabled"';
             }
         }
     }
-
 
     protected function prepareIntro()
     {
@@ -323,10 +314,8 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->form = $model->getForm();
 
         // Get money formatter.
-        $container             = Prism\Container::getContainer();
-
-        $this->currency        = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter  = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency        = JoomlaFacade::getCurrency();
+        $this->moneyFormatter  = JoomlaFacade::getMoneyFormatter();
 
         // Set minimum values - days, amount,...
         $this->minAmount = (float)$this->params->get('project_amount_minimum');
@@ -372,7 +361,7 @@ class CrowdfundingViewProject extends JViewLegacy
                 }
 
                 // If missing both, select days.
-                if (!$this->checkedDays and !$this->checkedDate) {
+                if (!$this->checkedDays && !$this->checkedDate) {
                     $this->checkedDays = 'checked="checked"';
                 }
                 break;
@@ -431,10 +420,8 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->items     = $model->getItems($this->itemId);
 
         // Get money formatter.
-        $container              = Prism\Container::getContainer();
-
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Get calendar date format.
         $this->dateFormatCalendar = $this->params->get('date_format_calendar', JText::_('DATE_FORMAT_LC4'));
@@ -487,9 +474,8 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->returnUrl = $filter->clean($uri->toString());
 
         // Get money formatter.
-        $container              = Prism\Container::getContainer();
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         $statistics = new Crowdfunding\Statistics\Project(JFactory::getDbo(), $this->item->id);
         $this->statistics = array(
@@ -533,14 +519,8 @@ class CrowdfundingViewProject extends JViewLegacy
         $this->item->event->onExtrasDisplay = trim(implode("\n", $results));
     }
 
-    /**
-     * Prepares the document.
-     *
-     * @throws \InvalidArgumentException
-     */
     protected function prepareDocument()
     {
-        // Prepare page suffix
         $this->pageclass_sfx = htmlspecialchars($this->params->get('pageclass_sfx'));
 
         $menus = $this->app->getMenu();

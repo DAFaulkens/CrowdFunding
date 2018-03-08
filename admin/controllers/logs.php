@@ -40,10 +40,9 @@ class CrowdfundingControllerLogs extends Prism\Controller\Admin
 
         try {
             $model->removeAll();
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_ALL_ITEMS_REMOVED_SUCCESSFULLY'), $redirectOptions);

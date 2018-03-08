@@ -25,13 +25,14 @@ class JFormRuleCfCategory extends JFormRule
      * @return  boolean  True if the value is valid, false otherwise.
      *
      * @since   11.1
+     * @throws \RuntimeException
      */
     public function test(SimpleXMLElement $element, $value, $group = null, JRegistry $input = null, JForm $form = null)
     {
         // If the field is empty and not required, the field is valid.
         $required = ((string)$element['required'] === 'true' or (string)$element['required'] === 'required');
 
-        if ($required and !$value) {
+        if ($required && !$value) {
             return false;
         }
 

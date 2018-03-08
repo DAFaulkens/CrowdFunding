@@ -23,7 +23,7 @@ class CrowdfundingViewLocations extends JViewLegacy
     protected $state;
 
     /**
-     * @var JApplicationSite
+     * @var JApplicationAdministrator
      */
     protected $app;
 
@@ -62,9 +62,6 @@ class CrowdfundingViewLocations extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -86,9 +83,6 @@ class CrowdfundingViewLocations extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         JHtmlSidebar::setAction('index.php?option=' . $this->option . '&view=' . $this->getName());
@@ -96,7 +90,7 @@ class CrowdfundingViewLocations extends JViewLegacy
         JHtmlSidebar::addFilter(
             JText::_('JOPTION_SELECT_PUBLISHED'),
             'filter_state',
-            JHtml::_('select.options', JHtml::_('jgrid.publishedOptions', array("archived" => false, "trash" => false)), 'value', 'text', $this->state->get('filter.state'), true)
+            JHtml::_('select.options', JHtml::_('jgrid.publishedOptions', array('archived' => false, 'trash' => false)), 'value', 'text', $this->state->get('filter.state'), true)
         );
 
         $this->sidebar = JHtmlSidebar::render();
@@ -116,7 +110,7 @@ class CrowdfundingViewLocations extends JViewLegacy
         JToolbarHelper::divider();
 
         // Add custom buttons
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
 
         // Import Locations
         $link = JRoute::_('index.php?option=com_crowdfunding&view=import&type=locations');
@@ -131,21 +125,13 @@ class CrowdfundingViewLocations extends JViewLegacy
         JToolbarHelper::custom('locations.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_LOCATIONS_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
     }
 }

@@ -1,2 +1,0 @@
-Module - Crowdfunding Campaigns Changelog
-=========================================

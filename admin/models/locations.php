@@ -77,12 +77,13 @@ class CrowdfundingModelLocations extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
-        // Create a new query object.
         $db = $this->getDbo();
         /** @var $db JDatabaseDriver */
+
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.

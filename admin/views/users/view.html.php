@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -57,9 +57,8 @@ class CrowdfundingViewUsers extends JViewLegacy
 
         $this->params     = $this->state->get('params');
 
-        $container              = Prism\Container::getContainer();
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Get user IDs.
         $usersIds         = Prism\Utilities\ArrayHelper::getIds($this->items);
@@ -83,9 +82,6 @@ class CrowdfundingViewUsers extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -105,9 +101,6 @@ class CrowdfundingViewUsers extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         JHtmlSidebar::setAction('index.php?option=' . $this->option . '&view=' . $this->getName());
@@ -122,24 +115,16 @@ class CrowdfundingViewUsers extends JViewLegacy
      */
     protected function addToolbar()
     {
-        // Set toolbar items for the page
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_USERS_MANAGER'));
-
         JToolbarHelper::custom('users.view', 'eye', '', JText::_('COM_CROWDFUNDING_VIEW'), false);
         JToolbarHelper::divider();
         JToolbarHelper::custom('users.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_USERS_MANAGER'));
 
-        // Scripts
         JHtml::_('bootstrap.tooltip');
         JHtml::_('formbehavior.chosen', 'select');
         JHtml::_('Prism.ui.joomlaList');

@@ -39,6 +39,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
      * The purpose of this method is to load a data and send it to browser.
      * That data will be used in the process of payment.
      *
+     * @throws \Exception
      * @throws \InvalidArgumentException
      */
     public function preparePaymentAjax()
@@ -57,7 +58,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             // Send response to the browser
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'))
                 ->failure();
 
             echo $response;
@@ -68,7 +69,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Prepare payment service alias.
         $filter         = new JFilterInput();
-        $paymentService = $filter->clean(trim(strtolower($this->input->getCmd('payment_service'))), 'ALNUM');
+        $paymentService = $filter->clean(strtolower(trim($this->input->getCmd('payment_service'))), 'ALNUM');
 
         // Trigger the event
         try {
@@ -82,15 +83,14 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $results = $dispatcher->trigger('onPaymentsPreparePayment', array($context, &$params));
 
             // Get the result, that comes from the plugin.
-            if (is_array($results) and count($results) > 0) {
+            if (is_array($results) && count($results) > 0) {
                 foreach ($results as $result) {
-                    if ($result !== null and is_object($result)) {
+                    if ($result !== null && is_object($result)) {
                         $paymentResult = $result;
                         break;
                     }
                 }
             }
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
 
@@ -98,7 +98,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $response
                 ->failure()
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
 
             echo $response;
             $app->close();
@@ -122,12 +122,12 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $response
                 ->failure()
                 ->setTitle($title)
-                ->setText($text);
+                ->setContent($text);
         } else { // If all is OK...
             $response
                 ->success()
                 ->setTitle($title)
-                ->setText($text)
+                ->setContent($text)
                 ->setData($data);
         }
 

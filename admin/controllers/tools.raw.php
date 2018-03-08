@@ -19,10 +19,16 @@ defined('_JEXEC') or die;
  */
 class CrowdfundingControllerTools extends JControllerLegacy
 {
+    /**
+     * @param string $name
+     * @param string $prefix
+     * @param array  $config
+     *
+     * @return bool|CrowdfundingModelTools
+     */
     public function getModel($name = 'Tools', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function getAcyStats()
@@ -50,7 +56,7 @@ class CrowdfundingControllerTools extends JControllerLegacy
 
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->success();
 
             echo $response;

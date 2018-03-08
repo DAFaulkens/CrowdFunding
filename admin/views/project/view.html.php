@@ -10,11 +10,13 @@
 // no direct access
 defined('_JEXEC') or die;
 
-/**
- * Class CrowdfundingViewProject
- */
 class CrowdfundingViewProject extends JViewLegacy
 {
+    /**
+     * @var JApplicationAdministrator
+     */
+    protected $app;
+
     /**
      * @var JDocumentHtml
      */
@@ -45,17 +47,13 @@ class CrowdfundingViewProject extends JViewLegacy
     protected $documentTitle;
     protected $option;
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get('option');
-    }
-
     public function display($tpl = null)
     {
-        $this->state = $this->get('State');
-        $this->item  = $this->get('Item');
-        $this->form  = $this->get('Form');
+        $this->app      = JFactory::getApplication();
+        $this->option   = $this->app->input->get('option');
+        $this->state    = $this->get('State');
+        $this->item     = $this->get('Item');
+        $this->form     = $this->get('Form');
 
         // Prepare parameters
         $this->params = $this->state->get('params');
@@ -114,11 +112,6 @@ class CrowdfundingViewProject extends JViewLegacy
         }
     }
 
-    /**
-     * Add the page title and toolbar.
-     *
-     * @since   1.6
-     */
     protected function addToolbar()
     {
         JFactory::getApplication()->input->set('hidemainmenu', true);
@@ -132,33 +125,24 @@ class CrowdfundingViewProject extends JViewLegacy
         JToolbarHelper::save('project.save');
 
         if (!$isNew) {
-            JToolbarHelper::cancel('project.cancel', 'JTOOLBAR_CANCEL');
+            JToolbarHelper::cancel('project.cancel');
         } else {
             JToolbarHelper::cancel('project.cancel', 'JTOOLBAR_CLOSE');
         }
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Add scripts
         JHtml::_('behavior.keepalive');
         JHtml::_('behavior.formvalidation');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('bootstrap.tooltip');
         JHtml::_('Prism.ui.bootstrap2FileInput');
         JHtml::_('Prism.ui.bootstrap2Typeahead');
-
         JHtml::_('Prism.ui.joomlaHelper');
 
-        $this->document->addScript('../media/' . $this->option . '/js/admin/' . JString::strtolower($this->getName()) . '.js');
+        $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 }

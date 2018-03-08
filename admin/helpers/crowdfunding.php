@@ -185,6 +185,7 @@ abstract class CrowdfundingHelper
      * @param integer $projectId
      *
      * @return array
+     * @throws \RuntimeException
      */
     public static function getProjectData($projectId)
     {
@@ -270,9 +271,10 @@ abstract class CrowdfundingHelper
     /**
      * Generate a path to the temporary images folder.
      *
-     * @param string $path   A base path to the folder. It can be JPATH_BASE, JPATH_ROOT, JPATH_SITE,...
+     * @param string $path A base path to the folder. It can be JPATH_BASE, JPATH_ROOT, JPATH_SITE,...
      *
      * @return string
+     * @throws \UnexpectedValueException
      */
     public static function getTemporaryImagesFolder($path = '')
     {
@@ -322,6 +324,7 @@ abstract class CrowdfundingHelper
      * @param string $folder
      *
      * @return string
+     * @throws \UnexpectedValueException
      */
     public static function createFolder($folder)
     {
@@ -401,7 +404,9 @@ abstract class CrowdfundingHelper
 
         try {
             $date       = DateTime::createFromFormat($dateFormat, $date);
-            $result     = $date->format(Prism\Constants::DATE_FORMAT_SQL_DATE);
+            if ($date !== false) {
+                $result = $date->format(Prism\Constants::DATE_FORMAT_SQL_DATE);
+            }
         } catch (Exception $e) {
             JLog::add('Invalid date: ' . (string)$date . '; Message: '. $e->getMessage(), JLog::WARNING, 'com_crowdfunding');
         }
@@ -416,6 +421,7 @@ abstract class CrowdfundingHelper
      * @param float $value
      *
      * @return string|float
+     * @deprecated v2.7
      */
     public static function parseAmount($value)
     {
@@ -438,10 +444,12 @@ abstract class CrowdfundingHelper
      * @return array
      *
      * @deprecated v2.5 Use Crowdfunding\Helper\PrepareCategoriesHelper
+     * @throws \InvalidArgumentException
      */
     public static function prepareCategories($items)
     {
         $result = array();
+        $items  = (array)$items;
 
         if (count($items) > 0) {
             foreach ($items as $key => $item) {
@@ -475,6 +483,7 @@ abstract class CrowdfundingHelper
     public static function prepareItems($items)
     {
         $result = array();
+        $items  = (array)$items;
 
         if (!empty($items)) {
             foreach ($items as $key => $item) {
@@ -639,7 +648,7 @@ abstract class CrowdfundingHelper
             return true;
         }
 
-        return (bool)(($type instanceof Crowdfunding\Type) and $type->isRewardsEnabled());
+        return (($type instanceof Crowdfunding\Type) and $type->isRewardsEnabled());
     }
 
     /**
@@ -660,15 +669,16 @@ abstract class CrowdfundingHelper
             return true;
         }
 
-        return (bool)((int)$item->user_id === (int)$userId);
+        return ((int)$item->user_id === (int)$userId);
     }
 
     /**
      * Route URI to front-end.
      *
-     * @param string  $url
+     * @param string $url
      *
      * @return string
+     * @throws \RuntimeException
      */
     public static function siteRoute($url)
     {

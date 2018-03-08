@@ -9,6 +9,12 @@
 
 // no direct access
 defined('_JEXEC') or die;?>
+<div class="panel panel-default mt-10">
+    <div class="panel-heading"><?php echo JText::_('COM_CROWDFUNDING_CONTRIBUTORS'); ?></div>
+    <div class="panel-body">
+        <?php if (count($this->items) === 0) {?>
+            <?php echo JText::sprintf('COM_CROWDFUNDING_NOT_CONTRIBUTORS_BE_FIRST_S', JRoute::_(CrowdfundingHelperRoute::getBackingRoute($this->item->id, $this->item->catid))); ?>
+        <?php } ?>
 <?php
 foreach ($this->items as $item) {
     $socialProfile = (!$this->socialProfiles) ? null : $this->socialProfiles->getLink($item->id);
@@ -52,3 +58,5 @@ foreach ($this->items as $item) {
         </div>
     </div>
 <?php } ?>
+    </div>
+</div>

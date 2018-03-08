@@ -24,7 +24,7 @@ class CrowdfundingControllerUpdate extends Prism\Controller\Form\Backend
         JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
 
         $data   = $this->input->post->get('jform', array(), 'array');
-        $itemId = JArrayHelper::getValue($data, 'id');
+        $itemId = Joomla\Utilities\ArrayHelper::getValue($data, 'id');
 
         $redirectOptions = array(
             'task' => $this->getTask(),
@@ -38,7 +38,7 @@ class CrowdfundingControllerUpdate extends Prism\Controller\Form\Backend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'), 500);
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'), 500);
         }
 
         // Validate the form data
@@ -47,7 +47,6 @@ class CrowdfundingControllerUpdate extends Prism\Controller\Form\Backend
         // Check for errors
         if ($validData === false) {
             $this->displayNotice($form->getErrors(), $redirectOptions);
-
             return;
         }
 
@@ -55,7 +54,7 @@ class CrowdfundingControllerUpdate extends Prism\Controller\Form\Backend
             $model->save($validData);
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_UPDATE_SAVED'), $redirectOptions);

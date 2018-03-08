@@ -54,6 +54,7 @@ class CrowdfundingModelLocation extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {

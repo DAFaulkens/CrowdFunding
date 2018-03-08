@@ -42,14 +42,10 @@ class CrowdfundingViewLogs extends JViewLegacy
         '/php_errorlog'
     );
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get('option');
-    }
-
     public function display($tpl = null)
     {
+        $this->option     = JFactory::getApplication()->input->get('option');
+
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
@@ -71,9 +67,6 @@ class CrowdfundingViewLogs extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -83,7 +76,7 @@ class CrowdfundingViewLogs extends JViewLegacy
 
         if ($this->saveOrder) {
             $this->saveOrderingUrl = 'index.php?option=' . $this->option . '&task=' . $this->getName() . '.saveOrderAjax&format=raw';
-            JHtml::_('sortablelist.sortable', $this->getName() . 'List', 'adminForm', JString::strtolower($this->listDirn), $this->saveOrderingUrl);
+            JHtml::_('sortablelist.sortable', $this->getName() . 'List', 'adminForm', strtolower($this->listDirn), $this->saveOrderingUrl);
         }
 
         $this->sortFields = array(
@@ -94,9 +87,6 @@ class CrowdfundingViewLogs extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         // Add submenu
@@ -126,7 +116,7 @@ class CrowdfundingViewLogs extends JViewLegacy
         // Set toolbar items for the page
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_LOGS_MANAGER'));
 
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
         $bar->appendButton(
             'Link',
             'eye-open',
@@ -142,10 +132,6 @@ class CrowdfundingViewLogs extends JViewLegacy
         JToolbarHelper::custom('logs.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_LOGS_MANAGER'));
@@ -153,13 +139,11 @@ class CrowdfundingViewLogs extends JViewLegacy
         // Load language string in JavaScript
         JText::script('COM_CROWDFUNDING_DELETE_ALL_ITEMS');
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
+        JHtml::_('Prism.ui.joomlaList');
 
-        JHtml::_('prism.ui.joomlaList');
-        $this->document->addScript('../media/' . $this->option . '/js/admin/' . JString::strtolower($this->getName()) . '.js');
+        $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 }

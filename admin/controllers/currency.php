@@ -38,7 +38,7 @@ class CrowdfundingControllerCurrency extends Prism\Controller\Form\Backend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
         }
 
         // Validate the form
@@ -57,7 +57,7 @@ class CrowdfundingControllerCurrency extends Prism\Controller\Form\Backend
             $redirectOptions['id'] = $itemId;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_CURRENCY_SAVED'), $redirectOptions);

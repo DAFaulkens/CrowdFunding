@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -21,7 +23,7 @@ class CrowdfundingModelReport extends JModelAdmin
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableReport|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Report', $prefix = 'CrowdfundingTable', $config = array())
@@ -32,10 +34,10 @@ class CrowdfundingModelReport extends JModelAdmin
     /**
      * Method to get the record form.
      *
-     * @param   array   $data     An optional array of data for the form to interogate.
+     * @param   array   $data     An optional array of data for the form to interrogate.
      * @param   boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return  JForm   A JForm object on success, false on failure
+     * @return  JForm|bool   A JForm object on success, false on failure
      * @since   1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -54,12 +56,14 @@ class CrowdfundingModelReport extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
         // Check the session for previously entered form data.
         $data = JFactory::getApplication()->getUserState($this->option . '.edit.report.data', array());
         if (empty($data)) {
+            /** @var stdClass $data */
             $data = $this->getItem();
             $data->title = CrowdfundingHelper::getProjectTitle($data->project_id);
         }
@@ -70,17 +74,20 @@ class CrowdfundingModelReport extends JModelAdmin
     /**
      * Save data into the DB
      *
-     * @param array $data   The data of item
+     * @param array $data The data of item
      *
      * @return    int      Item ID
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function save($data)
     {
-        $id          = JArrayHelper::getValue($data, "id");
-        $subject     = JArrayHelper::getValue($data, "subject");
-        $description = JArrayHelper::getValue($data, "description");
-        $email       = JArrayHelper::getValue($data, "email");
-        $userId      = JArrayHelper::getValue($data, "user_id");
+        $id          = ArrayHelper::getValue($data, 'id');
+        $subject     = ArrayHelper::getValue($data, 'subject');
+        $description = ArrayHelper::getValue($data, 'description');
+        $email       = ArrayHelper::getValue($data, 'email');
+        $userId      = ArrayHelper::getValue($data, 'user_id');
 
         if (!$email) {
             $email = null;
@@ -93,13 +100,13 @@ class CrowdfundingModelReport extends JModelAdmin
         $row = $this->getTable();
         $row->load($id);
 
-        $row->set("subject", $subject);
-        $row->set("description", $description);
-        $row->set("email", $email);
-        $row->set("user_id", $userId);
+        $row->set('subject', $subject);
+        $row->set('description', $description);
+        $row->set('email', $email);
+        $row->set('user_id', $userId);
 
         $row->store(true);
 
-        return $row->get("id");
+        return $row->get('id');
     }
 }

@@ -87,6 +87,7 @@ class CrowdfundingModelReports extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {

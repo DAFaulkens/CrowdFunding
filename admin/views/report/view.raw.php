@@ -20,9 +20,6 @@ class CrowdfundingViewReport extends JViewLegacy
     protected $state;
     protected $item;
 
-    /**
-     * Display the view
-     */
     public function display($tpl = null)
     {
         $this->state = $this->get('State');

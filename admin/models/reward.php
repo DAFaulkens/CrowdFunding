@@ -55,6 +55,7 @@ class CrowdfundingModelReward extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -64,6 +65,7 @@ class CrowdfundingModelReward extends JModelAdmin
         // Check the session for previously entered form data.
         $data = $app->getUserState($this->option . '.edit.reward.data', array());
         if (empty($data)) {
+            /** @var stdClass $data */
             $data = $this->getItem();
 
             // Set project ID to form data, if it is a new record.
@@ -133,7 +135,7 @@ class CrowdfundingModelReward extends JModelAdmin
     protected function prepareTable($table)
     {
         // Set order value
-        if (!$table->get('id') and !$table->get('ordering')) {
+        if (!$table->get('id') && !$table->get('ordering')) {
             $db    = $this->getDbo();
             $query = $db->getQuery(true);
 
@@ -149,13 +151,14 @@ class CrowdfundingModelReward extends JModelAdmin
             $table->set('ordering', $max + 1);
         }
     }
-    
+
     /**
      * Upload an image.
      *
-     * @param  array $uploadedFileData
+     * @param  array  $uploadedFileData
      * @param  string $destinationFolder
      *
+     * @throws \Exception
      * @throws RuntimeException
      * @throws InvalidArgumentException
      * @throws UnexpectedValueException
@@ -265,7 +268,7 @@ class CrowdfundingModelReward extends JModelAdmin
      */
     public function storeImage($images, $imagesFolder, $rewardId)
     {
-        if (!$images or !is_array($images)) {
+        if (!$images || !is_array($images)) {
             throw new InvalidArgumentException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_IMAGES'));
         }
 
@@ -307,9 +310,9 @@ class CrowdfundingModelReward extends JModelAdmin
         // Delete the images from filesystem.
         $this->deleteImages($table, $imagesFolder);
 
-        $table->set('image', null);
-        $table->set('image_thumb', null);
-        $table->set('image_square', null);
+        $table->set('image');
+        $table->set('image_thumb');
+        $table->set('image_square');
 
         $table->store(true);
     }

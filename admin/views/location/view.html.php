@@ -67,24 +67,18 @@ class CrowdfundingViewLocation extends JViewLegacy
         JToolbarHelper::save('location.save');
 
         if (!$isNew) {
-            JToolbarHelper::cancel('location.cancel', 'JTOOLBAR_CANCEL');
+            JToolbarHelper::cancel('location.cancel');
         } else {
             JToolbarHelper::cancel('location.cancel', 'JTOOLBAR_CLOSE');
         }
     }
 
-    /**
-     * Method to set up the document properties
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Scripts
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
 
         $this->document->addScript(JUri::root() . 'media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');

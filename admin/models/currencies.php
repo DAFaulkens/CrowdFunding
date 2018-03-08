@@ -15,7 +15,7 @@ class CrowdfundingModelCurrencies extends JModelList
     /**
      * Constructor.
      *
-     * @param   array  $config An optional associative array of configuration settings.
+     * @param   array $config An optional associative array of configuration settings.
      *
      * @see     JController
      * @since   1.6
@@ -73,6 +73,7 @@ class CrowdfundingModelCurrencies extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -98,8 +99,9 @@ class CrowdfundingModelCurrencies extends JModelList
                 $query->where('a.id = ' . (int)substr($search, 3));
             } else {
                 $escaped = $db->escape($search, true);
-                $quoted  = $db->quote("%" . $escaped . "%", false);
-                $query->where('a.title LIKE ' . $quoted);
+                $quoted  = $db->quote('%' . $escaped . '%', false);
+                $query->where('a.title LIKE ' . $quoted, 'OR');
+                $query->where('a.code LIKE ' . $quoted);
             }
         }
 

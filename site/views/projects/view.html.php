@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -56,7 +56,6 @@ class CrowdfundingViewProjects extends JViewLegacy
         if (!$userId) {
             $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'), 'notice');
             $this->app->redirect(JRoute::_('index.php?option=com_users&view=login', false));
-
             return;
         }
 
@@ -85,10 +84,8 @@ class CrowdfundingViewProjects extends JViewLegacy
 
         // Create money formatter.
         if (count($this->items) > 0) {
-            $container = Prism\Container::getContainer();
-
-            $this->layoutData->currency       = MoneyHelper::getCurrency($container, $this->params);
-            $this->layoutData->moneyFormatter = MoneyHelper::getMoneyFormatter($container, $this->params);
+            $this->layoutData->currency       = JoomlaFacade::getCurrency();
+            $this->layoutData->moneyFormatter = JoomlaFacade::getMoneyFormatter();
         }
 
         $this->prepareDocument();
@@ -96,10 +93,6 @@ class CrowdfundingViewProjects extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare document.
-     *
-     */
     protected function prepareDocument()
     {
         //Escape strings for HTML output

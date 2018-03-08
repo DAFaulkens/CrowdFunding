@@ -39,18 +39,12 @@ class CrowdfundingViewComment extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Add the page title and toolbar.
-     *
-     * @since   1.6
-     */
     protected function addToolbar()
     {
         JFactory::getApplication()->input->set('hidemainmenu', true);
-        $isNew = ($this->item->id == 0);
+        $isNew = ((int)$this->item->id === 0);
 
-        $this->documentTitle = $isNew ? JText::_('COM_CROWDFUNDING_NEW_COMMENT')
-            : JText::_('COM_CROWDFUNDING_EDIT_COMMENT');
+        $this->documentTitle = $isNew ? JText::_('COM_CROWDFUNDING_NEW_COMMENT') : JText::_('COM_CROWDFUNDING_EDIT_COMMENT');
 
         JToolbarHelper::title($this->documentTitle);
 
@@ -58,17 +52,13 @@ class CrowdfundingViewComment extends JViewLegacy
         JToolbarHelper::save('comment.save');
 
         if (!$isNew) {
-            JToolbarHelper::cancel('comment.cancel', 'JTOOLBAR_CANCEL');
+            JToolbarHelper::cancel('comment.cancel');
         } else {
             JToolbarHelper::cancel('comment.cancel', 'JTOOLBAR_CLOSE');
         }
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
+
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);

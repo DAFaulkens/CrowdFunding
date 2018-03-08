@@ -99,7 +99,7 @@ class CrowdfundingModelProject extends JModelForm
         // Initialise variables.
         $table = $this->getTable();
 
-        if ($pk > 0 and $userId > 0) {
+        if ($pk > 0 && $userId > 0) {
             $keys = array(
                 'id'      => $pk,
                 'user_id' => $userId
@@ -197,7 +197,7 @@ class CrowdfundingModelProject extends JModelForm
         $temporaryImages = $app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
         /** @var array $temporaryImages */
 
-        if (is_array($temporaryImages) and count($temporaryImages) > 0) {
+        if (is_array($temporaryImages) && count($temporaryImages) > 0) {
             $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
 
             foreach ($temporaryImages as $filename) {

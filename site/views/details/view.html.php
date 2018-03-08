@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -75,7 +75,7 @@ class CrowdfundingViewDetails extends JViewLegacy
 
         $model  = $this->getModel();
         $user   = JFactory::getUser();
-        $userId = JFactory::getUser()->get('id');
+        $userId = $user->get('id');
 
         // Handle bus helper.
         $helperBus = new Prism\Helper\HelperBus($this->item);
@@ -84,16 +84,14 @@ class CrowdfundingViewDetails extends JViewLegacy
         $helperBus->addCommand(new Crowdfunding\Helper\PrepareItemAccessHelper($user));
         $helperBus->handle();
 
-        if (!$this->item or !$model->isAllowed($this->item, $userId)) {
+        if (!$this->item || !$model->isAllowed($this->item, $userId)) {
             $this->app->enqueueMessage(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), 'notice');
             $this->app->redirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false));
             return;
         }
 
-        $this->container      = Prism\Container::getContainer();
-
-        $this->currency       = MoneyHelper::getCurrency($this->container, $this->params);
-        $this->moneyFormatter = MoneyHelper::getMoneyFormatter($this->container, $this->params);
+        $this->currency       = JoomlaFacade::getCurrency();
+        $this->moneyFormatter = JoomlaFacade::getMoneyFormatter();
 
         // Get the path to the images.
         $this->imageFolder    = $this->params->get('images_directory', 'images/crowdfunding');
@@ -155,7 +153,8 @@ class CrowdfundingViewDetails extends JViewLegacy
     protected function prepareUpdatesScreen()
     {
         $model       = JModelLegacy::getInstance('Updates', 'CrowdfundingModel', $config = array('ignore_request' => false));
-        /** @var CrowdfundingModelUpdates items */
+        /** @var CrowdfundingModelUpdates $model */
+
         $this->items = $model->getItems();
         $this->form  = $model->getForm();
 
@@ -185,6 +184,8 @@ class CrowdfundingViewDetails extends JViewLegacy
         // Initialize default comments functionality.
         if ($this->commentsEnabled) {
             $model       = JModelLegacy::getInstance('Comments', 'CrowdfundingModel', $config = array('ignore_request' => false));
+            /** @var CrowdfundingModelComments $model */
+
             $this->items = $model->getItems();
             $this->form  = $model->getForm();
 
@@ -217,22 +218,21 @@ class CrowdfundingViewDetails extends JViewLegacy
     protected function prepareFundersScreen()
     {
         $model       = JModelLegacy::getInstance('Funders', 'CrowdfundingModel', $config = array('ignore_request' => false));
+        /** @var CrowdfundingModelFunders $model */
+
         $this->items = $model->getItems();
 
         // Create a currency object if I have to display funders amounts.
         $this->displayAmounts = $this->params->get('funders_display_amounts', 0);
         if ($this->displayAmounts) {
-            $this->money      = $this->getMoneyFormatter($this->container, $this->params);
+            $this->moneyFormatter  = JoomlaFacade::getMoneyFormatter();
         }
 
         // Prepare social integration.
-        $usersIds             = Prism\Utilities\ArrayHelper::getIds($this->items, 'id');
+        $usersIds             = Prism\Utilities\ArrayHelper::getIds($this->items);
         $this->socialProfiles = CrowdfundingHelper::prepareIntegration($this->params->get('integration_social_platform'), $usersIds);
     }
 
-    /**
-     * Prepare the document
-     */
     protected function prepareDocument()
     {
         // Escape strings for HTML output
@@ -258,7 +258,7 @@ class CrowdfundingViewDetails extends JViewLegacy
         // Breadcrumb
         $pathway           = $this->app->getPathway();
         $currentBreadcrumb = JHtmlString::truncate($this->item->title, 32);
-        $pathway->addItem($currentBreadcrumb, '');
+        $pathway->addItem($currentBreadcrumb);
 
         // Add scripts
         JHtml::_('jquery.framework');

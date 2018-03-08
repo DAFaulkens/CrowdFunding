@@ -39,10 +39,10 @@ class CrowdfundingModelUpdates extends JModelList
     protected function populateState($ordering = null, $direction = null)
     {
         $app = JFactory::getApplication();
-        /** @var $app JApplicationSite * */
+        /** @var $app JApplicationSite **/
 
         // Get project ID
-        $value = $app->input->get('id', 0, 'uint');
+        $value = $app->input->getUint('id', 0);
         $this->setState($this->getName() . '.id', $value);
 
         // Load the component parameters.
@@ -64,6 +64,7 @@ class CrowdfundingModelUpdates extends JModelList
      *
      * @return  string      A store id.
      * @since   1.6
+     * @throws \Exception
      */
     protected function getStoreId($id = '')
     {
@@ -78,6 +79,8 @@ class CrowdfundingModelUpdates extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \Exception
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -136,7 +139,7 @@ class CrowdfundingModelUpdates extends JModelList
         JForm::addFormPath(JPATH_COMPONENT . '/models/forms');
         JForm::addFieldPath(JPATH_COMPONENT . '/models/fields');
 
-        $form = JForm::getInstance($name, $source, $options, false, false);
+        $form = JForm::getInstance($name, $source, $options, false);
 
         // Load the data into the form after the plugins have operated.
         $form->bind($data);

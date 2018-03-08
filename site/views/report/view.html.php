@@ -54,9 +54,6 @@ class CrowdfundingViewReport extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare the document
-     */
     protected function prepareDocument()
     {
         $app = JFactory::getApplication();
@@ -94,7 +91,7 @@ class CrowdfundingViewReport extends JViewLegacy
         // Breadcrumb
         $pathway           = $app->getPathway();
         $currentBreadcrumb = (!$this->item) ? JText::_('COM_CROWDFUNDING_REPORT_CAMPAIGN') : JHtmlString::truncate($this->item->title, 16);
-        $pathway->addItem($currentBreadcrumb, '');
+        $pathway->addItem($currentBreadcrumb);
 
         // Add scripts
         JHtml::_('jquery.framework');

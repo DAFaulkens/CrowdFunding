@@ -76,6 +76,7 @@ class CrowdfundingModelReward extends JModelList
     /**
      * Build an SQL query to load the list data.
      *
+     * @throws \Exception
      * @throws \RuntimeException
      *
      * @return  JDatabaseQuery

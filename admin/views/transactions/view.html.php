@@ -9,6 +9,7 @@
 
 use \Crowdfunding\Container\Helper\Money as MoneyHelper;
 use \Crowdfunding\Currency\Gateway\JoomlaGateway as CurrencyGateway;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -60,8 +61,8 @@ class CrowdfundingViewTransactions extends JViewLegacy
     {
         $this->option = JFactory::getApplication()->input->get('option');
 
+        $this->items      = (array)$this->get('Items');
         $this->state      = $this->get('State');
-        $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
         $this->params     = $this->state->get('params');
 
@@ -92,13 +93,8 @@ class CrowdfundingViewTransactions extends JViewLegacy
             $this->currencies   = $repository->fetchCollection($databaseRequest);
         }
 
-        $locale               = JFactory::getLanguage()->getTag();
-
-        $container            = Prism\Container::getContainer();
-
-        $containerHelper      = new MoneyHelper($container);
-        $this->currency       = $containerHelper->getCurrency($this->params->get('project_currency'), $currencyGateway);
-        $this->moneyFormatter = $containerHelper->getFormatter($locale);
+        $this->currency       = JoomlaFacade::getCurrency();
+        $this->moneyFormatter = JoomlaFacade::getMoneyFormatter();
 
         // Get enabled specific plugins.
         $extensions                   = new Prism\Extensions(JFactory::getDbo(), $this->specificPlugins);
@@ -115,9 +111,6 @@ class CrowdfundingViewTransactions extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -142,9 +135,6 @@ class CrowdfundingViewTransactions extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         // Add submenu
@@ -197,7 +187,7 @@ class CrowdfundingViewTransactions extends JViewLegacy
             JToolbarHelper::divider();
 
             // Add custom buttons
-            $bar = JToolbar::getInstance('toolbar');
+            $bar = JToolbar::getInstance();
             $bar->appendButton('Confirm', JText::_('COM_CROWDFUNDING_QUESTION_CAPTURE'), 'checkin', JText::_('COM_CROWDFUNDING_CAPTURE'), 'payments.doCapture', true);
             $bar->appendButton('Confirm', JText::_('COM_CROWDFUNDING_QUESTION_VOID'), 'cancel-circle', JText::_('COM_CROWDFUNDING_VOID'), 'payments.doVoid', true);
         }
@@ -208,20 +198,13 @@ class CrowdfundingViewTransactions extends JViewLegacy
         JToolbarHelper::custom('transactions.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_TRANSACTIONS_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
         JHtml::_('Prism.ui.pnotify');
         JHtml::_('Prism.ui.joomlaHelper');

@@ -142,9 +142,9 @@ class CrowdfundingModelTransactions extends JModelList
         $rewardState = $this->getState('filter.reward_state');
         if (is_numeric($rewardState)) {
             if ((int)$rewardState === Prism\Constants::NOT_SENT) {
-                $query->where('a.reward_state = ' .(int)Prism\Constants::NOT_SENT);
+                $query->where('a.reward_state = ' .Prism\Constants::NOT_SENT);
             } elseif ((int)$rewardState === Prism\Constants::SENT) {
-                $query->where('a.reward_state = ' .(int)Prism\Constants::SENT);
+                $query->where('a.reward_state = ' .Prism\Constants::SENT);
             }
         } elseif ($rewardState === 'none') {
             $query->where('a.reward_id = 0');

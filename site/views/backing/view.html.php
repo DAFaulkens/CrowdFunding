@@ -7,9 +7,9 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Joomla\String\StringHelper;
 use Joomla\Data\DataObject;
-use Crowdfunding\Container\MoneyHelper;
+use Joomla\String\StringHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -110,9 +110,9 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->container      = Prism\Container::getContainer();
 
         // Prepare money formatter.
-        $this->currency       = MoneyHelper::getCurrency($this->container, $this->params);
-        $this->moneyFormatter = MoneyHelper::getMoneyFormatter($this->container, $this->params);
-        $this->moneyParser    = MoneyHelper::getMoneyParser($this->container, $this->params);
+        $this->currency       = JoomlaFacade::getCurrency();
+        $this->moneyFormatter = JoomlaFacade::getMoneyFormatter();
+        $this->moneyParser    = JoomlaFacade::getMoneyParser();
 
         // Create an object that will contain the data during the payment process.
         $this->wizardSessionContext = Crowdfunding\Constants::PAYMENT_SESSION_CONTEXT.$this->item->id;
@@ -138,7 +138,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $layout = $this->getLayout();
 
         // Create payment session
-        if (!$this->wizardSession or empty($this->wizardSession->step1) or strcmp('default', $layout) === 0) {
+        if (!$this->wizardSession || empty($this->wizardSession->step1) || strcmp('default', $layout) === 0) {
             $this->wizardSession = $this->createWizardSession();
             $this->app->setUserState($this->wizardSessionContext, $this->wizardSession);
         }
@@ -241,7 +241,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         if ($this->rewardId > 0) {
             $reward = $this->rewards->getReward((int)$this->rewardId);
 
-            if ($reward !== null and ($this->rewardAmount < $reward->getAmount())) {
+            if ($reward !== null && ($this->rewardAmount < $reward->getAmount())) {
                 $this->rewardAmount     = $reward->getAmount();
                 $this->wizardSession->step1  = false;
             }
@@ -253,20 +253,18 @@ class CrowdfundingViewBacking extends JViewLegacy
         // If missing the flag "step1", redirect to first step.
         if (!$this->wizardSession->step1) {
             $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_INVALID_AMOUNT'));
-            return $this->createWizardSession();
         }
 
         // Authorise the user
         if (!$this->user->authorise('crowdfunding.donate', 'com_crowdfunding')) {
             $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_NO_SIGNED_PAYMENT'));
-            return $this->createWizardSession();
         }
 
         // Check for both user states. The user must have only one state - registered user or anonymous user.
         $userId  = (int)$this->user->get('id');
-        $aUserId = $this->app->getUserState('auser_id');
+        $aUserId = Joomla\String\StringHelper::trim($this->app->getUserState('auser_id'));
 
-        if (($userId > 0 and strlen($aUserId) > 0) or ($userId === 0 and !$aUserId)) {
+        if (($userId > 0 && $aUserId !== '') || ($userId === 0 && !$aUserId)) {
             // Reset anonymous hash user ID and redirect to first step.
             $this->app->setUserState('auser_id', '');
         }
@@ -285,7 +283,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         $this->reward = new Crowdfunding\Reward(JFactory::getDbo());
         $this->reward->load($keys);
 
-        if ($this->reward->getId() and ($this->reward->isLimited() and !$this->reward->getAvailable())) {
+        if ($this->reward->getId() && ($this->reward->isLimited() && !$this->reward->getAvailable())) {
             $this->returnToStep1(JText::_('COM_CROWDFUNDING_ERROR_REWARD_NOT_AVAILABLE'));
         }
 
@@ -467,9 +465,6 @@ class CrowdfundingViewBacking extends JViewLegacy
         }
     }
 
-    /**
-     * Prepare the document
-     */
     protected function prepareDocument()
     {
         // Escape strings for HTML output
@@ -498,7 +493,7 @@ class CrowdfundingViewBacking extends JViewLegacy
         // Breadcrumb
         $pathway           = $this->app->getPathway();
         $currentBreadcrumb = JHtmlString::truncate($this->item->title, 16);
-        $pathway->addItem($currentBreadcrumb, '');
+        $pathway->addItem($currentBreadcrumb);
 
         // Scripts
         JHtml::_('jquery.framework');

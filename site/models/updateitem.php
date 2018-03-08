@@ -21,7 +21,7 @@ class CrowdfundingModelUpdateItem extends JModelItem
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array $config  Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableUpdate|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Update', $prefix = 'CrowdfundingTable', $config = array())
@@ -34,6 +34,7 @@ class CrowdfundingModelUpdateItem extends JModelItem
      * Note. Calling getState in this method will result in recursion.
      *
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -55,9 +56,10 @@ class CrowdfundingModelUpdateItem extends JModelItem
     /**
      * Method to get an object.
      *
-     * @param    integer  $id  The id of the object to get.
+     * @param    integer $id The id of the object to get.
      *
      * @return    null|stdClass    Object on success, false on failure.
+     * @throws \Exception
      */
     public function getItem($id = 0)
     {

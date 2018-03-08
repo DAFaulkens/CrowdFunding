@@ -29,7 +29,7 @@ class CrowdfundingModelDetails extends JModelItem
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableProject|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Project', $prefix = 'CrowdfundingTable', $config = array())
@@ -43,6 +43,7 @@ class CrowdfundingModelDetails extends JModelItem
      * Note. Calling getState in this method will result in recursion.
      *
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -112,13 +113,13 @@ class CrowdfundingModelDetails extends JModelItem
      */
     public function isAllowed($item, $userId)
     {
-        if (!is_object($item) or (!$item->id or !$item->user_id)) {
+        if (!is_object($item) || (!$item->id || !$item->user_id)) {
             return (bool)Prism\Constants::NOT_ALLOWED;
         }
 
         // Check for the owner of the project.
         // If it is not published and not approved, only the owner will be able to view the project.
-        if ((!$item->published or !$item->approved) and ((int)$item->user_id === (int)$userId)) {
+        if ((!$item->published || !$item->approved) && ((int)$item->user_id === (int)$userId)) {
             return (bool)Prism\Constants::ALLOWED;
         }
 
@@ -129,6 +130,8 @@ class CrowdfundingModelDetails extends JModelItem
      * Increase number of hits.
      *
      * @param integer $id
+     *
+     * @throws \RuntimeException
      */
     public function hit($id)
     {

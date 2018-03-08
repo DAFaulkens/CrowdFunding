@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -56,9 +56,8 @@ class CrowdfundingViewRewards extends JViewLegacy
 
         $this->params     = $this->state->get('params');
 
-        $container             =  Prism\Container::getContainer();
-        $this->currency        =  MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter  =  MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency        =  JoomlaFacade::getCurrency();
+        $this->moneyFormatter  =  JoomlaFacade::getMoneyFormatter();
 
         $projectId          = $this->state->get('project_id');
         $this->projectTitle = CrowdfundingHelper::getProjectTitle($projectId);
@@ -77,9 +76,6 @@ class CrowdfundingViewRewards extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -104,9 +100,6 @@ class CrowdfundingViewRewards extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         // Add submenu
@@ -146,7 +139,7 @@ class CrowdfundingViewRewards extends JViewLegacy
         JToolbarHelper::divider();
 
         // Add custom buttons
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
 
         // Back to projects
         $link = JRoute::_('index.php?option=com_crowdfunding&view=projects');
@@ -156,21 +149,13 @@ class CrowdfundingViewRewards extends JViewLegacy
         JToolbarHelper::custom('projects.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_REWARDS_MANAGER_BROWSER_TITLE'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
     }
 }

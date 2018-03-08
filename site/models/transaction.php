@@ -19,7 +19,7 @@ class CrowdfundingModelTransaction extends JModelLegacy
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  CrowdfundingTableTransaction  A database object
+     * @return  CrowdfundingTableTransaction|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Transaction', $prefix = 'CrowdfundingTable', $config = array())

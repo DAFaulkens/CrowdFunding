@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 use Prism\Money\Money;
 
 // no direct access
@@ -31,11 +31,12 @@ class CrowdfundingModelPayments extends JModelLegacy
     public function prepareItem($projectId, $params, $wizardSession)
     {
         $container        = Prism\Container::getContainer();
-        $containerHelper  = new Crowdfunding\Container\Helper();
+        $containerHelper  = new Crowdfunding\Container\Helper\Project($container);
+        $gateway          = new Crowdfunding\Project\Gateway\JoomlaGateway(JFactory::getDbo());
 
-        $project          = $containerHelper->fetchProject($container, $projectId);
+        $project          = $containerHelper->getProject($projectId, $gateway);
 
-        if ($project === null or !$project->getId()) {
+        if ($project === null || !$project->getId()) {
             throw new UnexpectedValueException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'));
         }
 
@@ -43,8 +44,8 @@ class CrowdfundingModelPayments extends JModelLegacy
             throw new UnexpectedValueException(JText::_('COM_CROWDFUNDING_ERROR_COMPLETED_PROJECT'));
         }
 
-        $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
-        $currency       = MoneyHelper::getCurrency($container, $params);
+        $moneyFormatter = JoomlaFacade::getMoneyFormatter();
+        $currency       = JoomlaFacade::getCurrency();
 
         $item = new stdClass;
 

@@ -80,6 +80,7 @@ class CrowdfundingModelLogs extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -96,7 +97,7 @@ class CrowdfundingModelLogs extends JModelList
                 'a.id, a.title, a.record_date, a.type '
             )
         );
-        $query->from($db->quoteName('#__crowdf_logs', "a"));
+        $query->from($db->quoteName('#__crowdf_logs', 'a'));
 
         // Filter by type
         $type = $this->getState('filter.type');
@@ -111,7 +112,7 @@ class CrowdfundingModelLogs extends JModelList
                 $query->where('a.id = ' . (int)substr($search, 3));
             } else {
                 $escaped = $db->escape($search, true);
-                $quoted  = $db->quote("%" . $escaped . "%", false);
+                $quoted  = $db->quote('%' . $escaped . '%', false);
                 $query->where('a.title LIKE ' . $quoted);
             }
         }

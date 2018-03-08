@@ -13,6 +13,11 @@ defined('_JEXEC') or die;
 class CrowdfundingViewUpdates extends JViewLegacy
 {
     /**
+     * @var JApplicationAdministrator
+     */
+    public $app;
+
+    /**
      * @var JDocumentHtml
      */
     public $document;
@@ -35,14 +40,11 @@ class CrowdfundingViewUpdates extends JViewLegacy
 
     protected $sidebar;
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get("option");
-    }
-
     public function display($tpl = null)
     {
+        $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
+
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
@@ -50,7 +52,6 @@ class CrowdfundingViewUpdates extends JViewLegacy
         // Add submenu
         CrowdfundingHelper::addSubmenu($this->getName());
 
-        // Prepare sorting data
         $this->prepareSorting();
 
         // Prepare actions
@@ -61,15 +62,12 @@ class CrowdfundingViewUpdates extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
         $this->listOrder = $this->escape($this->state->get('list.ordering'));
         $this->listDirn  = $this->escape($this->state->get('list.direction'));
-        $this->saveOrder = (strcmp($this->listOrder, 'a.ordering') != 0) ? false : true;
+        $this->saveOrder = (strcmp($this->listOrder, 'a.ordering') === 0);
 
         if ($this->saveOrder) {
             $this->saveOrderingUrl = 'index.php?option=' . $this->option . '&task=' . $this->getName() . '.saveOrderAjax&format=raw';
@@ -103,25 +101,18 @@ class CrowdfundingViewUpdates extends JViewLegacy
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_UPDATES_MANAGER'));
         JToolbarHelper::editList('update.edit');
         JToolbarHelper::divider();
-        JToolbarHelper::deleteList(JText::_("COM_CROWDFUNDING_DELETE_ITEMS_QUESTION"), "updates.delete");
+        JToolbarHelper::deleteList(JText::_('COM_CROWDFUNDING_DELETE_ITEMS_QUESTION'), 'updates.delete');
         JToolbarHelper::divider();
-        JToolbarHelper::custom('updates.backToDashboard', "dashboard", "", JText::_("COM_CROWDFUNDING_DASHBOARD"), false);
+        JToolbarHelper::custom('updates.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
-
-    /**
-     * Method to set up the document properties
-     * @return void
-     */
+    
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_UPDATES_MANAGER'));
-
-        // Scripts
+        
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('prism.ui.joomlaList');
     }
 }

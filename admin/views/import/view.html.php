@@ -101,21 +101,14 @@ class CrowdfundingViewImport extends JViewLegacy
         JToolbarHelper::custom($this->uploadTask, 'upload', '', JText::_('COM_CROWDFUNDING_UPLOAD_AND_IMPORT'), false);
 
         JToolbarHelper::divider();
-        JToolbarHelper::cancel('import.cancel', 'JTOOLBAR_CANCEL');
+        JToolbarHelper::cancel('import.cancel');
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_IMPORT_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.formvalidation');
-
         JHtml::_('bootstrap.tooltip');
         JHtml::_('Prism.ui.bootstrap2FileInput');
 

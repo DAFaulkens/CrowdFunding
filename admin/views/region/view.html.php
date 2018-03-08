@@ -66,7 +66,7 @@ class CrowdfundingViewRegion extends JViewLegacy
     protected function addToolbar()
     {
         $this->app->input->set('hidemainmenu', true);
-        $isNew = ($this->item->id === 0);
+        $isNew = ((int)$this->item->id === 0);
 
         $this->documentTitle = $isNew ? JText::_('COM_CROWDFUNDING_ADD_REGION') : JText::_('COM_CROWDFUNDING_EDIT_REGION');
 
@@ -77,24 +77,18 @@ class CrowdfundingViewRegion extends JViewLegacy
         JToolbarHelper::save('region.save');
 
         if (!$isNew) {
-            JToolbarHelper::cancel('region.cancel', 'JTOOLBAR_CANCEL');
+            JToolbarHelper::cancel('region.cancel');
         } else {
             JToolbarHelper::cancel('region.cancel', 'JTOOLBAR_CLOSE');
         }
     }
 
-    /**
-     * Method to set up the document properties
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Scripts
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
 
         $this->document->addScript(JUri::root() . 'media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');

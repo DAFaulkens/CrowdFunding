@@ -20,7 +20,6 @@ defined('_JEXEC') or die;
 class CrowdfundingControllerPayments extends JControllerLegacy
 {
     protected $app;
-    protected $option;
     protected $log;
 
     protected $paymentProcessContext;
@@ -71,7 +70,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Check for disabled payment functionality
         if ($params->get('debug_payment_disabled', 0)) {
-            throw new Exception(JText::_($this->text_prefix . '_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
+            throw new RuntimeException(JText::_($this->text_prefix . '_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
         }
 
         $cid = $this->input->get('cid', array(), 'array');
@@ -107,18 +106,16 @@ class CrowdfundingControllerPayments extends JControllerLegacy
                     $results = $dispatcher->trigger('onPaymentsCapture', array($context, &$item, &$params));
 
                     foreach ($results as $message) {
-                        if ($message !== null and is_array($message)) {
+                        if ($message !== null && is_array($message)) {
                             $messages[] = $message;
                         }
                     }
                 }
             }
-
         } catch (UnexpectedValueException $e) {
             $this->setMessage($e->getMessage(), 'notice');
             $this->setRedirect(JRoute::_('index.php?option=' . $this->option . '&view=transactions', false));
             return;
-
         } catch (Exception $e) {
             // Store log data in the database
             $this->log->add(
@@ -127,7 +124,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
                 $e->getMessage()
             );
 
-            throw new Exception(JText::_($this->text_prefix . '_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_($this->text_prefix . '_ERROR_SYSTEM'));
         }
 
         // Set messages.
@@ -148,7 +145,7 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Check for disabled payment functionality
         if ($params->get('debug_payment_disabled', 0)) {
-            throw new Exception(JText::_($this->text_prefix . '_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
+            throw new RuntimeException(JText::_($this->text_prefix . '_ERROR_PAYMENT_HAS_BEEN_DISABLED_MESSAGE'));
         }
 
         $cid = $this->input->get('cid', array(), 'array');
@@ -183,22 +180,20 @@ class CrowdfundingControllerPayments extends JControllerLegacy
                     $results = $dispatcher->trigger('onPaymentsVoid', array($context, &$item, &$params));
 
                     foreach ($results as $message) {
-                        if ($message !== null and is_array($message)) {
+                        if ($message !== null && is_array($message)) {
                             $messages[] = $message;
                         }
                     }
                 }
             }
-
         } catch (UnexpectedValueException $e) {
             $this->setMessage($e->getMessage(), 'notice');
             $this->setRedirect(JRoute::_('index.php?option=' . $this->option . '&view=transactions', false));
 
             return;
-
         } catch (Exception $e) {
             $this->log->add(JText::_($this->text_prefix . '_ERROR_SYSTEM'), 'CONTROLLER_PAYMENTS_DOCAPTURE_ERROR', $e->getMessage());
-            throw new Exception(JText::_($this->text_prefix . '_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_($this->text_prefix . '_ERROR_SYSTEM'));
         }
 
         // Set messages.

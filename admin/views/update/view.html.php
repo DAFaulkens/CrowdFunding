@@ -13,6 +13,11 @@ defined('_JEXEC') or die;
 class CrowdfundingViewUpdate extends JViewLegacy
 {
     /**
+     * @var JApplicationAdministrator
+     */
+    public $app;
+
+    /**
      * @var JDocumentHtml
      */
     public $document;
@@ -28,22 +33,15 @@ class CrowdfundingViewUpdate extends JViewLegacy
     protected $documentTitle;
     protected $option;
 
-    public function __construct($config)
-    {
-        parent::__construct($config);
-        $this->option = JFactory::getApplication()->input->get("option");
-    }
-
-    /**
-     * Display the view
-     */
     public function display($tpl = null)
     {
+        $this->app    = JFactory::getApplication();
+        $this->option = $this->app->input->get('option');
+
         $this->state = $this->get('State');
         $this->item  = $this->get('Item');
         $this->form  = $this->get('Form');
 
-        // Prepare actions, behaviors, scritps and document
         $this->addToolbar();
         $this->setDocument();
 
@@ -57,11 +55,10 @@ class CrowdfundingViewUpdate extends JViewLegacy
      */
     protected function addToolbar()
     {
-        JFactory::getApplication()->input->set('hidemainmenu', true);
-        $isNew = ($this->item->id == 0);
+        $this->app->input->set('hidemainmenu', true);
+        $isNew = ((int)$this->item->id === 0);
 
-        $this->documentTitle = $isNew ? JText::_('COM_CROWDFUNDING_NEW_UPDATE')
-            : JText::_('COM_CROWDFUNDING_EDIT_UPDATE');
+        $this->documentTitle = $isNew ? JText::_('COM_CROWDFUNDING_NEW_UPDATE') : JText::_('COM_CROWDFUNDING_EDIT_UPDATE');
 
         JToolbarHelper::title($this->documentTitle);
 
@@ -69,27 +66,20 @@ class CrowdfundingViewUpdate extends JViewLegacy
         JToolbarHelper::save('update.save');
 
         if (!$isNew) {
-            JToolbarHelper::cancel('update.cancel', 'JTOOLBAR_CANCEL');
+            JToolbarHelper::cancel('update.cancel');
         } else {
             JToolbarHelper::cancel('update.cancel', 'JTOOLBAR_CLOSE');
         }
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Scripts
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
 
-        $this->document->addScript('../media/' . $this->option . '/js/admin/' . JString::strtolower($this->getName()) . '.js');
+        $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 }

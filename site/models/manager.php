@@ -18,6 +18,7 @@ class CrowdfundingModelManager extends CrowdfundingModelProject
      * @param int $projectId
      *
      * @return array
+     * @throws \RuntimeException
      */
     public function getRewardsData($projectId)
     {
@@ -38,8 +39,6 @@ class CrowdfundingModelManager extends CrowdfundingModelProject
 
         $db->setQuery($query);
 
-        $results = (array)$db->loadObjectList();
-
-        return $results;
+        return (array)$db->loadObjectList();
     }
 }

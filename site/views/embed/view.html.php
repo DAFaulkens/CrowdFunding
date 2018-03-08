@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -71,15 +71,14 @@ class CrowdfundingViewEmbed extends JViewLegacy
             return;
         }
 
-        $container              = Prism\Container::getContainer();
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Integrate with social profile.
         $this->displayCreator = $this->params->get('integration_display_creator', true);
 
         // Prepare integration. Load avatars and profiles.
-        if ($this->displayCreator and (is_object($this->item) and $this->item->user_id > 0)) {
+        if ($this->displayCreator && (is_object($this->item) && $this->item->user_id > 0)) {
             $socialProfile = CrowdfundingHelper::prepareIntegration($this->params->get('integration_social_platform'), $this->item->user_id);
             $this->socialProfileLink  = (!$socialProfile) ? null : $socialProfile->getLink();
         }
@@ -112,12 +111,9 @@ class CrowdfundingViewEmbed extends JViewLegacy
         // Generate embed link
         $embedLink = $host . JRoute::_(CrowdfundingHelperRoute::getEmbedRoute($item->slug, $item->catslug) . '&layout=widget&tmpl=component', false);
 
-        return '<iframe src="' . $embedLink . '"" width="280px" height="560px" frameborder="0" scrolling="no"></iframe>';
+        return '<iframe src="' . $embedLink . '" width="280px" height="560px" frameborder="0" scrolling="no"></iframe>';
     }
 
-    /**
-     * Prepare the document
-     */
     protected function prepareDocument()
     {
         // Escape strings for HTML output
@@ -146,7 +142,7 @@ class CrowdfundingViewEmbed extends JViewLegacy
         // Breadcrumb
         $pathway           = $this->app->getPathway();
         $currentBreadcrumb = JHtmlString::truncate($this->item->title, 16);
-        $pathway->addItem($currentBreadcrumb, '');
+        $pathway->addItem($currentBreadcrumb);
 
         // Add scripts
         JHtml::_('jquery.framework');

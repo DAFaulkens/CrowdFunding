@@ -113,12 +113,12 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Get payment gateway name.
         $paymentService = $this->input->getCmd('payment_service');
-        if (!$paymentService and !$this->paymentSessionLocal->paymentService) {
+        if (!$paymentService && !$this->paymentSessionLocal->paymentService) {
             throw new UnexpectedValueException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PAYMENT_GATEWAY'));
         }
 
         // Set the name of the payment service to session.
-        if ($paymentService !== null and $paymentService !== '') {
+        if ($paymentService !== null && $paymentService !== '') {
             $this->paymentSessionLocal->paymentService = $paymentService;
 
             // Store the payment process data into the session.
@@ -140,25 +140,23 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             $results = $dispatcher->trigger('onPaymentsAuthorize', array($context, &$params));
 
             // Get the result, that comes from the plugin.
-            if (is_array($results) and count($results) > 0) {
+            if (is_array($results) && count($results) > 0) {
                 foreach ($results as $result) {
-                    if (is_object($result) and ($result instanceof PaymentResult) and $result->transaction !== null) {
+                    if (is_object($result) && ($result instanceof PaymentResult) && $result->transaction !== null) {
                         $redirectUrl   = $result->redirectUrl ?: null;
                         $message       = $result->message ?: null;
                         break;
                     }
                 }
             }
-
         } catch (UnexpectedValueException $e) {
             $this->setMessage($e->getMessage(), 'notice');
             $this->setRedirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false));
             return;
-
         } catch (Exception $e) {
             // Store log data in the database
             $this->log->add(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'), 'ERROR_CONTROLLER_PAYMENTS_AUTHORIZE', $e->getMessage());
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         if (!$redirectUrl) {
@@ -206,12 +204,12 @@ class CrowdfundingControllerPayments extends JControllerLegacy
 
         // Get payment gateway name.
         $paymentService = $this->input->getCmd('payment_service');
-        if (!$paymentService and !$this->paymentSessionLocal->paymentService) {
+        if (!$paymentService && !$this->paymentSessionLocal->paymentService) {
             throw new UnexpectedValueException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PAYMENT_GATEWAY'));
         }
 
         // Set the name of the payment service to session.
-        if ($paymentService !== null and $paymentService !== '') {
+        if ($paymentService !== null && $paymentService !== '') {
             $this->paymentSessionLocal->paymentService = $paymentService;
 
             // Store the payment process data in the session.
@@ -259,15 +257,13 @@ class CrowdfundingControllerPayments extends JControllerLegacy
             if ($paymentResult !== null && $paymentResult->isEventActive(PaymentResult::EVENT_AFTER_PAYMENT)) {
                 $dispatcher->trigger('onAfterPayment', array($context, &$paymentResult, &$params));
             }
-
         } catch (UnexpectedValueException $e) {
             $this->setMessage($e->getMessage(), 'notice');
             $this->setRedirect(JRoute::_(CrowdfundingHelperRoute::getDiscoverRoute(), false));
             return;
-
         } catch (Exception $e) {
             $this->log->add(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'), 'ERROR_CONTROLLER_PAYMENTS_PROCESS', $e->getMessage());
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         if (!$redirectUrl) {

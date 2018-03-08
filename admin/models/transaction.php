@@ -7,10 +7,10 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
-use Joomla\Utilities\ArrayHelper;
-use Prism\Domain\BindException;
 use Prism\Money\Money;
+use Prism\Domain\BindException;
+use Joomla\Utilities\ArrayHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -70,6 +70,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
     /**
      * Method to get the data that should be injected in the form.
      *
+     * @throws \Exception
      * @throws \RuntimeException
      * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
@@ -86,14 +87,11 @@ class CrowdfundingModelTransaction extends JModelAdmin
         $data = $app->getUserState($this->option . '.edit.transaction.data', array());
         
         if (count($data) === 0) {
+            /** @var stdClass $data */
             $data = $this->getItem();
 
-            $params         = JComponentHelper::getParams('com_crowdfunding');
-            /** @var  $params Joomla\Registry\Registry */
-
-            $container      = Prism\Container::getContainer();
-            $currency       = MoneyHelper::getCurrency($container, $params);
-            $moneyFormatter = MoneyHelper::getMoneyFormatter($container, $params);
+            $currency       = JoomlaFacade::getCurrency();
+            $moneyFormatter = JoomlaFacade::getMoneyFormatter();
 
             // If it is new record, set default values.
             if (!$data->id) {
@@ -120,8 +118,10 @@ class CrowdfundingModelTransaction extends JModelAdmin
     /**
      * Save data into the DB
      *
-     * @param array $data   The data of item
+     * @param array $data The data of item
      *
+     * @throws \Exception
+     * @throws \Prism\Domain\BindException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      * @throws \UnexpectedValueException
@@ -138,12 +138,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
         $txnDate        = ArrayHelper::getValue($data, 'txn_date');
 
         // Parse the amount.
-        $params         = JComponentHelper::getParams($this->option);
-        /** @var  $params Joomla\Registry\Registry */
-
-        $container      = Prism\Container::getContainer();
-        $moneyParser    = MoneyHelper::getMoneyParser($container, $params);
-
+        $moneyParser    = JoomlaFacade::getMoneyParser();
         $amount         = ArrayHelper::getValue($data, 'txn_amount');
         $amount         = $moneyParser->parse($amount);
 
@@ -174,7 +169,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
 
         // Check for changed transaction status and trigger the event onTransactionChangeState.
         $oldStatus = $transaction->getStatus();
-        if (($oldStatus !== null and $oldStatus !== '') and strcmp($oldStatus, $txnStatus) !== 0) {
+        if (($oldStatus !== null && $oldStatus !== '') && strcmp($oldStatus, $txnStatus) !== 0) {
             $this->triggerOnTransactionChangeState($transaction, $oldStatus, $txnStatus);
         }
 
@@ -236,7 +231,7 @@ class CrowdfundingModelTransaction extends JModelAdmin
         $transaction->load($id);
 
         $oldStatus = $transaction->getStatus();
-        if (!$transaction->getId() or !$oldStatus) {
+        if (!$oldStatus || !$transaction->getId()) {
             throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_INVALID_TRANSACTION'));
         }
 

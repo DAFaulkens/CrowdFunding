@@ -48,7 +48,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -63,7 +63,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
             if (!$validator->isValid()) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'))
                     ->failure();
 
                 echo $response;
@@ -72,10 +72,10 @@ class CrowdfundingControllerStory extends JControllerLegacy
         }
 
         $file = $this->input->files->get('pitch_image');
-        if (!$file or empty($file['name'])) {
+        if (!$file || empty($file['name'])) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
                 ->failure();
 
             echo $response;
@@ -92,7 +92,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
             $fileData = $model->uploadImage($file, $temporaryFolder);
 
-            if (array_key_exists('filename', $fileData) and $fileData['filename'] !== '') {
+            if (array_key_exists('filename', $fileData) && $fileData['filename'] !== '') {
                 $filename = basename($fileData['filename']);
                 $fileUrl  = JUri::base() . CrowdfundingHelper::getTemporaryImagesFolderUri() . '/' . $filename;
                 $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, $filename);
@@ -107,7 +107,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
             if ($fileDataResponse === null) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_ERROR_FILE_CANT_BE_UPLOADED'))
                     ->failure();
 
                 echo $response;
@@ -115,10 +115,10 @@ class CrowdfundingControllerStory extends JControllerLegacy
             }
 
             $params = JComponentHelper::getParams('com_crowdfunding');
-            if ($fileDataResponse['width'] < $params->get('pitch_image_width', 600) or $fileDataResponse['height'] < $params->get('pitch_image_height', 400)) {
+            if ($fileDataResponse['width'] < $params->get('pitch_image_width', 600) || $fileDataResponse['height'] < $params->get('pitch_image_height', 400)) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::sprintf('COM_CROWDFUNDING_ERROR_PICTURE_SIZE_S', $params->get('pitch_image_width', 600), $params->get('pitch_image_height', 400)))
+                    ->setContent(JText::sprintf('COM_CROWDFUNDING_ERROR_PICTURE_SIZE_S', $params->get('pitch_image_width', 600), $params->get('pitch_image_height', 400)))
                     ->failure();
 
                 echo $response;
@@ -128,7 +128,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         } catch (InvalidArgumentException $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText($e->getMessage())
+                ->setContent($e->getMessage())
                 ->failure();
 
             echo $response;
@@ -136,7 +136,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         } catch (RuntimeException $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText($e->getMessage())
+                ->setContent($e->getMessage())
                 ->failure();
 
             echo $response;
@@ -144,7 +144,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         } catch (Exception $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -153,7 +153,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_IMAGE_SAVED_SUCCESSFULLY'))
+            ->setContent(JText::_('COM_CROWDFUNDING_IMAGE_SAVED_SUCCESSFULLY'))
             ->setData($fileDataResponse)
             ->success();
 
@@ -163,7 +163,6 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
     public function cropImage()
     {
-        // Check for request forgeries.
         JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
 
         $app = JFactory::getApplication();
@@ -175,7 +174,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -194,7 +193,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
             if (!$validator->isValid()) {
                 $response
                     ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                    ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PLACE'))
+                    ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PLACE'))
                     ->failure();
 
                 echo $response;
@@ -207,10 +206,10 @@ class CrowdfundingControllerStory extends JControllerLegacy
         $fileName        = basename($app->getUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT));
         $temporaryFolder = CrowdfundingHelper::getTemporaryImagesFolder(JPATH_ROOT);
         $temporaryFile   = JPath::clean($temporaryFolder .'/'. $fileName, '/');
-        if (!$fileName or !JFile::exists($temporaryFile)) {
+        if (!$fileName || !JFile::exists($temporaryFile)) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_FILE_DOES_NOT_EXIST'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_FILE_DOES_NOT_EXIST'))
                 ->failure();
 
             echo $response;
@@ -233,7 +232,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
             // If there is a project, store the images to database.
             // If there is NO project, store the images in the session.
-            if ($image !== '' and $projectId > 0) {
+            if ($image !== '' && $projectId > 0) {
                 $options = [
                     'project_id'    => $projectId,
                     'user_id'       => $userId,
@@ -246,21 +245,19 @@ class CrowdfundingControllerStory extends JControllerLegacy
                 // Get the folder of the images where the pictures will be stored.
                 $fileUrl = JUri::base() . CrowdfundingHelper::getImagesFolderUri() .'/'. $image;
             }
-
         } catch (RuntimeException $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText($e->getMessage())
+                ->setContent($e->getMessage())
                 ->failure();
 
             echo $response;
             $app->close();
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -269,8 +266,8 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_IMAGE_SAVED_SUCCESSFULLY'))
-            ->setData($fileUrl)
+            ->setContent(JText::_('COM_CROWDFUNDING_IMAGE_SAVED_SUCCESSFULLY'))
+            ->setData(['url' => $fileUrl])
             ->success();
 
         echo $response;
@@ -291,7 +288,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -314,11 +311,10 @@ class CrowdfundingControllerStory extends JControllerLegacy
                 // Set the name of the image in the session.
                 $app->setUserState(Crowdfunding\Constants::TEMPORARY_IMAGE_CONTEXT, null);
             }
-
         } catch (Exception $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -327,7 +323,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_IMAGE_RESET_SUCCESSFULLY'))
+            ->setContent(JText::_('COM_CROWDFUNDING_IMAGE_RESET_SUCCESSFULLY'))
             ->success();
 
         echo $response;
@@ -336,7 +332,6 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
     public function removeImage()
     {
-        // Check for request forgeries.
         JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
 
         $app = JFactory::getApplication();
@@ -348,7 +343,7 @@ class CrowdfundingControllerStory extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -359,10 +354,10 @@ class CrowdfundingControllerStory extends JControllerLegacy
 
         // Validate project owner.
         $validator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $itemId, $userId);
-        if (!$itemId or !$validator->isValid()) {
+        if (!$itemId || !$validator->isValid()) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_IMAGE'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_IMAGE'))
                 ->failure();
 
             echo $response;
@@ -376,12 +371,12 @@ class CrowdfundingControllerStory extends JControllerLegacy
             $model->removeImage($itemId, $userId, $mediaFolder);
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_IMAGE_DELETED'))
+            ->setContent(JText::_('COM_CROWDFUNDING_IMAGE_DELETED'))
             ->success();
 
         echo $response;

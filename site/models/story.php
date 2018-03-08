@@ -218,7 +218,7 @@ class CrowdfundingModelStory extends CrowdfundingModelProject
      *
      * @throws Exception
      *
-     * @return array
+     * @return string
      */
     public function cropImage($file, array $options, Registry $params)
     {

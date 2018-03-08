@@ -46,6 +46,7 @@ class CrowdfundingModelFunders extends JModelList
      *
      * @return  void
      * @since   1.6
+     * @throws \Exception
      */
     protected function populateState($ordering = 'ordering', $direction = 'ASC')
     {
@@ -77,7 +78,6 @@ class CrowdfundingModelFunders extends JModelList
      */
     protected function getStoreId($id = '')
     {
-        // Compile the store id.
         $id .= ':' . $this->getState($this->context . '.project_id');
         $id .= ':' . $this->getState('list.ordering');
         $id .= ':' . $this->getState('list.direction');
@@ -90,6 +90,7 @@ class CrowdfundingModelFunders extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \Exception
      */
     protected function getListQuery()
     {

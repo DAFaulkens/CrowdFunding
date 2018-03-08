@@ -215,7 +215,7 @@
                         $this.$modalLoader.hide();
                         $this.$modal.close();
 
-                        $this.$image.attr("src", response.data);
+                        $this.$image.attr("src", response.data.url);
 
                         // Display the button "Remove Image".
                         if ($this.projectId > 0) {

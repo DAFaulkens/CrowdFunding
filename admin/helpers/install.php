@@ -57,7 +57,7 @@ class CrowdfundingInstallHelper
         $outputText = Joomla\Utilities\ArrayHelper::getValue($result, 'text');
 
         $output = '';
-        if ($outputType and $outputText) {
+        if ($outputType && $outputText) {
             $output = '<span class="label label-' . $outputType . '">' . $outputText . '</span>';
         }
 

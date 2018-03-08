@@ -81,7 +81,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
         }
 
         // Validate data.
@@ -92,7 +92,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
         }
 
         // Verify terms of use during the process of creating a project.
-        if (!$itemId and $params->get('project_terms', 0) and !$terms) {
+        if (!$itemId && !$terms && $params->get('project_terms', 0)) {
             $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_TERMS_NOT_ACCEPTED'), $redirectOptions);
             return;
         }
@@ -123,7 +123,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
             $croppedImages = (array)$app->getUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT);
 
             // Store the images to the project record.
-            if (count($croppedImages) > 0 and $itemId > 0) {
+            if ($itemId > 0 && count($croppedImages) > 0) {
                 $options = array(
                     'project_id'    => $itemId,
                     'user_id'       => $userId,
@@ -137,7 +137,6 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
                 // Remove the pictures from the session.
                 $app->setUserState(Crowdfunding\Constants::CROPPED_IMAGES_CONTEXT, null);
             }
-
         } catch (RuntimeException $e) {
             $this->displayWarning($e->getMessage(), $redirectOptions);
             return;
@@ -146,7 +145,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Frontend
             return;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         // Redirect to next page

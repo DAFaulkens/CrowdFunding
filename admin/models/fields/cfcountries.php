@@ -40,6 +40,7 @@ class JFormFieldCfCountries extends JFormFieldList
      *
      * @return  array   The field option objects.
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getOptions()
     {

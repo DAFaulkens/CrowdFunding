@@ -62,15 +62,12 @@ class CrowdfundingViewCountries extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
         $this->listOrder = $this->escape($this->state->get('list.ordering'));
         $this->listDirn  = $this->escape($this->state->get('list.direction'));
-        $this->saveOrder = (strcmp($this->listOrder, 'a.ordering') != 0) ? false : true;
+        $this->saveOrder = (strcmp($this->listOrder, 'a.ordering') === 0);
 
         if ($this->saveOrder) {
             $this->saveOrderingUrl = 'index.php?option=' . $this->option . '&task=' . $this->getName() . '.saveOrderAjax&format=raw';
@@ -88,9 +85,6 @@ class CrowdfundingViewCountries extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         CrowdfundingHelper::addSubmenu($this->getName());
@@ -98,11 +92,6 @@ class CrowdfundingViewCountries extends JViewLegacy
         $this->sidebar = JHtmlSidebar::render();
     }
 
-    /**
-     * Add the page title and toolbar.
-     *
-     * @since   1.6
-     */
     protected function addToolbar()
     {
         // Set toolbar items for the page
@@ -128,11 +117,6 @@ class CrowdfundingViewCountries extends JViewLegacy
         JToolbarHelper::custom('countries.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_COUNTRIES_MANAGER'));

@@ -32,6 +32,8 @@ class JFormFieldCfProjects extends JFormFieldList
      *
      * @return  array   The field option objects.
      * @since   1.6
+     * @throws \InvalidArgumentException
+     * @throws \RuntimeException
      */
     protected function getOptions()
     {

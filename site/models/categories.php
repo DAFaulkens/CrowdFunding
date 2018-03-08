@@ -155,11 +155,10 @@ class CrowdfundingModelCategories extends JModelList
         if (!in_array($orderDirn, $allowedDirns, true)) {
             $orderDirn = 'ASC';
         } else {
-            $orderDirn = JString::strtoupper($orderDirn);
+            $orderDirn = strtoupper($orderDirn);
         }
 
         switch ($order) {
-
             case 'ordering':
                 $orderCol = 'a.rgt';
                 break;
@@ -173,8 +172,6 @@ class CrowdfundingModelCategories extends JModelList
                 break;
         }
 
-        $orderString = $orderCol . ' ' . $orderDirn;
-
-        return $orderString;
+        return $orderCol . ' ' . $orderDirn;
     }
 }

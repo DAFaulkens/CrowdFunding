@@ -8,7 +8,7 @@
  */
 
 use Joomla\String\StringHelper;
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -38,6 +38,8 @@ class CrowdfundingControllerBacking extends JControllerLegacy
 
     /**
      * Authorize payment process step.
+     *
+     * @throws RuntimeException
      */
     public function authorize()
     {
@@ -130,11 +132,8 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $rewardId  = $this->input->getUint('rid', 0);
         $amount    = $this->input->getString('amount');
 
-        $container    = Prism\Container::getContainer();
-        /** @var  $container Joomla\DI\Container */
-        
         // Parse the amount.
-        $moneyParser  = MoneyHelper::getMoneyParser($container, $params);
+        $moneyParser  = JoomlaFacade::getMoneyParser();
         $amount       = $moneyParser->parse($amount);
 
         // Get user ID
@@ -171,15 +170,15 @@ class CrowdfundingControllerBacking extends JControllerLegacy
             return;
         }
 
-        $currency         = MoneyHelper::getCurrency($container, $params);
-        $moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $params);
+        $currency         = JoomlaFacade::getCurrency();
+        $moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Check minimum allowed amount.
         $minimumAmount  = (float)$params->get('backing_minimum_amount');
         $moneyAmount    = new Prism\Money\Money($minimumAmount, $currency);
             
         $minimumAmountFormatted = $moneyFormatter->formatCurrency($moneyAmount);
-        if ($minimumAmount > 0 and ($minimumAmount > $amount)) {
+        if ($minimumAmount > 0 && ($minimumAmount > $amount)) {
             $this->setRedirect(JRoute::_($returnUrl, false), JText::sprintf('COM_CROWDFUNDING_ERROR_MINIMUM_AMOUNT_S', $minimumAmountFormatted), 'warning');
             return;
         }
@@ -189,7 +188,7 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $moneyAmount    = new Prism\Money\Money($maximumAmount, $currency);
         
         $maximumAmountFormatted  = $moneyFormatter->formatCurrency($moneyAmount);
-        if ($maximumAmount > 0 and ($maximumAmount < $amount)) {
+        if ($maximumAmount > 0 && ($maximumAmount < $amount)) {
             $this->setRedirect(JRoute::_($returnUrl, false), JText::sprintf('COM_CROWDFUNDING_ERROR_MAXIMUM_AMOUNT_S', $maximumAmountFormatted), 'warning');
             return;
         }

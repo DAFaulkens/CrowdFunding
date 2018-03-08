@@ -76,11 +76,12 @@ class CrowdfundingModelUpdates extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
         $db = $this->getDbo();
-        /** @var $db JDatabaseMySQLi * */
+        /** @var $db JDatabaseDriver */
 
         // Create a new query object.
         $query = $db->getQuery(true);
@@ -93,19 +94,19 @@ class CrowdfundingModelUpdates extends JModelList
                 'b.title AS project'
             )
         );
-        $query->from($db->quoteName('#__crowdf_updates') . ' AS a');
-        $query->innerJoin($db->quoteName('#__crowdf_projects') . ' AS b ON a.project_id = b.id');
+        $query->from($db->quoteName('#__crowdf_updates', 'a'));
+        $query->innerJoin($db->quoteName('#__crowdf_projects', 'b') . ' ON a.project_id = b.id');
 
         // Filter by search in title
-        $search = $this->getState('filter.search');
-        if (!empty($search)) {
+        $search = (string)$this->getState('filter.search');
+        if ($search !== '') {
             if (stripos($search, 'id:') === 0) {
                 $query->where('a.id = ' . (int)substr($search, 3));
             } elseif (stripos($search, 'pid:') === 0) {
                 $query->where('a.project_id = ' . (int)substr($search, 4));
             } else {
                 $escaped = $db->escape($search, true);
-                $quoted  = $db->quote("%" . $escaped . "%", false);
+                $quoted  = $db->quote('%' . $escaped . '%', false);
                 $query->where('a.title LIKE ' . $quoted);
             }
         }

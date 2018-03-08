@@ -26,4 +26,3 @@ defined('_JEXEC') or die;
     <th width="3%"
         class="nowrap center hidden-phone"><?php echo JHtml::_('grid.sort', 'JGRID_HEADING_ID', 'a.id', $this->listDirn, $this->listOrder); ?></th>
 </tr>
-	  

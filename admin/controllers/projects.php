@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // No direct access
 defined('_JEXEC') or die;
 
@@ -31,11 +33,16 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         $this->registerTask('unfeatured', 'featured');
     }
 
+    /**
+     * @param string $name
+     * @param string $prefix
+     * @param array  $config
+     *
+     * @return bool|CrowdfundingModelProject
+     */
     public function getModel($name = 'Project', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function approve()
@@ -51,35 +58,32 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         );
 
         $task  = $this->getTask();
-        $value = JArrayHelper::getValue($data, $task, 0, 'int');
+        $value = ArrayHelper::getValue($data, $task, 0, 'int');
 
         $redirectOptions = array(
             'view' => 'projects'
         );
 
         // Make sure the item ids are integers
-        JArrayHelper::toInteger($cid);
+        $cid = ArrayHelper::toInteger($cid);
         if (empty($cid)) {
             $this->displayNotice(JText::_($this->text_prefix . '_NO_ITEM_SELECTED'), $redirectOptions);
-
             return;
         }
 
-        // Get the model.
         $model = $this->getModel();
 
         try {
             $model->approve($cid, $value);
-
         } catch (RuntimeException $e) {
             $this->displayWarning($e->getMessage(), $redirectOptions);
             return;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
-        if ((int)$value === (int)Prism\Constants::APPROVED) {
+        if ((int)$value === Prism\Constants::APPROVED) {
             $msg = $this->text_prefix . '_N_ITEMS_APPROVED';
         } else {
             $msg = $this->text_prefix . '_N_ITEMS_DISAPPROVED';
@@ -108,17 +112,16 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         );
 
         $task  = $this->getTask();
-        $value = JArrayHelper::getValue($values, $task, 0, 'int');
+        $value = ArrayHelper::getValue($values, $task, 0, 'int');
 
         $redirectOptions = array(
             'view' => 'projects'
         );
 
         // Make sure the item ids are integers
-        JArrayHelper::toInteger($ids);
+        $ids = ArrayHelper::toInteger($ids);
         if (!$ids) {
             $this->displayNotice(JText::_($this->text_prefix . '_NO_ITEM_SELECTED'), $redirectOptions);
-
             return;
         }
 
@@ -127,13 +130,12 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
 
         try {
             $model->featured($ids, $value);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
-        if ((int)$value === (int)Prism\Constants::FEATURED) {
+        if ((int)$value === Prism\Constants::FEATURED) {
             $msg = $this->text_prefix . '_N_ITEMS_SET_AS_FEATURED';
         } else {
             $msg = $this->text_prefix . '_N_ITEMS_SET_AS_NOT_FEATURED';
@@ -163,17 +165,16 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
         );
 
         $task  = $this->getTask();
-        $value = JArrayHelper::getValue($values, $task, 0, 'int');
+        $value = ArrayHelper::getValue($values, $task, 0, 'int');
 
         $redirectOptions = array(
             'view' => 'projects'
         );
 
         // Make sure the item ids are integers
-        JArrayHelper::toInteger($ids);
+        $ids = ArrayHelper::toInteger($ids);
         if (!$ids) {
             $this->displayNotice(JText::_($this->text_prefix . '_NO_ITEM_SELECTED'), $redirectOptions);
-
             return;
         }
 
@@ -182,16 +183,15 @@ class CrowdfundingControllerProjects extends Prism\Controller\Admin
 
         try {
             $model->publish($ids, $value);
-
         } catch (RuntimeException $e) {
             $this->displayWarning($e->getMessage(), $redirectOptions);
             return;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
-        if ((int)$value === (int)Prism\Constants::PUBLISHED) {
+        if ((int)$value === Prism\Constants::PUBLISHED) {
             $msg = $this->text_prefix . '_N_ITEMS_PUBLISHED';
         } else {
             $msg = $this->text_prefix . '_N_ITEMS_UNPUBLISHED';

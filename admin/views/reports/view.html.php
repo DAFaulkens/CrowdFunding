@@ -57,9 +57,6 @@ class CrowdfundingViewReports extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -81,9 +78,6 @@ class CrowdfundingViewReports extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         JHtmlSidebar::setAction('index.php?option=' . $this->option . '&view=' . $this->getName());
@@ -98,7 +92,6 @@ class CrowdfundingViewReports extends JViewLegacy
      */
     protected function addToolbar()
     {
-        // Set toolbar items for the page
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_REPORTS_MANAGER'));
         JToolbarHelper::editList('report.edit');
         JToolbarHelper::divider();
@@ -107,22 +100,15 @@ class CrowdfundingViewReports extends JViewLegacy
         JToolbarHelper::custom('reports.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties.
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_REPORTS_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
+
         $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 }

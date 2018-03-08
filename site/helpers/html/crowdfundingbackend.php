@@ -7,10 +7,9 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Prism\Money\Money;
 use Joomla\Registry\Registry;
 use Crowdfunding\Currency\Currencies;
-
-use Prism\Money\Money;
 use Prism\Money\Formatter\IntlDecimalFormatter;
 
 // no direct access
@@ -105,14 +104,16 @@ abstract class JHtmlCrowdfundingBackend
     }
 
     /**
-     * @param   int $i
-     * @param   int $value The state value
+     * @param   int  $i
+     * @param   int  $value The state value
      * @param   bool $canChange
      *
      * @return string
+     * @throws \InvalidArgumentException
      */
     public static function featured($i, $value = 0, $canChange = true)
     {
+        $value = (int)$value;
         JHtml::_('bootstrap.tooltip');
 
         // Array of image, task, title, action
@@ -121,12 +122,12 @@ abstract class JHtmlCrowdfundingBackend
             1 => array('featured', 'projects.unfeatured', 'COM_CROWDFUNDING_FEATURED', 'COM_CROWDFUNDING_TOGGLE_TO_UNFEATURE'),
         );
 
-        $state = Joomla\Utilities\ArrayHelper::getValue($states, (int)$value, $states[1]);
+        $state = Joomla\Utilities\ArrayHelper::getValue($states, $value, $states[1]);
         $icon  = $state[0];
         if ($canChange) {
-            $html = '<a href="#" onclick="return listItemTask(\'cb' . $i . '\',\'' . $state[1] . '\')" class="btn btn-micro hasTooltip' . ($value == 1 ? ' active' : '') . '" title="' . JText::_($state[3]) . '"><i class="icon-' . $icon . '"></i></a>';
+            $html = '<a href="#" onclick="return listItemTask(\'cb' . $i . '\',\'' . $state[1] . '\')" class="btn btn-micro hasTooltip' . ($value === 1 ? ' active' : '') . '" title="' . JText::_($state[3]) . '"><i class="icon-' . $icon . '"></i></a>';
         } else {
-            $html = '<a class="btn btn-micro hasTooltip disabled' . ($value == 1 ? ' active' : '') . '" title="' . JText::_($state[2]) . '"><i class="icon-' . $icon . '"></i></a>';
+            $html = '<a class="btn btn-micro hasTooltip disabled' . ($value === 1 ? ' active' : '') . '" title="' . JText::_($state[2]) . '"><i class="icon-' . $icon . '"></i></a>';
         }
 
         return $html;
@@ -135,12 +136,12 @@ abstract class JHtmlCrowdfundingBackend
     public static function reason($value)
     {
         if (!$value) {
-            return "";
+            return '';
         }
 
         JHtml::_('bootstrap.tooltip');
 
-        $title = JText::sprintf('COM_CROWDFUNDING_STATUS_REASON', htmlspecialchars($value, ENT_COMPAT, 'UTF-8'));
+        $title = JText::sprintf('COM_CROWDFUNDING_STATUS_REASON', htmlspecialchars($value));
 
         $html[] = '<a class="btn btn-micro hasTooltip" href="javascript:void(0);" title="' . addslashes($title) . '">';
         $html[] = '<i class="icon-question"></i>';
@@ -159,7 +160,7 @@ abstract class JHtmlCrowdfundingBackend
     {
         $html = array();
 
-        if (!empty($socialProfile)) {
+        if ($socialProfile !== null) {
             $link = str_replace('/administrator', '', $socialProfile->getLink());
             $link = $str= ltrim($link, '/');
 
@@ -186,7 +187,7 @@ abstract class JHtmlCrowdfundingBackend
     {
         $html = array();
 
-        if (!empty($socialProfile)) {
+        if ($socialProfile !== null) {
             $link = str_replace('/administrator', '', $socialProfile->getLink());
             $link = $str= ltrim($link, '/');
 
@@ -226,7 +227,6 @@ abstract class JHtmlCrowdfundingBackend
                     $output = JText::sprintf('COM_CROWDFUNDING_DATE_AND_TIME', $date->format(DATE_RFC822));
                 }
             }
-
         }
 
         return $output;
@@ -304,7 +304,7 @@ abstract class JHtmlCrowdfundingBackend
         $output = array();
         $capturedPeriod = $params->get('capture_period');
 
-        if ($capturedPeriod !== null and (isset($capturedPeriod->start) and isset($capturedPeriod->end))) {
+        if ($capturedPeriod !== null && (isset($capturedPeriod->start) && isset($capturedPeriod->end))) {
             $output[] = '<span class="icon icon-help hasPopover cursor-pointer" data-title="'.JText::_('COM_CROWDFUNDING_CAPTURING_PERIOD').'" data-content="'.JText::sprintf('COM_CROWDFUNDING_CAPTURING_PERIOD_S', $capturedPeriod->start, $capturedPeriod->end).'">';
             $output[] = '</span>';
         }
@@ -319,7 +319,7 @@ abstract class JHtmlCrowdfundingBackend
 
         if ($title !== '') {
             $output[] = '<div>';
-            $output[] = JText::sprintf('COM_CROWDFUNDING_TYPE_S', htmlspecialchars($title, ENT_COMPAT, 'UTF-8'));
+            $output[] = JText::sprintf('COM_CROWDFUNDING_TYPE_S', htmlspecialchars($title));
             $output[] = '</div>';
         }
 
@@ -333,7 +333,7 @@ abstract class JHtmlCrowdfundingBackend
 
         if ($title !== '') {
             $output[] = '<div>';
-            $output[] = JText::sprintf('COM_CROWDFUNDING_CATEGORY_S', htmlspecialchars($title, ENT_COMPAT, 'UTF-8'));
+            $output[] = JText::sprintf('COM_CROWDFUNDING_CATEGORY_S', htmlspecialchars($title));
             $output[] = '</div>';
         }
 

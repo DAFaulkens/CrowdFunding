@@ -32,13 +32,13 @@ class CrowdfundingControllerLocation extends Prism\Controller\Form\Backend
         );
 
         $model = $this->getModel();
-        /** @var $model CrowdfundingModelLocation * */
+        /** @var $model CrowdfundingModelLocation */
 
         $form = $model->getForm($data, false);
-        /** @var $form JForm * */
+        /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'), 500);
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'), 500);
         }
 
         // Validate the form
@@ -47,18 +47,15 @@ class CrowdfundingControllerLocation extends Prism\Controller\Form\Backend
         // Check for errors
         if ($validData === false) {
             $this->displayNotice($form->getErrors(), $redirectOptions);
-
             return;
         }
 
         try {
             $itemId = $model->save($validData);
             $redirectOptions['id'] = $itemId;
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
-
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_LOCATION_SAVED'), $redirectOptions);

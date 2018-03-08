@@ -52,6 +52,7 @@ class CrowdfundingModelImport extends JModelForm
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -175,7 +176,8 @@ class CrowdfundingModelImport extends JModelForm
 
     protected function insertCurrencies($content, $resetId)
     {
-        $items = array();
+        $items   = array();
+        $content = (array)$content;
 
         $db = $this->getDbo();
 
@@ -183,7 +185,7 @@ class CrowdfundingModelImport extends JModelForm
         foreach ($content as $item) {
             $title = StringHelper::trim($item->title);
             $code  = StringHelper::trim($item->code);
-            if (!$title or !$code) {
+            if (!$title || !$code) {
                 continue;
             }
 
@@ -207,6 +209,10 @@ class CrowdfundingModelImport extends JModelForm
      * Update the currencies with new columns.
      *
      * @param array $content
+     *
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     protected function updateCurrencies($content)
     {
@@ -333,6 +339,10 @@ class CrowdfundingModelImport extends JModelForm
      * Update the countries with new columns.
      *
      * @param SimpleXMLElement $content
+     *
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     protected function updateCountries($content)
     {

@@ -371,6 +371,7 @@ class CrowdfundingModelProject extends JModelAdmin
      * @param   integer $value The value to toggle to.
      *
      * @return  boolean  True on success.
+     * @throws \RuntimeException
      */
     public function featured(array $pks, $value = 0)
     {
@@ -449,7 +450,7 @@ class CrowdfundingModelProject extends JModelAdmin
                     if ($startDateValidator->isValid()) {
                         $periodValidator = new Crowdfunding\Validator\Project\Period($table->get('funding_start'), $table->get('funding_end'), $minDays, $maxDays);
                         if (!$periodValidator->isValid()) {
-                            if ((int)$maxDays > 0) {
+                            if ($maxDays > 0) {
                                 throw new RuntimeException(JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_MAX_DAYS', $minDays, $maxDays));
                             } else {
                                 throw new RuntimeException(JText::sprintf('COM_CROWDFUNDING_ERROR_INVALID_ENDING_DATE_MIN_DAYS', $minDays));
@@ -507,6 +508,8 @@ class CrowdfundingModelProject extends JModelAdmin
      *
      * @param   array &$pks An array of record primary keys.
      *
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      * @throws  \UnexpectedValueException
      * @return  boolean  True if successful, false if an error occurs.
      *

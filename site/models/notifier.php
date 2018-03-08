@@ -15,6 +15,7 @@ class CrowdfundingModelNotifier extends JModelLegacy
     /**
      * Send mail to administrator and notify him
      * if there is an error during process of transaction.
+     * @throws \Exception
      */
     public function sendMailToAdministrator()
     {
@@ -42,7 +43,7 @@ class CrowdfundingModelNotifier extends JModelLegacy
      */
     public function closePaymentSession($session)
     {
-        if (is_object($session) and (int)$session->id > 0) {
+        if (is_object($session) && (int)$session->id > 0) {
             $intention = new Crowdfunding\Intention(JFactory::getDbo());
 
             $intention->setId($session->id);

@@ -43,6 +43,7 @@ class CrowdfundingModelCategory extends JModelList
      *
      * @return  void
      * @since   1.6
+     * @throws \Exception
      */
     protected function populateState($ordering = 'ordering', $direction = 'ASC')
     {
@@ -134,7 +135,6 @@ class CrowdfundingModelCategory extends JModelList
      */
     protected function getStoreId($id = '')
     {
-        // Compile the store id.
         $id .= ':' . $this->getState($this->context . '.category_id');
         $id .= ':' . $this->getState($this->context . '.filter_country');
         $id .= ':' . $this->getState($this->context . '.filter_location');
@@ -155,6 +155,7 @@ class CrowdfundingModelCategory extends JModelList
      * @return  JDatabaseQuery
      * @since   1.6
      *
+     * @throws \Exception
      * @throws \RuntimeException
      */
     protected function getListQuery()
@@ -184,8 +185,8 @@ class CrowdfundingModelCategory extends JModelList
 
         // Filter by state
         $query
-            ->where('a.published = ' . (int)Prism\Constants::PUBLISHED)
-            ->where('a.approved = ' . (int)Prism\Constants::APPROVED);
+            ->where('a.published = ' . Prism\Constants::PUBLISHED)
+            ->where('a.approved = ' . Prism\Constants::APPROVED);
 
         // Filter by access level.
         $user   = JFactory::getUser();
@@ -278,10 +279,10 @@ class CrowdfundingModelCategory extends JModelList
         $db     = $this->getDbo();
 
         // Filter by featured state.
-        $value = $this->getState($this->context . '.filter_featured');
+        $value  = $this->getState($this->context . '.filter_featured');
         if ($value !== null) {
             $value = $value ? Prism\Constants::FEATURED : Prism\Constants::NOT_FEATURED;
-            $query->where('a.featured = '. (int)$value);
+            $query->where('a.featured = '. $value);
         }
 
         // Filter by category ID
@@ -319,7 +320,7 @@ class CrowdfundingModelCategory extends JModelList
         // Filter by location
         $value = (int)$this->getState($this->context . '.filter_location');
         if ($value > 0) {
-            $query->where('a.location_id = ' . (int)$value);
+            $query->where('a.location_id = ' . $value);
         }
 
         // Filter by funding type
@@ -344,6 +345,8 @@ class CrowdfundingModelCategory extends JModelList
      * Prepare filter by date.
      *
      * @param JDatabaseQuery $query
+     *
+     * @throws \Exception
      */
     protected function prepareFilterDate(&$query)
     {

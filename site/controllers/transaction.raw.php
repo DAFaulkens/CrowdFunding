@@ -25,13 +25,12 @@ class CrowdfundingControllerTransaction extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return   CrowdfundingModelTransaction    The model.
+     * @return   CrowdfundingModelTransaction|bool    The model.
      * @since    1.5
      */
     public function getModel($name = 'Transaction', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     /**
@@ -55,16 +54,15 @@ class CrowdfundingControllerTransaction extends JControllerLegacy
 
         try {
             $model->changeRewardsState($id, $state);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $response
             ->success()
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_REWARD_STATE_CHANGED_SUCCESSFULLY'));
+            ->setContent(JText::_('COM_CROWDFUNDING_REWARD_STATE_CHANGED_SUCCESSFULLY'));
 
         echo $response;
         JFactory::getApplication()->close();

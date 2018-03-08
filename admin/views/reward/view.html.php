@@ -80,8 +80,7 @@ class CrowdfundingViewReward extends JViewLegacy
         if (strcmp('default', $this->layout) === 0) {
             $this->prepareDefaultLayout();
         }
-        
-        // Prepare actions, behaviors, scripts and document.
+
         $this->addToolbar();
         $this->setDocument();
 
@@ -119,7 +118,6 @@ class CrowdfundingViewReward extends JViewLegacy
     protected function addToolbar()
     {
         if (strcmp('default', $this->layout) !== 0) { // Layout 'edit'.
-
             $this->app->input->set('hidemainmenu', true);
             $isNew = ((int)$this->item->id === 0);
 
@@ -134,7 +132,7 @@ class CrowdfundingViewReward extends JViewLegacy
             JToolbarHelper::save('reward.save');
 
             if (!$isNew) {
-                JToolbarHelper::cancel('reward.cancel', 'JTOOLBAR_CANCEL');
+                JToolbarHelper::cancel('reward.cancel');
             } else {
                 JToolbarHelper::cancel('reward.cancel', 'JTOOLBAR_CLOSE');
             }
@@ -146,24 +144,16 @@ class CrowdfundingViewReward extends JViewLegacy
         }
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle($this->documentTitle);
 
-        // Scripts
         JHtml::_('behavior.keepalive');
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('Prism.ui.bootstrap2FileInput');
         JHtml::_('Prism.ui.pnotify');
         JHtml::_('Prism.ui.joomlaHelper');
-
         JHtml::_('formbehavior.chosen', 'select');
 
         // Add scripts

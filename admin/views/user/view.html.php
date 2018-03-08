@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -66,12 +66,11 @@ class CrowdfundingViewUser extends JViewLegacy
 
         $this->params = JComponentHelper::getParams($this->option);
 
-        $container              = Prism\Container::getContainer();
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Get number of rewards.
-        $statistics = new Crowdfunding\Statistics\User(JFactory::getDbo(), $this->item->id);
+        $statistics      = new Crowdfunding\Statistics\User(JFactory::getDbo(), $this->item->id);
         $this->projects  = $statistics->getProjectsNumber();
 
         $amounts   = $statistics->getAmounts();
@@ -97,7 +96,6 @@ class CrowdfundingViewUser extends JViewLegacy
 
         $this->returnUrl = base64_encode('index.php?option=com_crowdfunding&view=user&id='.$this->item->id);
 
-        // Prepare actions, behaviors, scripts and document
         $this->addToolbar();
         $this->setDocument();
 
@@ -118,7 +116,7 @@ class CrowdfundingViewUser extends JViewLegacy
         JToolbarHelper::title($this->documentTitle);
 
         // Refresh page.
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
         $bar->appendButton('Link', 'refresh', JText::_('COM_CROWDFUNDING_REFRESH'), JRoute::_('index.php?option=com_crowdfunding&view=user&id='.$this->item->id));
 
         JToolbarHelper::cancel('user.cancel', 'JTOOLBAR_CLOSE');
@@ -138,9 +136,7 @@ class CrowdfundingViewUser extends JViewLegacy
         // Scripts
         JHtml::_('behavior.formvalidation');
         JHtml::_('behavior.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.pnotify');
         JHtml::_('Prism.ui.joomlaHelper');
 

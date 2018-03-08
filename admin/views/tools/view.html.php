@@ -51,9 +51,6 @@ class CrowdfundingViewTools extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         // Add submenu
@@ -75,31 +72,24 @@ class CrowdfundingViewTools extends JViewLegacy
         JToolbarHelper::title(JText::_('COM_CROWDFUNDING_TOOLS'));
 
         // Add custom buttons
-        $bar = JToolbar::getInstance('toolbar');
+        $bar = JToolbar::getInstance();
 
         // Go to script manager
         $link = JRoute::_('index.php?option=com_crowdfunding&view=dashboard', false);
-        $bar->appendButton('Link', 'dashboard', JText::_("COM_CROWDFUNDING_DASHBOARD"), $link);
+        $bar->appendButton('Link', 'dashboard', JText::_('COM_CROWDFUNDING_DASHBOARD'), $link);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_TOOLS'));
 
-        // Scripts
         JHtml::_('bootstrap.tooltip');
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.pnotify');
         JHtml::_('Prism.ui.joomlaHelper');
         JHtml::_('Prism.ui.serializeJson');
 
-        $this->document->addScript('../media/' . $this->option . '/js/admin/' . JString::strtolower($this->getName()) . '.js');
+        $this->document->addScript('../media/' . $this->option . '/js/admin/' . strtolower($this->getName()) . '.js');
     }
 
     protected function prepareAcymailing()

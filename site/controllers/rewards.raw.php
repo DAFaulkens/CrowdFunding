@@ -25,13 +25,12 @@ class CrowdfundingControllerRewards extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelRewards  The model.
+     * @return    CrowdfundingModelRewards|bool  The model.
      * @since    1.5
      */
     public function getModel($name = 'Rewards', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     /**
@@ -56,7 +55,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -67,7 +66,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
         if (!$pks) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARDS_SELECTED'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARDS_SELECTED'))
                 ->failure();
 
             echo $response;
@@ -78,10 +77,10 @@ class CrowdfundingControllerRewards extends JControllerLegacy
 
         // Validate reward owner.
         $validator = new Crowdfunding\Validator\Reward\Owner(JFactory::getDbo(), $rewardId, $userId);
-        if (!$rewardId or !$validator->isValid()) {
+        if (!$rewardId || !$validator->isValid()) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARDS_SELECTED'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARDS_SELECTED'))
                 ->failure();
 
             echo $response;
@@ -103,23 +102,20 @@ class CrowdfundingControllerRewards extends JControllerLegacy
                 // Get the folder where the images are stored
                 $imagesFolder = CrowdfundingHelper::getImagesFolder($userId, JPATH_ROOT);
                 $model->remove($rewardId, $imagesFolder);
-
             }
-
         } catch (RuntimeException $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText($e->getMessage())
+                ->setContent($e->getMessage())
                 ->failure();
 
             echo $response;
             $app->close();
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -128,7 +124,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_REWARD_SUCCESSFULY_REMOVED'))
+            ->setContent(JText::_('COM_CROWDFUNDING_REWARD_SUCCESSFULY_REMOVED'))
             ->success();
 
         echo $response;
@@ -155,7 +151,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
         if (!$userId) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_NOT_LOG_IN'))
                 ->failure();
 
             echo $response;
@@ -168,7 +164,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
         if (!$params->get('rewards_images', 0)) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'))
                 ->failure();
 
             echo $response;
@@ -177,10 +173,10 @@ class CrowdfundingControllerRewards extends JControllerLegacy
 
         // Validate reward owner.
         $validator = new Crowdfunding\Validator\Reward\Owner(JFactory::getDbo(), $rewardId, $userId);
-        if (!$rewardId or !$validator->isValid()) {
+        if (!$rewardId || !$validator->isValid()) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_INVALID_REWARD'))
                 ->failure();
 
             echo $response;
@@ -195,21 +191,19 @@ class CrowdfundingControllerRewards extends JControllerLegacy
             $imagesFolder = CrowdfundingHelper::getImagesFolder($userId, JPATH_ROOT);
 
             $model->removeImage($rewardId, $imagesFolder);
-
         } catch (RuntimeException $e) {
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText($e->getMessage())
+                ->setContent($e->getMessage())
                 ->failure();
 
             echo $response;
             JFactory::getApplication()->close();
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
             $response
                 ->setTitle(JText::_('COM_CROWDFUNDING_FAIL'))
-                ->setText(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
+                ->setContent(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'))
                 ->failure();
 
             echo $response;
@@ -218,7 +212,7 @@ class CrowdfundingControllerRewards extends JControllerLegacy
 
         $response
             ->setTitle(JText::_('COM_CROWDFUNDING_SUCCESS'))
-            ->setText(JText::_('COM_CROWDFUNDING_REWARD_IMAGE_REMOVED_SUCCESSFULLY'))
+            ->setContent(JText::_('COM_CROWDFUNDING_REWARD_IMAGE_REMOVED_SUCCESSFULLY'))
             ->success();
 
         echo $response;

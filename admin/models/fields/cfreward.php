@@ -32,8 +32,10 @@ class JFormFieldCfreward extends JFormField
     /**
      * Method to get the field options.
      *
-     * @return  array   The field option objects.
+     * @return  mixed   The field option objects.
      * @since   1.6
+     * @throws \RuntimeException
+     * @throws \UnexpectedValueException
      */
     protected function getOptions()
     {
@@ -48,6 +50,7 @@ class JFormFieldCfreward extends JFormField
      * Get the data that is going to be passed to the layout
      *
      * @return  array
+     * @throws \RuntimeException
      */
     public function getLayoutData()
     {

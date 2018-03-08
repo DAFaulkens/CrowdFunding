@@ -85,12 +85,13 @@ class CrowdfundingModelTransactions extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
-        // Create a new query object.
         $db = $this->getDbo();
-        /** @var $db JDatabaseMySQLi * */
+        /** @var $db JDatabaseDriver **/
+
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -116,8 +117,8 @@ class CrowdfundingModelTransactions extends JModelList
         $query->innerJoin($db->quoteName('#__users') . ' AS f ON a.receiver_id = f.id');
 
         // Filter by search phrase or ID.
-        $search = $this->getState('filter.search');
-        if (JString::strlen($search) > 0) {
+        $search = (string)$this->getState('filter.search');
+        if ($search !== '') {
             if (stripos($search, 'id:') === 0) {
                 $query->where('a.id = ' . (int)substr($search, 3));
             } else {

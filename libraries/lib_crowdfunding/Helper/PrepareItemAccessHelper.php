@@ -57,10 +57,12 @@ class PrepareItemAccessHelper implements HelperInterface
                 $asset = 'com_crowdfunding.item.' . $data->id;
 
                 // Check general edit permission first.
-                if ($userId > 0 and $this->user->authorise('core.edit', $asset)) {
+                if ($userId > 0 && $this->user->authorise('core.edit', $asset)) {
                     $data->params->set('access-edit', true);
-                } // Now check if edit.own is available.
-                elseif ($userId > 0 and $this->user->authorise('core.edit.own', $asset)) {
+                }
+
+                // Now check if edit.own is available.
+                if ($userId > 0 && $this->user->authorise('core.edit.own', $asset)) {
                     // Check for a valid user and that they are the owner.
                     if ($userId === (int)$data->user_id) {
                         $data->params->set('access-edit', true);
@@ -69,10 +71,10 @@ class PrepareItemAccessHelper implements HelperInterface
             }
 
             // If no access filter is set, the layout takes some responsibility for display of limited information.
-            if (!$data->catid or !$data->category_access) {
+            if (!$data->catid || !$data->category_access) {
                 $data->params->set('access-view', in_array((int)$data->access, $viewGroups, true));
             } else {
-                $data->params->set('access-view', in_array((int)$data->access, $viewGroups, true) and in_array((int)$data->category_access, $viewGroups, true));
+                $data->params->set('access-view', in_array((int)$data->access, $viewGroups, true) && in_array((int)$data->category_access, $viewGroups, true));
             }
         }
     }

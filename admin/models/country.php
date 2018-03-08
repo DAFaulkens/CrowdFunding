@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -52,6 +54,7 @@ class CrowdfundingModelCountry extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -78,13 +81,13 @@ class CrowdfundingModelCountry extends JModelAdmin
      */
     public function save($data)
     {
-        $id        = Joomla\Utilities\ArrayHelper::getValue($data, 'id');
-        $name      = Joomla\Utilities\ArrayHelper::getValue($data, 'name');
-        $code      = Joomla\Utilities\ArrayHelper::getValue($data, 'code');
-        $locale    = Joomla\Utilities\ArrayHelper::getValue($data, 'locale');
-        $latitude  = Joomla\Utilities\ArrayHelper::getValue($data, 'latitude');
-        $longitude = Joomla\Utilities\ArrayHelper::getValue($data, 'longitude');
-        $timezone  = Joomla\Utilities\ArrayHelper::getValue($data, 'timezone');
+        $id        = ArrayHelper::getValue($data, 'id');
+        $name      = ArrayHelper::getValue($data, 'name');
+        $code      = ArrayHelper::getValue($data, 'code');
+        $locale    = ArrayHelper::getValue($data, 'locale');
+        $latitude  = ArrayHelper::getValue($data, 'latitude');
+        $longitude = ArrayHelper::getValue($data, 'longitude');
+        $timezone  = ArrayHelper::getValue($data, 'timezone');
 
         // Load a record from the database
         $row = $this->getTable();

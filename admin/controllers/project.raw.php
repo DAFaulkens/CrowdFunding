@@ -25,7 +25,7 @@ class CrowdfundingControllerProject extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    object    The model.
+     * @return    CrowdfundingModelProject|bool    The model.
      * @since    1.5
      */
     public function getModel($name = 'Project', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
@@ -51,12 +51,10 @@ class CrowdfundingControllerProject extends JControllerLegacy
         try {
             $locations = new Crowdfunding\Locations(JFactory::getDbo());
             $locations->loadByString($query);
-            
             $locationData = $locations->toOptions('id', 'name');
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $response

@@ -47,6 +47,7 @@ class CrowdfundingModelFeatured extends JModelList
      *
      * @return  void
      * @since   1.6
+     * @throws \Exception
      */
     protected function populateState($ordering = 'ordering', $direction = 'ASC')
     {
@@ -92,6 +93,7 @@ class CrowdfundingModelFeatured extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
@@ -119,7 +121,7 @@ class CrowdfundingModelFeatured extends JModelList
         // Filter by category ID
         $categoryId = (int)$this->getState($this->context . '.category_id', 0);
         if ($categoryId > 0) {
-            $query->where('a.catid = ' . (int)$categoryId);
+            $query->where('a.catid = ' . $categoryId);
         }
 
         // Filter by states

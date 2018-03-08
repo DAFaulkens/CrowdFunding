@@ -57,9 +57,6 @@ class CrowdfundingViewCurrencies extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -74,7 +71,7 @@ class CrowdfundingViewCurrencies extends JViewLegacy
 
         $this->sortFields = array(
             'a.title' => JText::_('COM_CROWDFUNDING_TITLE'),
-            'a.abbr'  => JText::_('COM_CROWDFUNDING_ABBR'),
+            'a.code'  => JText::_('COM_CROWDFUNDING_CURRENCY_CODE'),
             'a.id'    => JText::_('JGRID_HEADING_ID')
         );
     }
@@ -117,15 +114,10 @@ class CrowdfundingViewCurrencies extends JViewLegacy
         JToolbarHelper::custom('currencies.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_CURRENCY_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
 

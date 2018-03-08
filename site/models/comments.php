@@ -33,7 +33,6 @@ class CrowdfundingModelComments extends JModelList
         }
 
         parent::__construct($config);
-
     }
 
     protected function populateState($ordering = null, $direction = null)
@@ -64,10 +63,10 @@ class CrowdfundingModelComments extends JModelList
      *
      * @return  string      A store id.
      * @since   1.6
+     * @throws \Exception
      */
     protected function getStoreId($id = '')
     {
-        // Compile the store id.
         $id .= ':' . $this->getState($this->getName() . '.id');
 
         return parent::getStoreId($id);
@@ -78,10 +77,11 @@ class CrowdfundingModelComments extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \Exception
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
-        // Create a new query object.
         $db = $this->getDbo();
         /** @var $db JDatabaseDriver */
         
@@ -133,7 +133,7 @@ class CrowdfundingModelComments extends JModelList
         JForm::addFormPath(JPATH_COMPONENT . '/models/forms');
         JForm::addFieldPath(JPATH_COMPONENT . '/models/fields');
 
-        $form = JForm::getInstance($name, $source, $options, false, false);
+        $form = JForm::getInstance($name, $source, $options, false);
 
         // Load the data into the form after the plugins have operated.
         $form->bind($data);

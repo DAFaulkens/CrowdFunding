@@ -161,7 +161,7 @@ abstract class JHtmlCrowdfunding
         }
         $class .= '"';
 
-        if (!$value or !is_numeric($value)) {
+        if (!$value || !is_numeric($value)) {
             $value = 0.00;
         }
 
@@ -275,11 +275,11 @@ abstract class JHtmlCrowdfunding
         $minimumAmount = $moneyParser->parse($minimumAmount);
         $maximumAmount = $moneyParser->parse($maximumAmount);
 
-        if ($minimumAmount > 0 and $maximumAmount > 0) {
+        if ($minimumAmount > 0 && $maximumAmount > 0) {
             $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_MAXIMUM_AMOUNT_S_S', $moneyFormatter->formatCurrency(new Money($minimumAmount, $currency)), $moneyFormatter->formatCurrency(new Money($maximumAmount, $currency)));
-        } elseif ($minimumAmount > 0 and $maximumAmount <= 0) {
+        } elseif ($minimumAmount > 0 && $maximumAmount <= 0) {
             $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MINIMUM_AMOUNT_S', $moneyFormatter->formatCurrency(new Money($minimumAmount, $currency)));
-        } elseif ($minimumAmount <= 0 and $maximumAmount > 0) {
+        } elseif ($minimumAmount <= 0 && $maximumAmount > 0) {
             $output = JText::sprintf('COM_CROWDFUNDING_NOTE_MAXIMUM_AMOUNT_S', $moneyFormatter->formatCurrency(new Money($maximumAmount, $currency)));
         }
 
@@ -334,7 +334,7 @@ abstract class JHtmlCrowdfunding
             $tipMessage = (Prism\Constants::PUBLISHED !== $value) ? JText::_('COM_CROWDFUNDING_LAUNCH_CAMPAIGN') : JText::_('COM_CROWDFUNDING_STOP_CAMPAIGN');
 
             $class = ' class="btn btn-default btn-sm hasTooltip"';
-            $title = ' title="' . htmlspecialchars($tipMessage, ENT_QUOTES, 'UTF-8') . '"';
+            $title = ' title="' . htmlspecialchars($tipMessage, ENT_QUOTES) . '"';
 
         } else {
             $class = ' class="btn btn-default btn-sm"';
@@ -546,7 +546,6 @@ abstract class JHtmlCrowdfunding
                 $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
                 $output .= '</div>';
             }
-
         } elseif ($isValid) {
             $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
         } else {
@@ -583,7 +582,6 @@ abstract class JHtmlCrowdfunding
                 $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
                 $output .= ')</div>';
             }
-
         } elseif ($isValid) {
             $output .= JText::sprintf('COM_CROWDFUNDING_DURATION_END_DATE', JHtml::_('date', $endDate, $format));
         } else {
@@ -596,9 +594,9 @@ abstract class JHtmlCrowdfunding
     public static function postedby($name, $date, $link = null)
     {
         if (!$link) {
-            $profile = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+            $profile = htmlspecialchars($name, ENT_QUOTES);
         } else {
-            $profile = '<a href="' . $link . '">' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</a>';
+            $profile = '<a href="' . $link . '">' . htmlspecialchars($name, ENT_QUOTES) . '</a>';
         }
 
         $date = JHtml::_('date', $date, JText::_('DATE_FORMAT_LC3'));
@@ -611,7 +609,7 @@ abstract class JHtmlCrowdfunding
         if (!$name) {
             $output = JText::_('COM_CROWDFUNDING_ANONYMOUS');
         } else {
-            $output = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+            $output = htmlspecialchars($name, ENT_QUOTES);
         }
 
         return $output;
@@ -641,14 +639,14 @@ abstract class JHtmlCrowdfunding
     public static function socialProfileLink($link, $name, array $options = array())
     {
         if (!$link) {
-            $output = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+            $output = htmlspecialchars($name, ENT_QUOTES);
         } else {
             $target = '';
             if (!empty($options['target'])) {
                 $target = 'target="' . ArrayHelper::getValue($options, 'target') . '"';
             }
 
-            $output = '<a href="' . $link . '" ' . $target . '>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</a>';
+            $output = '<a href="' . $link . '" ' . $target . '>' . htmlspecialchars($name, ENT_QUOTES) . '</a>';
         }
 
         return $output;
@@ -713,12 +711,12 @@ abstract class JHtmlCrowdfunding
         }
 
         // Prepare class for a new campaign.
-        if (($today < $fundingEnd) and $fundingStart->isCurrentWeekDay()) {
+        if (($today < $fundingEnd) && $fundingStart->isCurrentWeekDay()) {
             $classes[] = $params->get('style_new');
         }
 
         // Prepare class for a ending soon campaign.
-        if (($today < $fundingEnd) and $fundingEnd->isCurrentWeekDay()) {
+        if (($today < $fundingEnd) && $fundingEnd->isCurrentWeekDay()) {
             $classes[] = $params->get('style_ending_soon');
         }
 
@@ -775,9 +773,9 @@ abstract class JHtmlCrowdfunding
         $html = array();
 
         if (!$link) {
-            $html[] = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+            $html[] = htmlspecialchars($name, ENT_QUOTES);
         } else {
-            $html[] = '<a href="' . $link . '">'.htmlspecialchars($name, ENT_QUOTES, 'UTF-8').'</a>';
+            $html[] = '<a href="' . $link . '">'.htmlspecialchars($name, ENT_QUOTES).'</a>';
         }
 
         if ($verified) {
@@ -787,7 +785,7 @@ abstract class JHtmlCrowdfunding
         return implode("\n", $html);
     }
 
-    public static function profileAvatar($avatar, $link = '', $options = array())
+    public static function profileAvatar($avatar, $link = '', array $options = array())
     {
         $class = (!empty($options['class'])) ? 'class="'.$options['class'].'"' : '';
 
@@ -816,9 +814,11 @@ abstract class JHtmlCrowdfunding
      */
     public static function infoMinMaxAmount($minAmount, $maxAmount, $moneyFormatter, $currency)
     {
-        if ($minAmount > 0 and !$maxAmount) {
+        if ($minAmount > 0 && !$maxAmount) {
             return JText::sprintf('COM_CROWDFUNDING_MINIMUM_AMOUNT', $moneyFormatter->formatCurrency(new Money($minAmount, $currency)));
-        } elseif ($minAmount > 0 and $maxAmount > 0) {
+        }
+
+        if ($minAmount > 0 && $maxAmount > 0) {
             return JText::sprintf('COM_CROWDFUNDING_MINIMUM_MAXIMUM_AMOUNT', $moneyFormatter->formatCurrency(new Money($minAmount, $currency)), $moneyFormatter->formatCurrency(new Money($maxAmount, $currency)));
         }
 

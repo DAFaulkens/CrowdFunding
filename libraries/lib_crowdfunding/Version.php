@@ -38,7 +38,7 @@ class Version
      *
      * @var integer
      */
-    public $devLevel = '7.2';
+    public $devLevel = '7.3';
 
     /**
      * Release Type
@@ -59,7 +59,7 @@ class Version
      *
      * @var string
      */
-    public $releaseDate = '03 December, 2017';
+    public $releaseDate = '08 March, 2018';
 
     /**
      * License
@@ -73,7 +73,7 @@ class Version
      *
      * @var string
      */
-    public $copyright = '&copy; 2017 ITPrism. All rights reserved.';
+    public $copyright = '&copy; 2018 ITPrism. All rights reserved.';
 
     /**
      * URL to the extension page.
@@ -101,7 +101,7 @@ class Version
      *
      * @var string
      */
-    public $requiredPrismVersion = '1.21';
+    public $requiredPrismVersion = '1.22';
 
     /**
      * Build long format of the version text.

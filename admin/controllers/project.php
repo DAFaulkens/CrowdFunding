@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // No direct access
 defined('_JEXEC') or die;
@@ -48,15 +48,8 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
             'id'   => $itemId
         );
 
-        // Get component parameters.
-        $params = JComponentHelper::getParams($this->option);
-        /** @var $params Joomla\Registry\Registry */
-
         // Prepare amounts.
-        $container   = Prism\Container::getContainer();
-
-        $moneyParser = MoneyHelper::getMoneyParser($container, $params);
-
+        $moneyParser    = JoomlaFacade::getMoneyParser();
         $data['goal']   = $moneyParser->parse($data['goal']);
         $data['funded'] = $moneyParser->parse($data['funded']);
 
@@ -67,7 +60,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
         }
 
         // Validate the form
@@ -107,18 +100,14 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
             $itemId = $model->save($validData);
 
             $redirectOptions['id'] = $itemId;
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_PROJECT_SAVED'), $redirectOptions);
     }
 
-    /**
-     * Delete image
-     */
     public function removeImage()
     {
         // Check for request forgeries.
@@ -152,7 +141,7 @@ class CrowdfundingControllerProject extends Prism\Controller\Form\Backend
             }
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $redirectOptions = array(

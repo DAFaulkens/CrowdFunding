@@ -43,7 +43,6 @@ class JFormFieldCfFundingType extends JFormFieldRadio
 
         // Build the radio field output.
         switch ($allowedFundingType) {
-
             case 'FIXED':
                 $this->prepareFixed($html);
                 break;
@@ -53,7 +52,6 @@ class JFormFieldCfFundingType extends JFormFieldRadio
                 break;
 
             default:
-
                 $this->prepareFixed($html);
                 $this->prepareFlexible($html);
 

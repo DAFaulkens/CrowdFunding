@@ -7,13 +7,18 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
 
 class CrowdfundingViewProjects extends JViewLegacy
 {
+    /**
+     * @var JApplicationAdministrator
+     */
+    protected $app;
+
     /**
      * @var JDocumentHtml
      */
@@ -51,7 +56,8 @@ class CrowdfundingViewProjects extends JViewLegacy
 
     public function display($tpl = null)
     {
-        $this->option     = JFactory::getApplication()->input->get('option');
+        $this->app      = JFactory::getApplication();
+        $this->option   = $this->app->input->get('option');
 
         $this->state      = $this->get('State');
         $this->items      = $this->get('Items');
@@ -59,9 +65,8 @@ class CrowdfundingViewProjects extends JViewLegacy
 
         $this->params     = $this->state->get('params');
 
-        $container              = Prism\Container::getContainer();
-        $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-        $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        $this->currency         = JoomlaFacade::getCurrency();
+        $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
 
         // Get projects IDs
         $projectsIds = Prism\Utilities\ArrayHelper::getIds($this->items);
@@ -105,12 +110,6 @@ class CrowdfundingViewProjects extends JViewLegacy
         $this->activeFilters = $this->get('ActiveFilters');
     }
 
-    /**
-     * Add a menu on the sidebar of page.
-     *
-     * @throws \InvalidArgumentException
-     * @throws \RuntimeException
-     */
     protected function addSidebar()
     {
         CrowdfundingHelper::addSubmenu($this->getName());
@@ -148,11 +147,6 @@ class CrowdfundingViewProjects extends JViewLegacy
         JToolbarHelper::custom('projects.backToDashboard', 'dashboard', '', JText::_('COM_CROWDFUNDING_DASHBOARD'), false);
     }
 
-    /**
-     * Method to set up the document properties
-     *
-     * @return void
-     */
     protected function setDocument()
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_PROJECTS_MANAGER'));

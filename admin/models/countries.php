@@ -79,10 +79,10 @@ class CrowdfundingModelCountries extends JModelList
      *
      * @return  JDatabaseQuery
      * @since   1.6
+     * @throws \RuntimeException
      */
     protected function getListQuery()
     {
-        // Create a new query object.
         $db = $this->getDbo();
         /** @var $db JDatabaseDriver */
 

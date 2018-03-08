@@ -46,7 +46,7 @@ class CrowdfundingModelProjectbasic extends CrowdfundingModelProject
                 $locationName = $location->getName(true);
 
                 // Set the name to the form element.
-                if ($locationName !== null and $locationName !== '') {
+                if ($locationName !== null && $locationName !== '') {
                     $data->location = $locationName;
                 }
             }
@@ -144,7 +144,6 @@ class CrowdfundingModelProjectbasic extends CrowdfundingModelProject
 
             $access = $params->get('default_access', JFactory::getApplication()->get('access'));
             $table->set('access', $access);
-
         } else {
             // Prepare default access.
             $access = (int)$table->get('access');
@@ -406,7 +405,7 @@ class CrowdfundingModelProjectbasic extends CrowdfundingModelProject
         $fileSmall  = $sourceFolder .'/'. $images['image_small'];
         $fileSquare = $sourceFolder .'/'. $images['image_square'];
 
-        if (is_file($fileImage) and is_file($fileSmall) and is_file($fileSquare)) {
+        if (is_file($fileImage) && is_file($fileSmall) && is_file($fileSquare)) {
             $destination = JPath::clean(JPATH_ROOT .'/'. $params->get('images_directory', 'images/crowdfunding'), '/');
 
             // Remove an image from the filesystem

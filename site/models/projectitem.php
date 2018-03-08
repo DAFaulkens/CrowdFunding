@@ -42,6 +42,7 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
      * Note. Calling getState in this method will result in recursion.
      *
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -78,7 +79,7 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
         if (!array_key_exists($storedId, $this->items)) {
             $table = $this->getTable();
 
-            if ($itemId > 0 and $userId > 0) {
+            if ($itemId > 0 && $userId > 0) {
                 $keys = array(
                     'id'      => $itemId,
                     'user_id' => $userId
@@ -151,10 +152,12 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
             $asset = 'com_crowdfunding.item.' . $item->id;
 
             // Check general edit permission first.
-            if ($userId > 0 and $user->authorise('core.edit', $asset)) {
+            if ($userId > 0 && $user->authorise('core.edit', $asset)) {
                 $canEdit = true;
-            } // Now check if edit.own is available.
-            elseif ($userId > 0 and $user->authorise('core.edit.own', $asset)) {
+            }
+
+            // Now check if edit.own is available.
+            if ($userId > 0 && $user->authorise('core.edit.own', $asset)) {
                 // Check for a valid user and that they are the owner.
                 if ($userId === (int)$item->user_id) {
                     $canEdit = true;
@@ -197,7 +200,7 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
             $transactionsNumber = (int)$statistics->getTransactionsNumber();
 
             // If it is not approve and there are no transactions, reset starting date.
-            if ($transactionsNumber === 0 and ((int)$row->get('approved') === Prism\Constants::NOT_APPROVED)) {
+            if ($transactionsNumber === 0 && ((int)$row->get('approved') === Prism\Constants::NOT_APPROVED)) {
                 $row->set('funding_start', Prism\Constants::DATE_DEFAULT_SQL_DATE);
             }
 
@@ -236,7 +239,7 @@ class CrowdfundingModelProjectItem extends JModelItem implements ContainerAwareI
         // Trigger the onContentChangeState event.
         $results    = $dispatcher->trigger('onContentChangeState', array($context, $pks, $state));
         if (in_array(false, $results, true)) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_CHANGE_STATE'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_CHANGE_STATE'));
         }
     }
 

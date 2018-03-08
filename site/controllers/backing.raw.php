@@ -25,18 +25,14 @@ class CrowdfundingControllerBacking extends JControllerLegacy
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelBacking    The model.
+     * @return    CrowdfundingModelBacking|bool    The model.
      * @since    1.5
      */
     public function getModel($name = 'Backing', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
-    /**
-     * Process custom step.
-     */
     public function processStep()
     {
         // Check for request forgeries.
@@ -61,9 +57,9 @@ class CrowdfundingControllerBacking extends JControllerLegacy
         $results    = $dispatcher->trigger('onPaymentProcessStep', array('com_crowdfunding.payment.process.'.$context, &$params));
 
         // Get the result, that comes from the plugin.
-        if (is_array($results) and count($results) > 0) {
+        if (is_array($results) && count($results) > 0) {
             foreach ($results as $result) {
-                if ($result !== null and is_object($result)) {
+                if ($result !== null && is_object($result)) {
                     $responseData = $result;
                     break;
                 }

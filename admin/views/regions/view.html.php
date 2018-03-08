@@ -65,9 +65,6 @@ class CrowdfundingViewRegions extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare sortable fields, sort values and filters.
-     */
     protected function prepareSorting()
     {
         // Prepare filters
@@ -86,9 +83,6 @@ class CrowdfundingViewRegions extends JViewLegacy
         );
     }
 
-    /**
-     * Add a menu on the sidebar of page
-     */
     protected function addSidebar()
     {
         CrowdfundingHelper::addSubmenu($this->getName());
@@ -125,12 +119,9 @@ class CrowdfundingViewRegions extends JViewLegacy
     {
         $this->document->setTitle(JText::_('COM_CROWDFUNDING_REGIONS_MANAGER'));
 
-        // Scripts
         JHtml::_('behavior.multiselect');
         JHtml::_('bootstrap.tooltip');
-
         JHtml::_('formbehavior.chosen', 'select');
-
         JHtml::_('Prism.ui.joomlaList');
     }
 }

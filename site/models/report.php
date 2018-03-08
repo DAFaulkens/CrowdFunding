@@ -21,7 +21,7 @@ class CrowdfundingModelReport extends JModelForm
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableReport|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Report', $prefix = 'CrowdfundingTable', $config = array())
@@ -35,6 +35,7 @@ class CrowdfundingModelReport extends JModelForm
      * Note. Calling getState in this method will result in recursion.
      *
      * @since    1.6
+     * @throws \Exception
      */
     protected function populateState()
     {
@@ -59,7 +60,7 @@ class CrowdfundingModelReport extends JModelForm
      * @param    array   $data     An optional array of data for the form to interrogate.
      * @param    boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return    JForm    A JForm object on success, false on failure
+     * @return    JForm|bool    A JForm object on success, false on failure
      * @since    1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -78,6 +79,7 @@ class CrowdfundingModelReport extends JModelForm
      *
      * @return    mixed    The data for the form.
      * @since    1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -96,16 +98,17 @@ class CrowdfundingModelReport extends JModelForm
     /**
      * Method to get an object.
      *
-     * @param    integer $id     The id of the object to get.
+     * @param    integer $id The id of the object to get.
      *
      * @return    array  Object on success, false on failure.
+     * @throws \Exception
+     * @throws \RuntimeException
      */
     public function getItem($id = 0)
     {
-        $id     = ($id) ?: (int)$this->getState($this->getName() . '.id');
+        $id     = $id ?: (int)$this->getState($this->getName() . '.id');
 
         if (!array_key_exists($id, $this->items)) {
-
             $this->items[$id] = null;
 
             $db    = $this->getDbo();
@@ -140,6 +143,7 @@ class CrowdfundingModelReport extends JModelForm
      * @return    mixed        The record id on success, null on failure.
      * @since    1.6
      *
+     * @throws \InvalidArgumentException
      * @throws RuntimeException
      */
     public function save($data)

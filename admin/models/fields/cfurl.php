@@ -36,7 +36,7 @@ class JFormFieldCfUrl extends JFormField
     /**
      * Method to get the field options.
      *
-     * @return  array   The field option objects.
+     * @return  string   The field option objects.
      * @since   1.6
      */
     protected function getInput()

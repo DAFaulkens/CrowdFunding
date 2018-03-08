@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -29,13 +29,12 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelFunding    The model.
+     * @return    CrowdfundingModelFunding|JModelLegacy    The model.
      * @since    1.5
      */
     public function getModel($name = 'Funding', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function save($key = null, $urlVar = null)
@@ -66,8 +65,7 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
         $params = JComponentHelper::getParams($this->option);
         /** @var $params Joomla\Registry\Registry */
 
-        $container    = Prism\Container::getContainer();
-        $moneyParser  = MoneyHelper::getMoneyParser($container, $params);
+        $moneyParser  = JoomlaFacade::getMoneyParser();
 
         $data['goal'] = $moneyParser->parse($data['goal']);
 
@@ -78,7 +76,7 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
         }
 
         // Test if the data is valid.
@@ -92,7 +90,7 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
 
         // Validate project owner.
         $validator = new Crowdfunding\Validator\Project\Owner(JFactory::getDbo(), $itemId, $userId);
-        if (!$itemId or !$validator->isValid()) {
+        if (!$itemId || !$validator->isValid()) {
             $this->displayWarning(JText::_('COM_CROWDFUNDING_ERROR_INVALID_PROJECT'), $redirectOptions);
             return;
         }
@@ -121,7 +119,7 @@ class CrowdfundingControllerFunding extends Prism\Controller\Form\Frontend
             return;
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_FUNDING_SUCCESSFULLY_SAVED'), $redirectOptions);

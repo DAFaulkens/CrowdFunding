@@ -18,6 +18,7 @@ class CrowdfundingModelTools extends JModelLegacy
      * @param $id
      *
      * @return array
+     * @throws \RuntimeException
      */
     public function importFunders($id)
     {
@@ -34,20 +35,20 @@ class CrowdfundingModelTools extends JModelLegacy
                 'a.id, a.name, a.registerDate'
             )
         );
+        
         $query->from($db->quoteName('#__users', 'a'));
-        $query->where("a.id = ". (int)$id);
+        $query->where('a.id = ' . (int)$id);
 
         $db->setQuery($query);
 
-        $result = $db->loadObject();
-
-        return $result;
+        return $db->loadObject();
     }
 
     /**
      * Return crowdfunding projects.
      *
      * @return array
+     * @throws \RuntimeException
      */
     public function getProjects()
     {
@@ -66,8 +67,8 @@ class CrowdfundingModelTools extends JModelLegacy
                 )
             )
             ->from($db->quoteName('#__crowdf_projects', 'a'))
-            ->where("a.published = ". (int)Prism\Constants::PUBLISHED)
-            ->where("a.approved  = ". (int)Prism\Constants::APPROVED);
+            ->where('a.published = '. Prism\Constants::PUBLISHED)
+            ->where('a.approved  = '. Prism\Constants::APPROVED);
 
         $db->setQuery($query);
 
@@ -78,6 +79,7 @@ class CrowdfundingModelTools extends JModelLegacy
      * Return AcyMailing lists.
      *
      * @return array
+     * @throws \RuntimeException
      */
     public function getAcyLists()
     {
@@ -106,6 +108,7 @@ class CrowdfundingModelTools extends JModelLegacy
      * Return AcyMailing lists.
      *
      * @return array
+     * @throws \RuntimeException
      */
     public function addSubscribers()
     {
@@ -146,7 +149,6 @@ class CrowdfundingModelTools extends JModelLegacy
         // Get data from Crowdfunding Data.
         $results2 = array();
         if (JComponentHelper::isInstalled('com_crowdfundingdata')) {
-
             $query    = $db->getQuery(true);
             $subQuery = $db->getQuery(true);
 
@@ -175,7 +177,6 @@ class CrowdfundingModelTools extends JModelLegacy
 
         // Add new subscribers.
         if (count($results) !== 0) {
-
             include_once(JPath::clean(JPATH_ADMINISTRATOR.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'com_acymailing'.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'helper.php'));
 
             $component = JComponentHelper::getComponent('com_crowdfunding');
@@ -197,7 +198,6 @@ class CrowdfundingModelTools extends JModelLegacy
                 $userClass->save($user);
             }
         }
-
     }
 
     /**
@@ -205,7 +205,9 @@ class CrowdfundingModelTools extends JModelLegacy
      *
      * @param int $projectId
      * @param int $listId
+     *
      * @return array
+     * @throws \RuntimeException
      */
     public function getAcyStats($projectId, $listId)
     {
@@ -231,7 +233,6 @@ class CrowdfundingModelTools extends JModelLegacy
         // Get the number of items that have to be imported.
         $subscribersIds = $this->getSubscribersIds($projectId);
         if (count($subscribersIds) !== 0) {
-
             $query = $db->getQuery(true);
             $query
                 ->select('COUNT(a.subid)')
@@ -255,6 +256,7 @@ class CrowdfundingModelTools extends JModelLegacy
      * @param int $listId
      *
      * @return int
+     * @throws \RuntimeException
      */
     public function addFundersToAcyList($projectId, $listId)
     {
@@ -264,7 +266,6 @@ class CrowdfundingModelTools extends JModelLegacy
         $subscribersIds = $this->getSubscribersIds($projectId);
 
         if (count($subscribersIds) !== 0) {
-
             $db = $this->getDbo();
             /** @var $db JDatabaseDriver */
 
@@ -281,8 +282,6 @@ class CrowdfundingModelTools extends JModelLegacy
                 $subscriberId = (int)$db->loadResult();
 
                 if (!$subscriberId) {
-                    $date = new JDate();
-
                     $query   = $db->getQuery(true);
                     $query
                         ->insert($db->quoteName('#__acymailing_listsub'))

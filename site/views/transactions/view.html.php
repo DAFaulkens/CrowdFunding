@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // no direct access
 defined('_JEXEC') or die;
@@ -69,10 +69,9 @@ class CrowdfundingViewTransactions extends JViewLegacy
         $this->params     = $this->state->get('params');
         /** @var  $params Joomla\Registry\Registry */
 
-        if (is_array($this->items) and count($this->items) > 0) {
-            $container              = Prism\Container::getContainer();
-            $this->currency         = MoneyHelper::getCurrency($container, $this->params);
-            $this->moneyFormatter   = MoneyHelper::getMoneyFormatter($container, $this->params);
+        if (is_array($this->items) && count($this->items) > 0) {
+            $this->currency         = JoomlaFacade::getCurrency();
+            $this->moneyFormatter   = JoomlaFacade::getMoneyFormatter();
         }
 
         // Prepare filters
@@ -89,9 +88,6 @@ class CrowdfundingViewTransactions extends JViewLegacy
         parent::display($tpl);
     }
 
-    /**
-     * Prepare document
-     */
     protected function prepareDocument()
     {
         //Escape strings for HTML output

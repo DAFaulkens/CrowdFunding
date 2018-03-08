@@ -52,6 +52,7 @@ class CrowdfundingModelRegion extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -61,9 +62,10 @@ class CrowdfundingModelRegion extends JModelAdmin
         $data = $app->getUserState($this->option . '.edit.region.data', array());
 
         if (!$data) {
+            /** @var stdClass $data */
             $data = $this->getItem();
 
-            if (!$data->id) {
+            if (is_object($data) && !$data->id) {
                 $data->country_code = $app->input->getCmd('code');
             }
         }

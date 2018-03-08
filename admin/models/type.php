@@ -7,6 +7,8 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
+use Joomla\Utilities\ArrayHelper;
+
 // no direct access
 defined('_JEXEC') or die;
 
@@ -19,7 +21,7 @@ class CrowdfundingModelType extends JModelAdmin
      * @param   string $prefix A prefix for the table class name. Optional.
      * @param   array  $config Configuration array for model. Optional.
      *
-     * @return  JTable  A database object
+     * @return  CrowdfundingTableType|bool  A database object
      * @since   1.6
      */
     public function getTable($type = 'Type', $prefix = 'CrowdfundingTable', $config = array())
@@ -33,7 +35,7 @@ class CrowdfundingModelType extends JModelAdmin
      * @param   array   $data     An optional array of data for the form to interrogate.
      * @param   boolean $loadData True if the form is to load its own data (default case), false if not.
      *
-     * @return  JForm   A JForm object on success, false on failure
+     * @return  JForm|bool   A JForm object on success, false on failure
      * @since   1.6
      */
     public function getForm($data = array(), $loadData = true)
@@ -52,6 +54,7 @@ class CrowdfundingModelType extends JModelAdmin
      *
      * @return  mixed   The data for the form.
      * @since   1.6
+     * @throws \Exception
      */
     protected function loadFormData()
     {
@@ -67,29 +70,32 @@ class CrowdfundingModelType extends JModelAdmin
     /**
      * Save data into the DB
      *
-     * @param array $data   The data of item
+     * @param array $data The data of item
      *
      * @return    int      Item ID
+     * @throws \UnexpectedValueException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function save($data)
     {
-        $id          = JArrayHelper::getValue($data, "id");
-        $title       = JArrayHelper::getValue($data, "title");
-        $description = JArrayHelper::getValue($data, "description");
+        $id          = ArrayHelper::getValue($data, 'id');
+        $title       = ArrayHelper::getValue($data, 'title');
+        $description = ArrayHelper::getValue($data, 'description');
 
-        $params = JArrayHelper::getValue($data, "params", array(), "array");
+        $params = ArrayHelper::getValue($data, 'params', array(), 'array');
         $params = json_encode($params);
 
         // Load a record from the database
         $row = $this->getTable();
         $row->load($id);
 
-        $row->set("title", $title);
-        $row->set("description", $description);
-        $row->set("params", $params);
+        $row->set('title', $title);
+        $row->set('description', $description);
+        $row->set('params', $params);
 
         $row->store();
 
-        return $row->get("id");
+        return $row->get('id');
     }
 }

@@ -7,7 +7,7 @@
  * @license      GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-use Crowdfunding\Container\MoneyHelper;
+use Crowdfunding\Facade\Joomla as JoomlaFacade;
 
 // No direct access
 defined('_JEXEC') or die;
@@ -27,13 +27,12 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
      * @param    string $prefix The class prefix. Optional.
      * @param    array  $config Configuration array for model. Optional.
      *
-     * @return    CrowdfundingModelReward    The model.
+     * @return    CrowdfundingModelReward|JModelLegacy    The model.
      * @since    1.5
      */
     public function getModel($name = 'Reward', $prefix = 'CrowdfundingModel', $config = array('ignore_request' => true))
     {
-        $model = parent::getModel($name, $prefix, $config);
-        return $model;
+        return parent::getModel($name, $prefix, $config);
     }
 
     public function save($key = null, $urlVar = null)
@@ -45,7 +44,7 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
 
         $dataFile  = $this->input->files->get('jform', array(), 'array');
         $image     = Joomla\Utilities\ArrayHelper::getValue($dataFile, 'image', array(), 'array');
-        $imageName = JString::trim(Joomla\Utilities\ArrayHelper::getValue($image, 'name'));
+        $imageName = Joomla\String\StringHelper::trim(Joomla\Utilities\ArrayHelper::getValue($image, 'name'));
 
         $redirectOptions = array(
             'task' => $this->getTask(),
@@ -59,16 +58,14 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
         /** @var $form JForm */
 
         if (!$form) {
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_FORM_CANNOT_BE_LOADED'));
         }
 
         $params = JComponentHelper::getParams('com_crowdfunding');
         /** @var  $params Joomla\Registry\Registry */
 
         // Prepare amounts.
-        $container   = Prism\Container::getContainer();
-        $moneyParser = MoneyHelper::getMoneyParser($container, $params);
-
+        $moneyParser    = JoomlaFacade::getMoneyParser();
         $data['amount'] = $moneyParser->parse($data['amount']);
 
         // Validate the form
@@ -89,7 +86,7 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
             $imagesAllowed = $params->get('rewards_images', 0);
             
             // Upload images.
-            if ($imagesAllowed and !empty($imageName) and !empty($itemId)) {
+            if ($imagesAllowed && !empty($imageName) && !empty($itemId)) {
                 $reward = new Crowdfunding\Reward(JFactory::getDbo());
                 $reward->load($itemId);
 
@@ -104,22 +101,17 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
                     $model->storeImage($images, $imagesFolder, $itemId);
                 }
             }
-
         } catch (RuntimeException $e) {
             $this->displayError($e->getMessage(), $redirectOptions);
             return;
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_REWARD_SAVED'), $redirectOptions);
     }
 
-    /**
-     * Delete image
-     */
     public function removeImage()
     {
         // Check for request forgeries.
@@ -148,11 +140,10 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
 
         try {
             $model = $this->getModel();
-
             $model->removeImage($itemId, $imagesFolder);
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         $this->displayMessage(JText::_('COM_CROWDFUNDING_IMAGE_DELETED'), $redirectOptions);
@@ -191,10 +182,9 @@ class CrowdfundingControllerReward extends Prism\Controller\Form\Backend
             /** @var $model CrowdfundingModelReward */
 
             $model->updateRewardState($transactionId, $state);
-
         } catch (Exception $e) {
             JLog::add($e->getMessage(), JLog::ERROR, 'com_crowdfunding');
-            throw new Exception(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
+            throw new RuntimeException(JText::_('COM_CROWDFUNDING_ERROR_SYSTEM'));
         }
 
         if (!$state) {
